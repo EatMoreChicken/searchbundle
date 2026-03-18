@@ -87,20 +87,17 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Cooper AI */}
+      {/* Account */}
       <div className="border-t border-border px-3 py-3">
-        <Link
-          href="/cooper"
-          className={[
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-semibold transition-colors",
-            isActive("/cooper")
-              ? "bg-indigo-light text-indigo"
-              : "text-indigo hover:bg-indigo-light",
-          ].join(" ")}
-        >
-          <i className="fa-solid fa-wand-magic-sparkles w-[18px] text-center text-[14px]" />
-          Cooper AI
-        </Link>
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface border border-border">
+            <i className="fa-solid fa-user w-[18px] text-center text-[12px] text-text-secondary" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-medium text-text">My Account</p>
+            <p className="truncate text-[11px] text-text-tertiary">user@example.com</p>
+          </div>
+        </div>
       </div>
     </aside>
   );
