@@ -14,6 +14,8 @@ out/
 # Environment variables
 .env
 .env.local
+.env.production
+# .env.example is intentionally committed — it's the template
 .env.development.local
 .env.test.local
 .env.production.local

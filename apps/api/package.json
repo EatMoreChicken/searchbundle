@@ -1,0 +1,22 @@
+{
+  "name": "@searchbundle/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "fastify": "^5.8.2",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/cookie": "^11.0.2",
+    "dotenv": "^16.4.0",
+    "@searchbundle/db": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3",
+    "tsx": "^4.21.0"
+  }
+}

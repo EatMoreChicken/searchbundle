@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Fonts */
+  --font-display: "DM Serif Display", serif;
+  --font-heading: "Syne", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Backgrounds */
+  --color-bg: #FAFAF8;
+  --color-surface: #F5F3EF;
+  --color-elevated: #FFFFFF;
+
+  /* Text */
+  --color-text: #1A1A1A;
+  --color-text-secondary: #6B6B6B;
+  --color-text-tertiary: #9A9A9A;
+
+  /* Borders */
+  --color-border: #E8E5DF;
+
+  /* Semantic — green */
+  --color-green: #4A7C59;
+  --color-green-light: #E8F0EA;
+
+  /* Semantic — amber */
+  --color-amber: #C4842D;
+  --color-amber-light: #FDF3E7;
+
+  /* Semantic — red */
+  --color-red: #B54A4A;
+  --color-red-light: #FDEAEA;
+
+  /* Brand — teal */
+  --color-teal: #2A7C8E;
+  --color-teal-light: #E6F3F5;
+
+  /* Brand — indigo (Cooper AI) */
+  --color-indigo: #5B6ABF;
+  --color-indigo-light: #EEEDF7;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+

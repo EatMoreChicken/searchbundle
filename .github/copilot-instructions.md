@@ -67,21 +67,27 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 ## SaaS Stack Decisions
 
 ### Core Framework
-- **Next.js** + **React** + **TypeScript** — full-stack framework, handles both frontend and API routes
+- **Next.js 16** + **React 19** + **TypeScript 5.9** — full-stack framework, handles both frontend and API routes
+- Turbopack is the default dev bundler in Next.js 16
 
 ### Styling
-- **Tailwind CSS** — utility-first, no separate CSS files needed
+- **Tailwind CSS v4** — utility-first, CSS-first configuration (no `tailwind.config.js`)
+- All design tokens are defined in `apps/web/src/styles/globals.css` via `@theme {}`
+- PostCSS plugin is `@tailwindcss/postcss` (not `tailwindcss`). `autoprefixer` is not needed — it is built into Tailwind v4.
 
 ### API
-- **Fastify** — Node.js HTTP server, faster than Express with better TypeScript support
-- Pattern: REST endpoints served via Fastify, consumed by the React frontend
+- **Fastify 5** — Node.js HTTP server, faster than Express with better TypeScript support
+- Pattern: REST endpoints served via Fastify on port 3001, consumed by the React frontend
+- Next.js proxies all `/api/*` requests to Fastify in development via `rewrites()` in `next.config.ts`
 
 ### Auth
-- **Auth.js** (formerly NextAuth) — self-hosted, free, integrates with Next.js
+- **Auth.js v5** (formerly NextAuth, package: `next-auth@beta`) — self-hosted, free, integrates with Next.js
 
 ### Database
-- **PostgreSQL** — primary database
-- **Drizzle ORM** — lightweight, type-safe, closer to raw SQL than Prisma
+- **PostgreSQL 17** (Docker image: `postgres:17-bookworm`) — primary database
+- **Drizzle ORM 0.45** — lightweight, type-safe, closer to raw SQL than Prisma
+- **drizzle-kit 0.31** — migration tool; config at `packages/db/drizzle.config.ts`
+- Schema lives in `packages/db/src/schema.ts`; migrations in `packages/db/migrations/`
 
 ### Deployment (self-hosted)
 - **Docker** — containerize the app
