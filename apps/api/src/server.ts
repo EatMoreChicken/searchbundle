@@ -2,9 +2,9 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import accountRoutes from "./routes/accounts.js";
-import debtRoutes from "./routes/debts.js";
-import checkInRoutes from "./routes/check-ins.js";
+import accountRoutes from "./routes/accounts";
+import debtRoutes from "./routes/debts";
+import checkInRoutes from "./routes/check-ins";
 
 config({ path: resolve(__dirname, "../../../.env") });
 

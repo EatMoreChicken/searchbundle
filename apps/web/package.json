@@ -11,12 +11,16 @@
     "next": "^16.1.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "next-auth": "beta"
+    "next-auth": "beta",
+    "@searchbundle/db": "*",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/bcryptjs": "^2.4.6",
     "typescript": "^5.9.3",
     "tailwindcss": "^4.2.1",
     "@tailwindcss/postcss": "^4.2.1",

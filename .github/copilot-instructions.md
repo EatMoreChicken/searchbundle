@@ -76,12 +76,20 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - PostCSS plugin is `@tailwindcss/postcss` (not `tailwindcss`). `autoprefixer` is not needed — it is built into Tailwind v4.
 
 ### API
-- **Fastify 5** — Node.js HTTP server, faster than Express with better TypeScript support
-- Pattern: REST endpoints served via Fastify on port 3001, consumed by the React frontend
-- Next.js proxies all `/api/*` requests to Fastify in development via `rewrites()` in `next.config.ts`
+- **Fastify 5** — Node.js HTTP server on port 3001 for internal operations and health checks
+- **Next.js Route Handlers** handle all user-facing API endpoints (`/api/accounts`, `/api/users`, `/api/auth/*`) — they use Auth.js session directly and call the DB via `@searchbundle/db`
+- Next.js proxies remaining `/api/*` paths to Fastify using `afterFiles` rewrites (so Next.js route handlers always take priority)
 
 ### Auth
-- **Auth.js v5** (formerly NextAuth, package: `next-auth@beta`) — self-hosted, free, integrates with Next.js
+- **Auth.js v5** (`next-auth@beta`) — Credentials provider (email + password), JWT sessions
+- Config at `apps/web/src/auth.ts` — exports `{ handlers, auth, signIn, signOut }`
+- Auth.js route handler at `apps/web/src/app/api/auth/[...nextauth]/route.ts`
+- Route protection via `apps/web/src/middleware.ts` using `auth` as middleware wrapper
+- `SessionProvider` wrapped in `apps/web/src/components/SessionProviderWrapper.tsx`, added to root layout
+- Sign-in page: `/sign-in`, Sign-up page: `/sign-up` — both in `(auth)` route group (no sidebar)
+- `apps/web` depends on `@searchbundle/db` directly for auth + route handler DB access
+- Passwords hashed with **bcryptjs** (12 rounds)
+- Dev fixture user: `dev@searchbundle.io` / `password123` (re-run `npm run db:seed` to set hash)
 
 ### Database
 - **PostgreSQL 17** (Docker image: `postgres:17-bookworm`) — primary database

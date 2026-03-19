@@ -1,15 +1,23 @@
+import { config } from "dotenv";
+import { resolve, dirname } from "path";
 import type { NextConfig } from "next";
 
+config({ path: resolve(__dirname, "../../.env") });
+
 const nextConfig: NextConfig = {
-  // The API runs as a separate Fastify server.
-  // All /api/* requests are proxied to it in development.
+  // fallback: Only unmatched /api/* paths proxy to Fastify.
+  // Next.js route handlers (/api/auth/*, /api/accounts, /api/users) resolve first.
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:3001/api/:path*",
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        {
+          source: "/api/:path*",
+          destination: "http://localhost:3001/api/:path*",
+        },
+      ],
+    };
   },
 };
 

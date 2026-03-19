@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 type NavItem = {
   href: string;
@@ -39,6 +40,10 @@ const navSections: NavSection[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const displayName = session?.user?.name ?? session?.user?.email ?? "My Account";
+  const displayEmail = session?.user?.email ?? "";
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
@@ -90,15 +95,23 @@ export default function Sidebar() {
       {/* Account */}
       <div className="border-t border-border px-3 py-3">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface border border-border">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface">
             <i className="fa-solid fa-user w-[18px] text-center text-[12px] text-text-secondary" />
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-medium text-text">My Account</p>
-            <p className="truncate text-[11px] text-text-tertiary">user@example.com</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium text-text">{displayName}</p>
+            <p className="truncate text-[11px] text-text-tertiary">{displayEmail}</p>
           </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            title="Sign out"
+            className="shrink-0 text-text-tertiary transition-colors hover:text-text"
+          >
+            <i className="fa-solid fa-arrow-right-from-bracket text-[13px]" />
+          </button>
         </div>
       </div>
     </aside>
   );
 }
+
