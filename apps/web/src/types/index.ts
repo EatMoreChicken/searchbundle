@@ -34,9 +34,27 @@ export interface Debt {
   name: string;
   type: "mortgage" | "student_loan" | "auto" | "credit_card" | "other";
   balance: number;
+  originalBalance: number;
   interestRate: number;
   minimumPayment: number;
-  originalBalance: number;
+  escrowAmount: number | null;
+  remainingMonths: number | null;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type DebtType = Debt["type"];
+
+export interface Scenario {
+  id: string;
+  userId: string;
+  debtId: string | null;
+  accountId: string | null;
+  name: string;
+  extraMonthlyPayment: number;
+  extraYearlyPayment: number;
+  lumpSumPayment: number;
+  lumpSumMonth: number;
+  createdAt: Date;
 }

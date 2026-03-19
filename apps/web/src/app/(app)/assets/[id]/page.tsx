@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
-import type { Asset, AssetType, ContributionFrequency } from "@/types";
+import type { Asset, AssetType, ContributionFrequency, Scenario } from "@/types";
 import InvestmentProjectionChart from "@/components/InvestmentProjectionChart";
 
 const TYPE_LABELS: Record<AssetType, string> = {
@@ -87,6 +87,18 @@ export default function AssetDetailPage() {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
+  // What-if scenario state
+  const [extraOneOff, setExtraOneOff] = useState("");
+  const [extraMonthly, setExtraMonthly] = useState("");
+  const [extraYearly, setExtraYearly] = useState("");
+  const [scenarioActive, setScenarioActive] = useState(false);
+
+  // Saved scenarios
+  const [savedScenarios, setSavedScenarios] = useState<Scenario[]>([]);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [scenarioName, setScenarioName] = useState("");
+  const [savingScenario, setSavingScenario] = useState(false);
+
   async function fetchAsset() {
     setLoading(true);
     try {
@@ -98,7 +110,14 @@ export default function AssetDetailPage() {
     }
   }
 
-  useEffect(() => { fetchAsset(); }, [id]);
+  async function fetchScenarios() {
+    try {
+      const data = await apiClient.get<Scenario[]>(`/api/assets/${id}/scenarios`);
+      setSavedScenarios(data);
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => { fetchAsset(); fetchScenarios(); }, [id]);
 
   function openEdit() {
     if (!asset) return;
@@ -148,6 +167,49 @@ export default function AssetDetailPage() {
     await apiClient.delete(`/api/assets/${asset.id}`);
     router.push("/assets");
   }
+
+  function clearScenario() {
+    setExtraOneOff("");
+    setExtraMonthly("");
+    setExtraYearly("");
+    setScenarioActive(false);
+  }
+
+  function loadScenario(scenario: Scenario) {
+    setExtraOneOff(scenario.lumpSumPayment > 0 ? String(scenario.lumpSumPayment) : "");
+    setExtraMonthly(scenario.extraMonthlyPayment > 0 ? String(scenario.extraMonthlyPayment) : "");
+    setExtraYearly(scenario.extraYearlyPayment > 0 ? String(scenario.extraYearlyPayment) : "");
+    setScenarioActive(true);
+  }
+
+  async function handleSaveScenario() {
+    if (!scenarioName.trim()) return;
+    setSavingScenario(true);
+    try {
+      await apiClient.post(`/api/assets/${id}/scenarios`, {
+        name: scenarioName.trim(),
+        extraMonthlyPayment: extraMonthly ? Number(extraMonthly) : 0,
+        extraYearlyPayment: extraYearly ? Number(extraYearly) : 0,
+        lumpSumPayment: extraOneOff ? Number(extraOneOff) : 0,
+        lumpSumMonth: 1,
+      });
+      setSaveModalOpen(false);
+      setScenarioName("");
+      await fetchScenarios();
+    } finally {
+      setSavingScenario(false);
+    }
+  }
+
+  async function handleDeleteScenario(scenarioId: string) {
+    await apiClient.delete(`/api/assets/${id}/scenarios/${scenarioId}`);
+    await fetchScenarios();
+  }
+
+  const hasScenarioInputs = !!(extraOneOff || extraMonthly || extraYearly);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setScenarioActive(hasScenarioInputs); }, [extraOneOff, extraMonthly, extraYearly]);
 
   if (loading) {
     return (
@@ -351,6 +413,188 @@ export default function AssetDetailPage() {
               )}
             </div>
           </div>
+
+          {/* What-If Scenario Panel */}
+          <div className="mt-8 rounded-2xl border border-border bg-elevated p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[2px] text-teal">What If</p>
+                <h2 className="mt-1 font-heading text-xl font-bold text-text">Extra Contribution Scenarios</h2>
+              </div>
+              <div className="flex gap-2">
+                {scenarioActive && (
+                  <>
+                    <button
+                      onClick={() => setSaveModalOpen(true)}
+                      className="flex items-center gap-2 rounded-[10px] bg-teal px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                    >
+                      <i className="fa-solid fa-bookmark text-[12px]" />
+                      Save Scenario
+                    </button>
+                    <button
+                      onClick={clearScenario}
+                      className="flex items-center gap-2 rounded-[10px] border border-border px-4 py-2.5 text-[13px] font-medium text-text-secondary hover:bg-surface hover:text-text"
+                    >
+                      <i className="fa-solid fa-xmark text-[12px]" />
+                      Discard
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <p className="mt-3 text-[14px] text-text-secondary">
+              See how extra contributions affect your portfolio growth over time.
+            </p>
+
+            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-text">
+                  Extra Monthly Contribution
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="200"
+                    value={extraMonthly}
+                    onChange={(e) => setExtraMonthly(e.target.value)}
+                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg pl-7 pr-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-text-tertiary">Added to every month&apos;s contribution</p>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-text">
+                  Extra Annual Contribution
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="1000"
+                    value={extraYearly}
+                    onChange={(e) => setExtraYearly(e.target.value)}
+                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg pl-7 pr-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-text-tertiary">One extra contribution each year</p>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-text">
+                  One-Off Contribution
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="5000"
+                    value={extraOneOff}
+                    onChange={(e) => setExtraOneOff(e.target.value)}
+                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg pl-7 pr-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-text-tertiary">Added to your balance immediately</p>
+              </div>
+            </div>
+
+            {/* Scenario impact summary */}
+            {scenarioActive && (() => {
+              const r = (asset.returnRate ?? 0) / 100;
+              const baseContrib = (asset.contributionAmount ?? 0) * (FREQ_MULTIPLIER[asset.contributionFrequency ?? "monthly"] ?? 12);
+              const scenarioContrib = baseContrib + (Number(extraMonthly) || 0) * 12 + (Number(extraYearly) || 0);
+              const oneOff = Number(extraOneOff) || 0;
+              const scenarioBalance = asset.balance + oneOff;
+
+              const baseFV = r === 0
+                ? asset.balance + baseContrib * horizon.years
+                : asset.balance * Math.pow(1 + r, horizon.years) + baseContrib * ((Math.pow(1 + r, horizon.years) - 1) / r);
+              const scenarioFV = r === 0
+                ? scenarioBalance + scenarioContrib * horizon.years
+                : scenarioBalance * Math.pow(1 + r, horizon.years) + scenarioContrib * ((Math.pow(1 + r, horizon.years) - 1) / r);
+              const extraGain = scenarioFV - baseFV;
+
+              return (
+                <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-green/20 bg-green-light/30 p-6 sm:grid-cols-3">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Scenario Value ({horizon.years}Y)</p>
+                    <p className="mt-1 font-heading text-xl font-bold text-green">
+                      {formatCurrency(scenarioFV, asset.currency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Extra Growth</p>
+                    <p className="mt-1 font-heading text-xl font-bold text-green">
+                      +{formatCurrency(extraGain, asset.currency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">New Annual Contribution</p>
+                    <p className="mt-1 font-heading text-xl font-bold text-text">
+                      {formatCurrency(scenarioContrib, asset.currency)}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-text-tertiary">
+                      was {formatCurrency(baseContrib, asset.currency)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Saved Scenarios */}
+          {savedScenarios.length > 0 && (
+            <div className="mt-8 rounded-2xl border border-border bg-elevated p-8">
+              <p className="font-mono text-[11px] uppercase tracking-[2px] text-teal">Saved</p>
+              <h2 className="mt-1 font-heading text-xl font-bold text-text">Saved Scenarios</h2>
+
+              <div className="mt-4 space-y-3">
+                {savedScenarios.map((scenario) => (
+                  <div
+                    key={scenario.id}
+                    className="flex items-center justify-between rounded-xl border border-border bg-surface p-4"
+                  >
+                    <div>
+                      <p className="font-heading text-[15px] font-semibold text-text">{scenario.name}</p>
+                      <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-text-secondary">
+                        {scenario.extraMonthlyPayment > 0 && (
+                          <span>+{formatCurrency(scenario.extraMonthlyPayment, asset.currency)}/mo</span>
+                        )}
+                        {scenario.extraYearlyPayment > 0 && (
+                          <span>+{formatCurrency(scenario.extraYearlyPayment, asset.currency)}/yr</span>
+                        )}
+                        {scenario.lumpSumPayment > 0 && (
+                          <span>+{formatCurrency(scenario.lumpSumPayment, asset.currency)} one-off</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => loadScenario(scenario)}
+                        className="rounded-lg px-3 py-2 text-[12px] font-medium text-teal hover:bg-teal-light"
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => handleDeleteScenario(scenario.id)}
+                        className="rounded-lg px-3 py-2 text-[12px] font-medium text-text-tertiary hover:bg-red-light hover:text-red"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -532,6 +776,44 @@ export default function AssetDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Save Scenario Modal */}
+      {saveModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-text/20"
+          onClick={(e) => { if (e.target === e.currentTarget) setSaveModalOpen(false); }}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-elevated p-8 shadow-xl">
+            <h2 className="font-display text-2xl text-text">Save Scenario</h2>
+            <p className="mt-2 text-[14px] text-text-secondary">
+              Give this scenario a name so you can load it later.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              placeholder="e.g. Max out contributions"
+              value={scenarioName}
+              onChange={(e) => setScenarioName(e.target.value)}
+              className="mt-4 w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+            />
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setSaveModalOpen(false)}
+                className="flex-1 rounded-[10px] border-[1.5px] border-border py-3 text-[14px] font-semibold text-text-secondary hover:bg-surface"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!scenarioName.trim() || savingScenario}
+                onClick={handleSaveScenario}
+                className="flex-1 rounded-[10px] bg-teal py-3 text-[14px] font-semibold text-white disabled:opacity-50"
+              >
+                {savingScenario ? "Saving…" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       )}

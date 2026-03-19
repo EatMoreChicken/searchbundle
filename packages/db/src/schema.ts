@@ -63,9 +63,24 @@ export const debts = pgTable("debts", {
   originalBalance: numeric("original_balance", { precision: 14, scale: 2 }).notNull(),
   interestRate: numeric("interest_rate", { precision: 6, scale: 4 }).notNull(),
   minimumPayment: numeric("minimum_payment", { precision: 10, scale: 2 }).notNull(),
+  escrowAmount: numeric("escrow_amount", { precision: 10, scale: 2 }),
+  remainingMonths: numeric("remaining_months", { precision: 5, scale: 0 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const scenarios = pgTable("scenarios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  debtId: uuid("debt_id").references(() => debts.id, { onDelete: "cascade" }),
+  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  extraMonthlyPayment: numeric("extra_monthly_payment", { precision: 10, scale: 2 }).default("0"),
+  extraYearlyPayment: numeric("extra_yearly_payment", { precision: 10, scale: 2 }).default("0"),
+  lumpSumPayment: numeric("lump_sum_payment", { precision: 14, scale: 2 }).default("0"),
+  lumpSumMonth: numeric("lump_sum_month", { precision: 5, scale: 0 }).default("1"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const checkIns = pgTable("check_ins", {
