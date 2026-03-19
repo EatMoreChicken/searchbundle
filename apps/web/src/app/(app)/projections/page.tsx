@@ -1,3 +1,18 @@
+import ComingSoonPage from "@/components/ComingSoonPage";
+
 export default function ProjectionsPage() {
-  return <div>Projections</div>;
+  return (
+    <ComingSoonPage
+      overline="Plans"
+      title="Projections"
+      summary="Model future outcomes with contribution plans, assumptions, and scenario testing."
+      icon="fa-chart-line"
+      bullets={[
+        "Target-date and target-amount planning for each account",
+        "What-if sliders for growth rate and contribution changes",
+        "Compound-interest visualizations over time",
+        "On-track indicators tied to your long-term goals",
+      ]}
+    />
+  );
 }

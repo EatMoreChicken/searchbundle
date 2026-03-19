@@ -30,12 +30,6 @@ const navSections: NavSection[] = [
       { href: "/projections", icon: "fa-chart-line", label: "Projections" },
     ],
   },
-  {
-    label: "TOOLS",
-    items: [
-      { href: "/check-in", icon: "fa-circle-check", label: "Check-In" },
-    ],
-  },
 ];
 
 export default function Sidebar() {
