@@ -15,6 +15,7 @@ export interface Account {
   type: "investment" | "savings" | "property" | "other";
   balance: number;
   currency: string;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
