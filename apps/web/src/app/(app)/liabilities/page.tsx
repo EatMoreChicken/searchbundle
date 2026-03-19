@@ -1,10 +1,10 @@
 import ComingSoonPage from "@/components/ComingSoonPage";
 
-export default function DebtsPage() {
+export default function LiabilitiesPage() {
   return (
     <ComingSoonPage
       overline="Finances"
-      title="Debts"
+      title="Liabilities"
       summary="Track balances, payoff timelines, and interest savings in one clear view."
       icon="fa-credit-card"
       bullets={[

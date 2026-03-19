@@ -30,9 +30,9 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 
 ## Key Features
 
-- **Dashboard ("Your Position")** — Net worth with trend line, assets panel, debts panel, on-track indicators, next check-in reminder.
-- **Accounts & Assets** — Balance cards with history, contribution plans, growth assumptions, projection charts, on-track status, and notes.
-- **Debts & Liabilities** — Balance cards with loan terms, payoff projections, amortization view, and interest saved calculators.
+- **Dashboard ("Your Position")** — Net worth with trend line, assets panel, liabilities panel, on-track indicators, next check-in reminder.
+- **Assets** — Balance cards with history, contribution plans, growth assumptions, projection charts, on-track status, and notes. Types: investment, savings, HSA, property, other.
+- **Liabilities** — Balance cards with loan terms, payoff projections, amortization view, and interest saved calculators.
 - **Check-In Flow** — Step-by-step guided update (one account at a time), change detection, goal review, summary, and AI debrief.
 - **Plans & Projections** — Contribution schedules, growth rate assumptions, target amounts/dates, "what if" sliders, compound interest calculator.
 - **Cooper (AI Companion)** — Available app-wide for Q&A, scenario modeling, suggestions, guided actions, and financial education.
@@ -77,7 +77,7 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 
 ### API
 - **Fastify 5** — Node.js HTTP server on port 3001 for internal operations and health checks
-- **Next.js Route Handlers** handle all user-facing API endpoints (`/api/accounts`, `/api/users`, `/api/auth/*`) — they use Auth.js session directly and call the DB via `@searchbundle/db`
+- **Next.js Route Handlers** handle all user-facing API endpoints (`/api/assets`, `/api/users`, `/api/auth/*`) — they use Auth.js session directly and call the DB via `@searchbundle/db`
 - Next.js proxies remaining `/api/*` paths to Fastify using `afterFiles` rewrites (so Next.js route handlers always take priority)
 
 ### Auth
@@ -112,6 +112,13 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 | BullMQ | Background job queues (requires Redis) |
 | Sentry | Error monitoring |
 | PostHog | Product analytics |
+
+### Domain / Route Names
+- **Assets** (not "accounts") — page `/assets`, API `/api/assets`, TypeScript type `Asset`. DB table stays `accounts` internally.
+- **Liabilities** (not "debts") — page `/liabilities`. DB table stays `debts` internally.
+- Asset types: `investment`, `savings`, `hsa`, `property`, `other`
+- Investment assets have extra projection fields: `contributionAmount`, `contributionFrequency`, `returnRate`, `returnRateVariance`, `includeInflation`
+- `recharts` is installed in `apps/web` for investment projection charts (`InvestmentProjectionChart` component)
 
 ---
 

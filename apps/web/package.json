@@ -8,22 +8,23 @@
     "start": "next start --port 3000"
   },
   "dependencies": {
-    "next": "^16.1.6",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "next-auth": "beta",
     "@searchbundle/db": "*",
     "bcryptjs": "^2.4.3",
-    "dotenv": "^16.4.0"
+    "dotenv": "^16.4.0",
+    "next": "^16.1.6",
+    "next-auth": "beta",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "recharts": "^3.8.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@types/bcryptjs": "^2.4.6",
-    "typescript": "^5.9.3",
+    "postcss": "^8.5.0",
     "tailwindcss": "^4.2.1",
-    "@tailwindcss/postcss": "^4.2.1",
-    "postcss": "^8.5.0"
+    "typescript": "^5.9.3"
   }
 }

@@ -1,7 +1,7 @@
-// Utility for making type-safe requests to the Fastify API.
-// Usage: apiClient.get<Account[]>("/api/accounts")
+// Utility for making type-safe API requests.
+// Routes through Next.js route handlers, which proxy unmatched paths to Fastify.
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+const API_BASE = "";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {

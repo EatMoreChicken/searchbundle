@@ -25,8 +25,8 @@ const navSections: NavSection[] = [
   {
     label: "FINANCES",
     items: [
-      { href: "/accounts", icon: "fa-building-columns", label: "Accounts" },
-      { href: "/debts", icon: "fa-credit-card", label: "Debts" },
+      { href: "/assets", icon: "fa-building-columns", label: "Assets" },
+      { href: "/liabilities", icon: "fa-credit-card", label: "Liabilities" },
       { href: "/projections", icon: "fa-chart-line", label: "Projections" },
     ],
   },

@@ -1,12 +1,21 @@
-import { pgTable, uuid, text, numeric, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 
 // --- Enums ---
 
 export const accountTypeEnum = pgEnum("account_type", [
   "investment",
   "savings",
+  "hsa",
   "property",
   "other",
+]);
+
+export const contributionFrequencyEnum = pgEnum("contribution_frequency", [
+  "weekly",
+  "biweekly",
+  "monthly",
+  "quarterly",
+  "yearly",
 ]);
 
 export const debtTypeEnum = pgEnum("debt_type", [
@@ -35,6 +44,12 @@ export const accounts = pgTable("accounts", {
   balance: numeric("balance", { precision: 14, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("USD"),
   notes: text("notes"),
+  // Investment-specific fields
+  contributionAmount: numeric("contribution_amount", { precision: 14, scale: 2 }),
+  contributionFrequency: contributionFrequencyEnum("contribution_frequency"),
+  returnRate: numeric("return_rate", { precision: 6, scale: 4 }),
+  returnRateVariance: numeric("return_rate_variance", { precision: 6, scale: 4 }).default("0"),
+  includeInflation: boolean("include_inflation").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

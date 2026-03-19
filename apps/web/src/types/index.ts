@@ -8,14 +8,22 @@ export interface User {
   createdAt: Date;
 }
 
-export interface Account {
+export type AssetType = "investment" | "savings" | "hsa" | "property" | "other";
+export type ContributionFrequency = "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly";
+
+export interface Asset {
   id: string;
   userId: string;
   name: string;
-  type: "investment" | "savings" | "property" | "other";
+  type: AssetType;
   balance: number;
   currency: string;
   notes: string | null;
+  contributionAmount: number | null;
+  contributionFrequency: ContributionFrequency | null;
+  returnRate: number | null;
+  returnRateVariance: number | null;
+  includeInflation: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

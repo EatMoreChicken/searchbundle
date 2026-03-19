@@ -2,7 +2,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import accountRoutes from "./routes/accounts";
+import assetRoutes from "./routes/assets";
 import debtRoutes from "./routes/debts";
 import checkInRoutes from "./routes/check-ins";
 
@@ -16,7 +16,7 @@ void (async () => {
     credentials: true,
   });
 
-  server.register(accountRoutes, { prefix: "/api/accounts" });
+  server.register(assetRoutes, { prefix: "/api/assets" });
   server.register(debtRoutes, { prefix: "/api/debts" });
   server.register(checkInRoutes, { prefix: "/api/check-ins" });
 
