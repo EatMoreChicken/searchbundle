@@ -115,18 +115,12 @@ export default function Sidebar() {
                     key={h.householdId}
                     onClick={() => handleSwitch(h.householdId)}
                     className={[
-                      "w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
+                      "w-full flex items-center gap-2 mx-1 px-3 py-2 text-left text-xs transition-colors rounded-xl",
                       h.householdId === activeHouseholdId
-                        ? "text-primary font-semibold"
-                        : "text-on-surface hover:bg-surface-container-low font-medium",
+                        ? "bg-primary-fixed text-primary font-semibold"
+                        : "text-on-surface hover:bg-surface-container font-medium",
                     ].join(" ")}
                   >
-                    {h.householdId === activeHouseholdId && (
-                      <span className="material-symbols-outlined text-[14px] text-primary">check</span>
-                    )}
-                    {h.householdId !== activeHouseholdId && (
-                      <span className="w-[14px]" />
-                    )}
                     <span className="flex-1">{h.householdName}</span>
                     <span className="text-[10px] text-on-surface-variant opacity-60">{h.role}</span>
                   </button>
@@ -149,7 +143,7 @@ export default function Sidebar() {
               "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all",
               isActive(item.href)
                 ? "bg-surface-container-lowest text-primary rounded-full shadow-sm"
-                : "text-on-surface hover:bg-white/50 hover:translate-x-1",
+                : "text-on-surface hover:bg-white/50 hover:translate-x-1 rounded-full",
             ].join(" ")}
           >
             <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
