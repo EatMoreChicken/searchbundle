@@ -110,13 +110,13 @@ export default function Sidebar() {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 z-50 min-w-44 bg-surface-container-lowest rounded-2xl shadow-lg py-1.5 border border-outline-variant/20">
+              <div className="absolute left-0 top-full mt-1 z-50 min-w-44 bg-surface-container-lowest rounded-2xl shadow-lg p-1.5 border border-outline-variant/20">
                 {households.map((h) => (
                   <button
                     key={h.householdId}
                     onClick={() => handleSwitch(h.householdId)}
                     className={[
-                      "w-full flex items-center gap-2 mx-1 px-3 py-2 text-left text-xs transition-colors rounded-xl",
+                      "w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition-colors rounded-xl",
                       h.householdId === activeHouseholdId
                         ? "bg-primary-fixed text-primary font-semibold"
                         : "text-on-surface hover:bg-surface-container font-medium",
