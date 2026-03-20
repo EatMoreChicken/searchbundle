@@ -10,7 +10,9 @@ import { users, households, householdMembers, accounts, debts, netWorthCategorie
 
 const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
 const PARTNER_USER_ID = "00000000-0000-0000-0000-000000000002";
+const FRIEND_USER_ID = "00000000-0000-0000-0000-000000000003";
 const HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000010";
+const SECOND_HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000011";
 
 async function seed() {
   const connectionString = process.env.DATABASE_URL;
@@ -51,6 +53,21 @@ async function seed() {
       set: { passwordHash, activeHouseholdId: HOUSEHOLD_ID },
     });
 
+  // Friend user (owns the second household)
+  await db
+    .insert(users)
+    .values({
+      id: FRIEND_USER_ID,
+      email: "friend@searchbundle.io",
+      name: "Friend User",
+      passwordHash,
+      activeHouseholdId: SECOND_HOUSEHOLD_ID,
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: { passwordHash, activeHouseholdId: SECOND_HOUSEHOLD_ID },
+    });
+
   // Household
   await db
     .insert(households)
@@ -65,14 +82,48 @@ async function seed() {
       set: { name: "Dev Household", financialGoalNote: "Retire by 55 with $2M invested" },
     });
 
+  // Second household (owned by friend)
+  await db
+    .insert(households)
+    .values({
+      id: SECOND_HOUSEHOLD_ID,
+      name: "Friend's Household",
+      financialGoalNote: "Save for a vacation home by 2030",
+      createdBy: FRIEND_USER_ID,
+    })
+    .onConflictDoUpdate({
+      target: households.id,
+      set: { name: "Friend's Household", financialGoalNote: "Save for a vacation home by 2030" },
+    });
+
   // Memberships
   await db
     .insert(householdMembers)
     .values([
       { householdId: HOUSEHOLD_ID, userId: DEV_USER_ID, role: "owner" as const },
       { householdId: HOUSEHOLD_ID, userId: PARTNER_USER_ID, role: "member" as const },
+      { householdId: SECOND_HOUSEHOLD_ID, userId: FRIEND_USER_ID, role: "owner" as const },
+      { householdId: SECOND_HOUSEHOLD_ID, userId: DEV_USER_ID, role: "member" as const },
     ])
     .onConflictDoNothing();
+
+  // Sample assets for second household
+  await db
+    .insert(accounts)
+    .values([
+      { householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "High-Yield Savings", type: "savings" as const, balance: "15000.00", currency: "USD" },
+      { householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "Brokerage", type: "investment" as const, balance: "55000.00", currency: "USD", returnRate: "0.0750" },
+    ])
+    .onConflictDoNothing();
+
+  // Sample net worth categories for second household
+  const secondHouseholdCategories = [
+    { householdId: SECOND_HOUSEHOLD_ID, name: "Savings", type: "asset" as const, sortOrder: 0 },
+    { householdId: SECOND_HOUSEHOLD_ID, name: "Investments", type: "asset" as const, sortOrder: 1 },
+  ];
+  for (const cat of secondHouseholdCategories) {
+    await db.insert(netWorthCategories).values(cat).onConflictDoNothing();
+  }
 
   // Sample assets (household-scoped)
   const sampleAccounts = [
@@ -138,9 +189,11 @@ async function seed() {
   }
 
   console.log("Seed complete:");
-  console.log(`  Dev user: ${DEV_USER_ID} (dev@searchbundle.io / password123)`);
-  console.log(`  Partner user: ${PARTNER_USER_ID} (partner@searchbundle.io / password123)`);
-  console.log(`  Household: ${HOUSEHOLD_ID} (Dev Household)`);
+  console.log(`  Dev user:     ${DEV_USER_ID} (dev@searchbundle.io / password123) — owner of Dev Household, member of Friend's Household`);
+  console.log(`  Partner user: ${PARTNER_USER_ID} (partner@searchbundle.io / password123) — member of Dev Household`);
+  console.log(`  Friend user:  ${FRIEND_USER_ID} (friend@searchbundle.io / password123) — owner of Friend's Household`);
+  console.log(`  Household 1: ${HOUSEHOLD_ID} (Dev Household)`);
+  console.log(`  Household 2: ${SECOND_HOUSEHOLD_ID} (Friend's Household)`);
   console.log("  Sample assets, debts, and net worth data seeded.");
 
   await client.end();
