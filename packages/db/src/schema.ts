@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, timestamp, boolean, integer, pgEnum, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer, pgEnum, unique, date } from "drizzle-orm/pg-core";
 
 // --- Enums ---
 
@@ -34,6 +34,11 @@ export const users = pgTable("users", {
   name: text("name"),
   passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  dateOfBirth: date("date_of_birth"),
+  timezone: text("timezone").notNull().default("America/Chicago"),
+  preferredCurrency: text("preferred_currency").notNull().default("USD"),
+  retirementAge: integer("retirement_age"),
+  financialGoalNote: text("financial_goal_note"),
 });
 
 export const accounts = pgTable("accounts", {

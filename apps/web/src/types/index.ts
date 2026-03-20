@@ -6,6 +6,11 @@ export interface User {
   email: string;
   name: string | null;
   createdAt: Date;
+  dateOfBirth: string | null;
+  timezone: string;
+  preferredCurrency: string;
+  retirementAge: number | null;
+  financialGoalNote: string | null;
 }
 
 export type AssetType = "investment" | "savings" | "hsa" | "property" | "other";

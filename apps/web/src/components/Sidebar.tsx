@@ -63,6 +63,18 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="mt-auto flex flex-col gap-2">
         <Link
+          href="/settings"
+          className={[
+            "flex items-center gap-3 px-4 py-2 text-sm transition-all rounded-full",
+            isActive("/settings")
+              ? "bg-surface-container-lowest text-primary shadow-sm"
+              : "text-on-surface hover:bg-white/50 hover:translate-x-1",
+          ].join(" ")}
+        >
+          <span className="material-symbols-outlined text-[20px]">manage_accounts</span>
+          <span>Settings</span>
+        </Link>
+        <Link
           href="/cooper"
           className="flex items-center gap-3 text-on-surface px-4 py-2 hover:bg-white/50 rounded-full transition-all hover:translate-x-1"
         >

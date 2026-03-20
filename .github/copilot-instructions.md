@@ -136,6 +136,15 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - Users can add/remove categories, inline-edit cell values, switch years, and see auto-calculated totals & net worth
 - The net worth categories are **standalone** — not yet linked to the existing `accounts`/`debts` tables. This will be connected in a future iteration.
 
+### Account Settings
+- Settings page at `/settings` — three sections: Profile, Personal & Financial, Security
+- DB: `users` table has extra profile columns: `date_of_birth` (date), `timezone` (text, default `America/Chicago`), `preferred_currency` (text, default `USD`), `retirement_age` (integer), `financial_goal_note` (text)
+- API routes:
+  - `GET /api/users/me` — returns full user profile (excludes passwordHash)
+  - `PATCH /api/users/me` — update name, email, dateOfBirth, timezone, preferredCurrency, retirementAge, financialGoalNote
+  - `POST /api/users/me/password` — change password; requires `{ currentPassword, newPassword }`
+- Settings link is in the Sidebar footer (icon: `manage_accounts`)
+
 ---
 
 # SearchBundle - Styling Guide ("The Financial Sanctuary")
