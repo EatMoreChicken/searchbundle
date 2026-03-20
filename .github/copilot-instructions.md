@@ -30,7 +30,7 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 
 ## Key Features
 
-- **Dashboard ("Your Position")** — Net worth with trend line, assets panel, liabilities panel, on-track indicators, next check-in reminder.
+- **Dashboard ("Net Worth Tracker")** — Spreadsheet-style monthly grid showing assets, liabilities, totals, and net worth. Users add categories and manually enter monthly balances. Current month highlighted, year selector, inline cell editing.
 - **Assets** — Balance cards with history, contribution plans, growth assumptions, projection charts, on-track status, and notes. Types: investment, savings, HSA, property, other.
 - **Liabilities** — Balance cards with loan terms, payoff projections, amortization view, and interest saved calculators.
 - **Check-In Flow** — Step-by-step guided update (one account at a time), change detection, goal review, summary, and AI debrief.
@@ -120,150 +120,184 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - Investment assets have extra projection fields: `contributionAmount`, `contributionFrequency`, `returnRate`, `returnRateVariance`, `includeInflation`
 - `recharts` is installed in `apps/web` for investment projection charts (`InvestmentProjectionChart` component)
 
+### Net Worth Tracker (Dashboard)
+- The dashboard (`/dashboard`) is a spreadsheet-style **Net Worth Tracker** showing a monthly grid of assets and liabilities with calculated totals
+- Two new DB tables: `net_worth_categories` (rows: asset or liability names) and `net_worth_entries` (monthly balance values per category)
+- DB enum `category_type` with values `asset` | `liability`
+- `net_worth_entries` has a unique constraint on `(category_id, year, month)` — one value per category per month
+- API routes under `/api/dashboard`:
+  - `GET /api/dashboard?year=YYYY` — returns categories + entries for the year
+  - `POST /api/dashboard/categories` — create a category (name, type)
+  - `PUT /api/dashboard/categories/[id]` — rename a category
+  - `DELETE /api/dashboard/categories/[id]` — delete category + all its entries (cascade)
+  - `PUT /api/dashboard/entries` — upsert a monthly value (categoryId, year, month, value)
+- Main UI component: `NetWorthTracker` in `apps/web/src/components/NetWorthTracker.tsx`
+- Current month is highlighted with amber styling; past months show as "actual"; future months show dashes
+- Users can add/remove categories, inline-edit cell values, switch years, and see auto-calculated totals & net worth
+- The net worth categories are **standalone** — not yet linked to the existing `accounts`/`debts` tables. This will be connected in a future iteration.
+
 ---
 
-# SearchBundle - Styling Guide
+# SearchBundle - Styling Guide ("The Financial Sanctuary")
 
-## Fonts (Google Fonts)
+## Design Philosophy
 
-Load all four:
+The UI is a "sanctuary" — soft, layered, breathable. We reject the banking-as-a-fortress aesthetic. Surfaces feel physical, like frosted glass and floating paper. Depth comes from **layered backgrounds**, not drop shadows. Boundaries come from **color shifts**, not border lines.
+
+**Key principles:**
+- **No-Line Rule**: Borders are prohibited for sectioning content. Use background color shifts between surface layers instead.
+- **Zero-Shadow Lift**: Stack surface tokens (`surface-container-low` card on `surface` background) for clean depth without shadows.
+- **Organic Asymmetry & Tonal Depth**: Avoid rigid grids where possible. The interface should feel fluid and breathable.
+- **Glass & Gradient**: Hero sections and primary CTAs use subtle radial gradients. Floating elements use glassmorphism (80% opacity + 20px backdrop-blur).
+
+## Font (Google Fonts)
+
+Single font family:
 ```
-DM Serif Display (display/headlines)
-Syne (headings, balances, brand elements)
-Plus Jakarta Sans (body, UI, buttons, labels)
-JetBrains Mono (monospace: data labels, overlines, financial figures in tables)
+Manrope (all weights: 200–800)
 ```
 
 ### Usage Rules
-- **DM Serif Display**: Hero text, large page titles, welcome messages, empty states. Never below 24px.
-- **Syne**: Section headings, account names, monetary values (balances, net worth), card titles. Weights 600-800. Use letter-spacing: -0.5px to -1px on larger sizes.
-- **Plus Jakarta Sans**: Everything else. Body copy, buttons, form labels, navigation, descriptions. Default weight 400, medium 500 for UI labels, 600-700 for buttons and emphasis.
-- **JetBrains Mono**: Overline labels (e.g., "NET WORTH", "STEP 3 OF 5"), percentage changes, dates, metadata, projection parameters. Always 12-14px. Use with uppercase + letter-spacing: 1-2px for overlines.
-
-### Font Sizes
-- Page titles: 48-56px (DM Serif Display)
-- Section titles: 26-32px (DM Serif Display)
-- Card titles / account names: 18-20px (Syne, weight 700)
-- Large monetary values: 36-42px (Syne, weight 700-800, letter-spacing: -1px)
-- Medium monetary values: 20-24px (Syne, weight 700)
-- Body text: 14-15px (Plus Jakarta Sans)
-- Small labels / meta: 12-13px (Plus Jakarta Sans, weight 500-600)
-- Monospace labels: 11-12px (JetBrains Mono, uppercase, letter-spacing: 1.2px)
+- **Display & Headlines**: `display-lg` (3.5rem / 56px) and `headline-lg` (2rem / 32px). Letter-spacing: -0.02em for a premium, editorial look. Weight 800 (extrabold).
+- **Titles & Cards**: `title-md` (1.125rem / 18px). Used for nav items, card headings. Weight 700.
+- **Body**: `body-lg` (1rem / 16px). Primary readable text. Weight 400–500.
+- **Labels & Meta**: `label-sm` (0.75rem / 12px). Uppercase with `tracking-widest` for overlines and small labels. Weight 600–700.
+- **Large monetary values**: 3rem–3.75rem (48–60px), weight 900 (black), tracking tight (-0.02em).
+- **Medium monetary values**: 1.875rem (30px), weight 700.
 
 ## Colors
 
+The palette is anchored in growth (Teal) and warmth (Amber). These are not mere accents — they serve as light sources within the UI.
+
 ```css
-/* Backgrounds */
---bg: #FAFAF8;              /* Page background, warm off-white */
---surface: #F5F3EF;          /* Cards, sidebars, input backgrounds */
---surface-elevated: #FFFFFF;  /* Modals, popovers, elevated cards */
+/* Surface Hierarchy (layered backgrounds) */
+--surface: #f7faf8;                    /* Base canvas — the sanctuary */
+--surface-container-low: #f1f4f2;      /* Primary containers, sidebar */
+--surface-container: #ebefed;           /* Secondary containers */
+--surface-container-high: #e6e9e7;      /* Interactive sandbox backgrounds */
+--surface-container-highest: #e0e3e1;   /* Progress tracks, divider replacements */
+--surface-container-lowest: #ffffff;    /* Elevated cards ("floating paper") */
 
 /* Text */
---text: #1A1A1A;             /* Primary text, headings */
---text-secondary: #6B6B6B;   /* Descriptions, secondary info */
---text-tertiary: #9A9A9A;    /* Placeholders, disabled, timestamps */
+--on-surface: #181c1b;                 /* Primary text, headings */
+--on-surface-variant: #3e4947;         /* Secondary text, descriptions */
+--outline-variant: #bdc9c7;            /* Ghost borders (20% opacity) for accessibility */
 
-/* Semantic */
---green: #4A7C59;            /* Positive trends, on-track, success */
---green-light: #E8F0EA;      /* Green badges, backgrounds */
---amber: #C4842D;            /* Caution, warnings, needs attention */
---amber-light: #FDF3E7;      /* Amber badges, backgrounds */
---red: #B54A4A;              /* Alerts, off-track, negative trends */
---red-light: #FDEAEA;        /* Red badges, backgrounds */
+/* Primary (Teal) */
+--primary: #006761;                    /* Primary interactive: buttons, links, active states */
+--primary-container: #15827b;          /* Gradient endpoint, hover states */
+--on-primary: #ffffff;                 /* Text on primary backgrounds */
+--primary-fixed: #96f3e9;              /* Light teal fills */
 
-/* Brand */
---teal: #2A7C8E;             /* Primary accent, interactive elements, links, charts */
---teal-light: #E6F3F5;       /* Teal badges, hover states, chart fills */
---indigo: #5B6ABF;           /* Cooper AI, AI-related elements */
---indigo-light: #EEEDF7;     /* Cooper chat bubbles, AI badges */
+/* Secondary (Mint) */
+--secondary: #2c6956;                  /* Secondary actions */
+--secondary-container: #aeedd5;        /* Secondary button backgrounds */
+--on-secondary-container: #316d5b;     /* Text on secondary containers */
+--secondary-fixed: #b1efd8;            /* Chart fills, list highlights */
 
-/* Borders & Dividers */
---border: #E8E5DF;           /* Card borders, dividers, input borders */
+/* Tertiary (Amber) — for curiosity-driven / "Aha!" elements */
+--tertiary: #805200;                   /* Sandboxes, sliders, insight accents */
+--tertiary-container: #9d6a1b;         /* Warm CTA backgrounds */
+--tertiary-fixed: #ffddb5;             /* Insight card backgrounds */
+--on-tertiary-fixed-variant: #643f00;  /* Text on tertiary surfaces — high-value insights */
+
+/* Error */
+--error: #ba1a1a;                      /* Alerts, off-track, negative */
+--error-container: #ffdad6;            /* Error badge backgrounds */
+--on-error-container: #93000a;         /* Text on error containers */
+
+/* Cooper AI — uses --primary (teal) in the new system, not indigo */
 ```
 
 ### Color Usage Rules
-- Backgrounds are always warm (off-white/cream), never pure white or cool gray.
-- Status indicators: green = on track, amber = needs attention, red = off track. Use the light variant as background with the full color as text/icon.
-- Teal is the primary interactive color: buttons, links, active states, chart lines, focus rings.
-- Indigo is reserved exclusively for Cooper AI: avatar, chat bubbles, AI badges, AI-related CTAs.
-- Primary buttons use --text (near-black) background with --bg text. Not teal.
-- Never use pure black (#000000). Always --text (#1A1A1A).
-- Change indicators: positive values get --green, negative get --red. Display inside a pill with the light variant background (e.g., green text on green-light background, border-radius: 100px, padding: 3px 10px).
+- **Surface layering** defines depth: `surface` → `surface-container-low` → `surface-container-lowest`. Inner cards float on outer containers.
+- **Primary (Teal)** is the signature color: main buttons, active navigation, chart lines, focus rings.
+- **Secondary (Mint)** for secondary buttons and positive context (asset growth percentages).
+- **Tertiary (Amber)** for curiosity and insight elements: sandbox sliders, "What if?" badges, projection results. Use `on-tertiary-fixed-variant` (#643f00) for high-value insight text.
+- **No 1px borders for layout.** "Ghost borders" (outline-variant at 20% opacity) only when required for accessibility (e.g., input fields on focus).
+- Never use pure black (#000000). Always `on-surface` (#181c1b).
+- Change indicators: positive values get `secondary` (mint green), negative get `error` (red).
 
 ## Spacing & Layout
 
-- **Page padding**: 48px horizontal on desktop, 24px on mobile.
-- **Section spacing**: 120-160px vertical padding between major sections.
-- **Card padding**: 24-36px internal padding. Never less than 18px.
-- **Card border-radius**: 12-16px for cards, 8-10px for buttons/inputs, 100px for pills/badges.
-- **Card borders**: 1px solid var(--border). Elevated cards get box-shadow instead: `0 1px 3px rgba(0,0,0,0.04), 0 24px 68px rgba(0,0,0,0.06)`.
-- **Grid gaps**: 14-24px between sibling cards. 28-32px between major content blocks.
-- **Generous whitespace is non-negotiable.** When in doubt, add more space, not less.
+- **Page padding**: 24px (1.5rem) on all sides within the main content area.
+- **Section spacing**: 48px (3rem) vertical gaps between major sections.
+- **Card padding**: 32px (2rem) internal padding. Hero bento cards: 32–48px.
+- **Border-radius**: `1rem` (16px) default for all cards/containers. `9999px` (full) for buttons and pills. `2rem` (32px) for large panels and sidebar.
+- **No card borders.** Elevation is achieved by surface layering, not `border: 1px solid`.
+- **Grid gaps**: 24px (1.5rem) between cards in a bento grid.
+- **Generous whitespace is non-negotiable.** Use `spacing-6` (2rem) as the base unit when in doubt.
 
 ## Components
 
 ### Buttons
-- **Primary**: background --text, color --bg, padding 14-16px 28-36px, border-radius 10px, font-weight 600, font-size 14-15px. Hover: translateY(-1px) + subtle shadow.
-- **Secondary**: transparent background, 1.5px solid --border, same padding/radius. Hover: background --surface, border-color --text-secondary.
-- **Small/inline**: Same patterns but padding 10px 20px, font-size 13px.
+- **Primary**: Soft gradient from `primary` (#006761) to `primary-container` (#15827b). Text `on-primary` (#fff). Rounded `9999px` (full pill) or `1rem`. No shadow — use a subtle inner glow at 10% opacity.
+- **Secondary**: `secondary-container` (#aeedd5) background with `on-secondary-container` (#316d5b) text. Rounded full.
+- **Hover**: `translate-x-1` for nav items, `scale-105` for CTAs. Active: `scale-95`.
 
 ### Inputs
-- Border: 1.5px solid --border, border-radius 10px, padding 14-16px 18-20px.
-- Background: var(--bg).
-- Focus: border-color var(--teal). No outline, no glow.
-- Font: Plus Jakarta Sans for most inputs. Syne weight 700 for large monetary inputs.
+- **Never use a bottom line.** Use `surface-container-high` (#e6e9e7) fill with border-radius `1rem`.
+- **On focus**: background transitions to `surface-container-lowest` (#fff) with a ghost border of `primary`.
+- Font: Manrope for all inputs.
 
 ### Cards
-- Background: var(--surface) for inline cards (inside a page), var(--surface-elevated) for standalone/modal cards.
-- Border: 1px solid var(--border).
-- Border-radius: 12-16px.
-- Hover (if interactive): translateY(-4px), box-shadow: 0 12px 40px rgba(0,0,0,0.06).
+- **Default**: `surface-container-low` (#f1f4f2) background on `surface` (#f7faf8) canvas. No border.
+- **Elevated/Active**: `surface-container-lowest` (#ffffff) — floating paper effect.
+- **No shadow on static cards.** Only floating elements (FABs, modals) get ambient shadows: `on-surface` (#181c1b) at 6% opacity, blur 30–40px, Y offset 8px.
 
-### Status Pills
-- Border-radius: 100px. Padding: 3px 10px. Font-size: 12-13px, weight 600.
-- Green: color --green, background --green-light.
-- Amber: color --amber, background --amber-light.
-- Red: color --red, background --red-light.
+### Lists
+- **No divider lines / horizontal rules.** Use vertical spacing (1.4rem gap) and alternating backgrounds (`surface-container-low` / `surface-container`) for list separation.
 
 ### Sidebar Navigation
-- Active item: background --surface, color --text, border-radius 8px.
-- Inactive: no background, color --text-secondary.
-- Icons: Font Awesome. 14px, fixed 18px width for alignment.
-- Section labels: 10px uppercase, letter-spacing 1.2px, color --text-tertiary, margin-bottom 16px.
+- Background: `surface-container-low` with a rounded right edge (`rounded-r-[32px]`).
+- Active item: `surface-container-lowest` (#fff) background, `primary` text, rounded full pill, subtle shadow.
+- Inactive items: `on-surface` text, no background. Hover: `translate-x-1` + `bg-white/50`.
+- Icons: Material Symbols Outlined (not Font Awesome).
 
 ### Charts & Data Visualization
-- Primary line/bar color: --teal.
-- Fill/area: --teal-light at 50% opacity.
-- Grid lines: --border at 0.5px, dashed.
-- Axis labels: JetBrains Mono, 10-11px, color --text-tertiary.
-- Current/active data point: solid --teal dot with a larger semi-transparent ring behind it.
-- Secondary/conservative lines: --border, dashed.
+- Primary line/bar color: `primary` (#006761).
+- Fill/area: `primary-fixed` (#96f3e9) at 50% opacity.
+- Grid lines: `outline-variant` (#bdc9c7) at 0.5px, dashed.
+- Axis labels: Manrope, 11px, `on-surface-variant`.
+- Track backgrounds: `surface-container-highest` (#e0e3e1).
 
-## Micro-Animations
-
-- **Scroll reveals**: Elements fade in and translate up 20-30px. Duration 0.5-0.7s, ease timing. Stagger siblings by 100ms.
-- **Hover on cards**: translateY(-4px) over 0.3s.
-- **Hover on buttons**: translateY(-1px) to -2px, add shadow.
-- **Chart lines (SVG)**: Animate stroke-dashoffset for a draw-on effect, 1.5-2s ease.
-- **Bar charts**: Animate height from 0 to target, 0.6-1s ease, stagger each bar by 50ms.
-- **Status dot pulse**: Opacity 1 to 0.4, 2s infinite (used for Cooper "online" indicator).
-- **Page transitions**: Prefer slide (translateX) over fade for step-by-step flows like check-ins.
-- **No bounce, no overshoot.** Keep everything calm and smooth. Ease or ease-out only.
+### The "Sandbox" Slider
+- Thick track: `surface-container-highest` (#e0e3e1).
+- Thumb: large circle in `tertiary` (#805200).
+- Value labels: `tertiary` color for immediate feedback.
 
 ## Iconography
 
-- Use **Font Awesome 6** throughout.
-- Prefer solid style (fa-solid) for navigation and status. Regular style (fa-regular) for secondary/inactive states.
-- Icon size in nav/sidebar: 14px. In feature cards: 20px. In buttons: match font-size or slightly smaller.
-- Icons inside colored boxes: Use the light color variant as background with the full color for the icon. Box: 48px square, border-radius 12px.
+- Use **Material Symbols Outlined** (Google) throughout — not Font Awesome.
+- Variable font settings: `'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24`.
+- Filled variant (`'FILL' 1`) for active/selected states and decorative hero icons.
+- Icons inside colored circles: 48px circle with semantic background + contrasting icon color.
 
-## General Rules
+## Glassmorphism
 
-1. One purpose per screen. Don't pack multiple unrelated sections together.
-2. Progressive disclosure. Show summaries first, details on click/expand.
-3. No pure decorative elements. Every visual element should communicate something.
-4. All monetary values use Syne with negative letter-spacing for a tight, confident look.
-5. Overline pattern for section context: JetBrains Mono, 12px, uppercase, letter-spacing 2px, color --teal. Appears above section titles.
-6. Empty states should use DM Serif Display for the heading and feel warm/encouraging, not clinical.
-7. Cooper AI elements always use --indigo. If Cooper is speaking or referenced, indigo is present.
-8. Dark mode: invert --bg to #1A1A1A, --surface to #242420, --surface-elevated to #2E2E28, --text to #FAFAF8, --border to #3A3A34. Keep semantic colors (green, amber, red, teal, indigo) the same but bump lightness slightly for contrast.
+For floating navigation, modal overlays, and projection result cards:
+- Background: `surface-container-lowest` with 80% opacity.
+- Backdrop filter: `blur(20px)`.
+- Optional: `border border-white/20`.
+
+## Micro-Animations
+
+- **Hover on nav items**: `translate-x-1` over 0.3s.
+- **Hover on CTAs**: `scale-105`, active: `scale-95`.
+- **Abstract background elements**: `group-hover:scale-110`, duration 0.7s.
+- **No bounce, no overshoot.** Calm transitions only. Ease or ease-out.
+
+## Do's and Don'ts
+
+### Do
+- Use whitespace as a structural tool. If in doubt, add more.
+- Use `tertiary` (Amber) for curiosity-driven elements ("What if you saved $100 more?").
+- Use asymmetrical layouts — place a large display-size number off-center for an editorial vibe.
+- Define boundaries through background color shifts, not lines.
+
+### Don't
+- Use 100% black (#000000) for text. Use `on-surface` (#181c1b).
+- Use sharp corners. Everything is `1rem` radius minimum, `9999px` for pills.
+- Use standard 1px borders for content separation.
+- Use standard modal overlays. Use glassmorphism to keep the UI light and interconnected.
+- Use Font Awesome. Use Material Symbols Outlined.

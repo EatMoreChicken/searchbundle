@@ -6,7 +6,7 @@ export default function CheckInPage() {
       overline="Check-In"
       title="Guided Check-In"
       summary="Step through one calm review flow and keep your financial plan current."
-      icon="fa-circle-check"
+      icon="check_circle"
       bullets={[
         "One-account-at-a-time updates with change detection",
         "Goal review prompts tailored to your latest data",

@@ -13,12 +13,12 @@ const TYPE_LABELS: Record<AssetType, string> = {
   other: "Other",
 };
 
-const TYPE_ICONS: Record<AssetType, string> = {
-  investment: "fa-chart-line",
-  savings: "fa-piggy-bank",
-  hsa: "fa-heart-pulse",
-  property: "fa-house",
-  other: "fa-circle-dot",
+const TYPE_ICON_NAMES: Record<AssetType, string> = {
+  investment: "trending_up",
+  savings: "savings",
+  hsa: "favorite",
+  property: "home",
+  other: "radio_button_checked",
 };
 
 const FREQ_LABELS: Record<ContributionFrequency, string> = {
@@ -183,12 +183,12 @@ export default function AssetsPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[2px] text-teal">Finances</p>
-          <h1 className="mt-1 font-display text-4xl text-text">Assets</h1>
+          <p className="text-[11px] uppercase tracking-[2px] text-primary">Finances</p>
+          <h1 className="mt-1 font-headline font-extrabold text-4xl text-on-surface">Assets</h1>
           {assetList.length > 0 && (
-            <p className="mt-2 text-[14px] text-text-secondary">
+            <p className="mt-2 text-[14px] text-on-surface-variant">
               Total assets:{" "}
-              <span className="font-heading font-bold text-text">
+              <span className="font-bold text-on-surface">
                 {formatCurrency(totalBalance)}
               </span>
             </p>
@@ -196,15 +196,15 @@ export default function AssetsPage() {
         </div>
         <div className="flex items-center gap-3">
           {hasInvestments && (
-            <div className="flex items-center gap-1.5 rounded-[10px] border border-border bg-surface px-3 py-2.5">
-              <i className="fa-solid fa-calendar text-[12px] text-text-tertiary" />
+            <div className="flex items-center gap-1.5 rounded-full bg-surface-container-low px-3 py-2.5">
+              <span className="material-symbols-outlined text-[16px] text-on-surface-variant">calendar_today</span>
               <select
                 value={selectedPeriod.years}
                 onChange={(e) => {
                   const found = PERIOD_OPTIONS.find((p) => p.years === Number(e.target.value));
                   if (found) setSelectedPeriod(found);
                 }}
-                className="bg-transparent text-[13px] font-medium text-text focus:outline-none"
+                className="bg-transparent text-[13px] font-medium text-on-surface focus:outline-none"
               >
                 {PERIOD_OPTIONS.map((p) => (
                   <option key={p.years} value={p.years}>{p.label}</option>
@@ -214,9 +214,9 @@ export default function AssetsPage() {
           )}
           <button
             onClick={openAdd}
-            className="flex items-center gap-2 rounded-[10px] bg-text px-5 py-3 text-[14px] font-semibold text-bg transition-transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-5 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
           >
-            <i className="fa-solid fa-plus text-[13px]" />
+            <span className="material-symbols-outlined text-[16px]">add</span>
             Add Asset
           </button>
         </div>
@@ -224,19 +224,19 @@ export default function AssetsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="mt-16 text-center text-[14px] text-text-tertiary">Loading…</div>
+        <div className="mt-16 text-center text-[14px] text-on-surface-variant">Loading…</div>
       ) : assetList.length === 0 ? (
-        <div className="mt-16 flex flex-col items-center rounded-2xl border border-dashed border-border bg-surface px-12 py-16 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-light">
-            <i className="fa-solid fa-building-columns text-[20px] text-teal" />
+        <div className="mt-16 flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed/30">
+            <span className="material-symbols-outlined text-[22px] text-primary">account_balance</span>
           </div>
-          <h2 className="mt-5 font-display text-2xl text-text">No assets yet</h2>
-          <p className="mt-2 max-w-sm text-[14px] text-text-secondary">
+          <h2 className="mt-5 font-headline font-extrabold text-2xl text-on-surface">No assets yet</h2>
+          <p className="mt-2 max-w-sm text-[14px] text-on-surface-variant">
             Add your savings accounts, investments, HSA, or any other asset to start building your financial picture.
           </p>
           <button
             onClick={openAdd}
-            className="mt-6 rounded-[10px] bg-text px-6 py-3 text-[14px] font-semibold text-bg transition-transform hover:-translate-y-0.5"
+            className="mt-6 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
           >
             Add Your First Asset
           </button>
@@ -254,57 +254,57 @@ export default function AssetsPage() {
               <div
                 key={asset.id}
                 onClick={() => router.push(`/assets/${asset.id}`)}
-                className="group relative cursor-pointer rounded-2xl border border-border bg-elevated p-7 transition-transform hover:-translate-y-1"
+                className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-7 transition-transform hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-light">
-                      <i className={`fa-solid ${TYPE_ICONS[asset.type]} text-[14px] text-teal`} />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-fixed/30">
+                      <span className="material-symbols-outlined text-[16px] text-primary">{TYPE_ICON_NAMES[asset.type]}</span>
                     </div>
-                    <span className="font-mono text-[11px] uppercase tracking-[1px] text-text-tertiary">
+                    <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
                       {TYPE_LABELS[asset.type]}
                     </span>
                   </div>
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={(e) => openEdit(asset, e)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-text-tertiary hover:bg-surface hover:text-text"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
                     >
-                      <i className="fa-solid fa-pen text-[11px]" />
+                      <span className="material-symbols-outlined text-[14px]">edit</span>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteConfirm(asset.id); }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-text-tertiary hover:bg-red-light hover:text-red"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-on-surface-variant hover:bg-error-container hover:text-error"
                     >
-                      <i className="fa-solid fa-trash text-[11px]" />
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
                     </button>
                   </div>
                 </div>
 
-                <p className="mt-4 font-heading text-[17px] font-semibold text-text">{asset.name}</p>
-                <p className="mt-1 font-heading text-3xl font-bold tracking-tight text-text">
+                <p className="mt-4 text-[17px] font-semibold text-on-surface">{asset.name}</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-on-surface">
                   {formatCurrency(asset.balance, asset.currency)}
                 </p>
 
                 {asset.type === "investment" && projected != null && (
-                  <div className="mt-4 border-t border-border pt-4">
+                  <div className="mt-4 pt-4">
                     <div className="flex items-end justify-between">
                       <div>
-                        <p className="font-mono text-[10px] uppercase tracking-[1px] text-text-tertiary">
+                        <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">
                           In {selectedPeriod.label}
                         </p>
-                        <p className="mt-0.5 font-heading text-[18px] font-bold text-green">
+                        <p className="mt-0.5 text-[18px] font-bold text-secondary">
                           {formatCurrency(projected, asset.currency)}
                         </p>
                       </div>
                       {asset.returnRate != null && (
-                        <span className="rounded-full bg-green-light px-2.5 py-1 font-mono text-[11px] font-semibold text-green">
+                        <span className="rounded-full bg-secondary-fixed/40 px-2.5 py-1 text-[11px] font-semibold text-secondary">
                           {asset.returnRate}% / yr
                         </span>
                       )}
                     </div>
                     {annualContrib != null && annualContrib > 0 && asset.contributionFrequency && (
-                      <p className="mt-2 text-[12px] text-text-tertiary">
+                      <p className="mt-2 text-[12px] text-on-surface-variant">
                         {formatCurrency(asset.contributionAmount!, asset.currency)}{" "}
                         {FREQ_LABELS[asset.contributionFrequency].toLowerCase()} contribution
                       </p>
@@ -313,11 +313,11 @@ export default function AssetsPage() {
                 )}
 
                 {asset.type !== "investment" && asset.notes && (
-                  <p className="mt-3 text-[12px] text-text-tertiary line-clamp-2">{asset.notes}</p>
+                  <p className="mt-3 text-[12px] text-on-surface-variant line-clamp-2">{asset.notes}</p>
                 )}
 
-                <div className="mt-3 flex items-center gap-1 text-[12px] text-text-tertiary">
-                  <i className="fa-solid fa-arrow-right text-[10px]" />
+                <div className="mt-3 flex items-center gap-1 text-[12px] text-on-surface-variant">
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
                   <span>View details</span>
                 </div>
               </div>
@@ -329,41 +329,41 @@ export default function AssetsPage() {
       {/* Add / Edit Modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-text/20 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-on-surface/20 sm:items-center"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="w-full max-w-lg rounded-t-2xl bg-elevated p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
+          <div className="w-full max-w-lg rounded-t-2xl bg-surface-container-lowest p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-2xl text-text">
+              <h2 className="font-headline font-extrabold text-2xl text-on-surface">
                 {editing ? "Edit Asset" : "New Asset"}
               </h2>
               <button
                 onClick={closeModal}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-tertiary hover:bg-surface hover:text-text"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
               >
-                <i className="fa-solid fa-xmark" />
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text">Asset Name</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Asset Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Fidelity Roth IRA"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                  className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text">Type</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Type</label>
                 <select
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value as AssetType })}
-                  className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                  className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 >
                   <option value="savings">Savings</option>
                   <option value="investment">Investment</option>
@@ -375,7 +375,7 @@ export default function AssetsPage() {
 
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">Current Balance</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Current Balance</label>
                   <input
                     type="number"
                     required
@@ -384,29 +384,29 @@ export default function AssetsPage() {
                     placeholder="0.00"
                     value={form.balance}
                     onChange={(e) => setForm({ ...form, balance: e.target.value })}
-                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 font-heading text-[15px] font-bold text-text placeholder:font-body placeholder:font-normal placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                    className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[15px] font-bold text-on-surface placeholder:font-normal placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div className="w-24">
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">Currency</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Currency</label>
                   <input
                     type="text"
                     maxLength={3}
                     value={form.currency}
                     onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
-                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                    className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
               {form.type === "investment" && (
-                <div className="rounded-xl border border-border bg-surface p-4 space-y-4">
-                  <p className="font-mono text-[11px] uppercase tracking-[1.5px] text-teal">Investment Details</p>
+                <div className="rounded-xl bg-surface-container-low p-4 space-y-4">
+                  <p className="text-[11px] uppercase tracking-[1.5px] text-primary">Investment Details</p>
 
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="mb-1.5 block text-[13px] font-medium text-text">
-                        Contribution Amount <span className="font-normal text-text-tertiary">(optional)</span>
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Contribution Amount <span className="font-normal text-on-surface-variant">(optional)</span>
                       </label>
                       <input
                         type="number"
@@ -415,15 +415,15 @@ export default function AssetsPage() {
                         placeholder="500.00"
                         value={form.contributionAmount}
                         onChange={(e) => setForm({ ...form, contributionAmount: e.target.value })}
-                        className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                        className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                       />
                     </div>
                     <div className="w-36">
-                      <label className="mb-1.5 block text-[13px] font-medium text-text">Frequency</label>
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Frequency</label>
                       <select
                         value={form.contributionFrequency}
                         onChange={(e) => setForm({ ...form, contributionFrequency: e.target.value as ContributionFrequency })}
-                        className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                        className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                       >
                         <option value="weekly">Weekly</option>
                         <option value="biweekly">Bi-weekly</option>
@@ -436,8 +436,8 @@ export default function AssetsPage() {
 
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="mb-1.5 block text-[13px] font-medium text-text">
-                        Expected Return <span className="font-normal text-text-tertiary">(% / yr)</span>
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Expected Return <span className="font-normal text-on-surface-variant">(% / yr)</span>
                       </label>
                       <div className="relative">
                         <input
@@ -448,14 +448,14 @@ export default function AssetsPage() {
                           placeholder="7.0"
                           value={form.returnRate}
                           onChange={(e) => setForm({ ...form, returnRate: e.target.value })}
-                          className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 pr-8 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                          className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 pr-8 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">%</span>
                       </div>
                     </div>
                     <div className="flex-1">
-                      <label className="mb-1.5 block text-[13px] font-medium text-text">
-                        Variance <span className="font-normal text-text-tertiary">(±%)</span>
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Variance <span className="font-normal text-on-surface-variant">(±%)</span>
                       </label>
                       <div className="relative">
                         <input
@@ -466,9 +466,9 @@ export default function AssetsPage() {
                           placeholder="1.0"
                           value={form.returnRateVariance}
                           onChange={(e) => setForm({ ...form, returnRateVariance: e.target.value })}
-                          className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 pr-8 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                          className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 pr-8 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">%</span>
                       </div>
                     </div>
                   </div>
@@ -478,26 +478,26 @@ export default function AssetsPage() {
                       type="checkbox"
                       checked={form.includeInflation}
                       onChange={(e) => setForm({ ...form, includeInflation: e.target.checked })}
-                      className="h-4 w-4 rounded border-border accent-teal"
+                      className="h-4 w-4 rounded accent-primary"
                     />
-                    <span className="text-[13px] font-medium text-text">
+                    <span className="text-[13px] font-medium text-on-surface">
                       Track inflation-adjusted value
-                      <span className="ml-1 font-normal text-text-tertiary">(3% annual)</span>
+                      <span className="ml-1 font-normal text-on-surface-variant">(3% annual)</span>
                     </span>
                   </label>
                 </div>
               )}
 
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text">
-                  Notes <span className="font-normal text-text-tertiary">(optional)</span>
+                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                  Notes <span className="font-normal text-on-surface-variant">(optional)</span>
                 </label>
                 <textarea
                   rows={2}
                   placeholder="Any notes about this asset…"
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                  className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -505,14 +505,14 @@ export default function AssetsPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 rounded-[10px] border-[1.5px] border-border py-3 text-[14px] font-semibold text-text-secondary hover:border-text-secondary hover:bg-surface"
+                  className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-[10px] bg-text py-3 text-[14px] font-semibold text-bg disabled:opacity-50"
+                  className="flex-1 rounded-full bg-gradient-to-r from-primary to-primary-container py-3 text-[14px] font-semibold text-on-primary disabled:opacity-50 transition-transform active:scale-95"
                 >
                   {saving ? "Saving…" : editing ? "Save Changes" : "Add Asset"}
                 </button>
@@ -524,24 +524,24 @@ export default function AssetsPage() {
 
       {deleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-text/20"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-elevated p-8 shadow-xl">
-            <h2 className="font-display text-2xl text-text">Delete asset?</h2>
-            <p className="mt-2 text-[14px] text-text-secondary">
+          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <h2 className="font-headline font-extrabold text-2xl text-on-surface">Delete asset?</h2>
+            <p className="mt-2 text-[14px] text-on-surface-variant">
               This will permanently remove the asset and its history. This cannot be undone.
             </p>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 rounded-[10px] border-[1.5px] border-border py-3 text-[14px] font-semibold text-text-secondary hover:bg-surface"
+                className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 rounded-[10px] bg-red py-3 text-[14px] font-semibold text-white"
+                className="flex-1 rounded-full bg-error py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
               >
                 Delete
               </button>

@@ -58,3 +58,30 @@ export interface Scenario {
   lumpSumMonth: number;
   createdAt: Date;
 }
+
+export type CategoryType = "asset" | "liability";
+
+export interface NetWorthCategory {
+  id: string;
+  userId: string;
+  name: string;
+  type: CategoryType;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NetWorthEntry {
+  id: string;
+  categoryId: string;
+  year: number;
+  month: number;
+  value: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DashboardData {
+  categories: NetWorthCategory[];
+  entries: NetWorthEntry[];
+}

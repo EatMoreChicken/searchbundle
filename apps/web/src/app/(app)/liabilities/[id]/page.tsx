@@ -15,11 +15,11 @@ const TYPE_LABELS: Record<DebtType, string> = {
 };
 
 const TYPE_ICONS: Record<DebtType, string> = {
-  mortgage: "fa-house",
-  auto: "fa-car",
-  student_loan: "fa-graduation-cap",
-  credit_card: "fa-credit-card",
-  other: "fa-circle-dot",
+  mortgage: "home",
+  auto: "directions_car",
+  student_loan: "school",
+  credit_card: "credit_card",
+  other: "radio_button_checked",
 };
 
 function formatCurrency(value: number) {
@@ -188,7 +188,7 @@ export default function LiabilityDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-[14px] text-text-tertiary">Loading…</p>
+        <p className="text-[14px] text-on-surface-variant">Loading…</p>
       </div>
     );
   }
@@ -196,8 +196,8 @@ export default function LiabilityDetailPage() {
   if (!debt) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-[14px] text-text-secondary">Liability not found.</p>
-        <button onClick={() => router.push("/liabilities")} className="text-[13px] text-teal underline">
+        <p className="text-[14px] text-on-surface-variant">Liability not found.</p>
+        <button onClick={() => router.push("/liabilities")} className="text-[13px] text-primary underline">
           Back to Liabilities
         </button>
       </div>
@@ -239,24 +239,24 @@ export default function LiabilityDetailPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push("/liabilities")}
-          className="flex items-center gap-2 text-[13px] text-text-secondary hover:text-text"
+          className="flex items-center gap-2 text-[13px] text-on-surface-variant hover:text-on-surface"
         >
-          <i className="fa-solid fa-arrow-left text-[12px]" />
+          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
           Liabilities
         </button>
         <div className="flex gap-2">
           <button
             onClick={openEdit}
-            className="flex items-center gap-2 rounded-[10px] border border-border px-4 py-2.5 text-[13px] font-medium text-text-secondary hover:bg-surface hover:text-text"
+            className="flex items-center gap-2 rounded-full bg-surface-container-low px-4 py-2.5 text-[13px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
           >
-            <i className="fa-solid fa-pen text-[12px]" />
+            <span className="material-symbols-outlined text-[16px]">edit</span>
             Edit
           </button>
           <button
             onClick={() => setDeleteConfirm(true)}
-            className="flex items-center gap-2 rounded-[10px] border border-border px-4 py-2.5 text-[13px] font-medium text-text-secondary hover:bg-red-light hover:border-red hover:text-red"
+            className="flex items-center gap-2 rounded-full bg-surface-container-low px-4 py-2.5 text-[13px] font-medium text-on-surface-variant hover:bg-error-container hover:text-error"
           >
-            <i className="fa-solid fa-trash text-[12px]" />
+            <span className="material-symbols-outlined text-[16px]">delete</span>
             Delete
           </button>
         </div>
@@ -265,85 +265,85 @@ export default function LiabilityDetailPage() {
       {/* Debt header */}
       <div className="mt-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-light">
-            <i className={`fa-solid ${TYPE_ICONS[debt.type]} text-[16px] text-red`} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error-container">
+            <span className="material-symbols-outlined text-[18px] text-error">{TYPE_ICONS[debt.type]}</span>
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-[1.5px] text-text-tertiary">
+          <span className="text-[11px] uppercase tracking-[1.5px] text-on-surface-variant">
             {TYPE_LABELS[debt.type]}
           </span>
         </div>
-        <h1 className="mt-3 font-display text-4xl text-text">{debt.name}</h1>
-        <p className="mt-2 font-heading text-5xl font-bold tracking-tight text-red">
+        <h1 className="mt-3 font-headline font-extrabold text-4xl text-on-surface">{debt.name}</h1>
+        <p className="mt-2 text-5xl font-bold tracking-tight text-error">
           {formatCurrency(debt.balance)}
         </p>
       </div>
 
       {/* Key metrics */}
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-border bg-elevated p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Interest Rate</p>
-          <p className="mt-2 font-heading text-xl font-bold text-amber">{debt.interestRate}%</p>
-          <p className="mt-1 text-[12px] text-text-tertiary">annual</p>
+        <div className="rounded-xl bg-surface-container-lowest p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Interest Rate</p>
+          <p className="mt-2 text-xl font-bold text-tertiary">{debt.interestRate}%</p>
+          <p className="mt-1 text-[12px] text-on-surface-variant">annual</p>
         </div>
-        <div className="rounded-xl border border-border bg-elevated p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Monthly Payment</p>
-          <p className="mt-2 font-heading text-xl font-bold text-text">{formatCurrency(debt.minimumPayment)}</p>
+        <div className="rounded-xl bg-surface-container-lowest p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Monthly Payment</p>
+          <p className="mt-2 text-xl font-bold text-on-surface">{formatCurrency(debt.minimumPayment)}</p>
           {debt.escrowAmount != null && debt.escrowAmount > 0 && (
-            <p className="mt-1 text-[12px] text-text-tertiary">
+            <p className="mt-1 text-[12px] text-on-surface-variant">
               + {formatCurrency(debt.escrowAmount)} escrow = {formatCurrency(totalWithEscrow)}
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-border bg-elevated p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Total Interest</p>
-          <p className="mt-2 font-heading text-xl font-bold text-amber">{formatCurrency(baseAmort.totalInterest)}</p>
-          <p className="mt-1 text-[12px] text-text-tertiary">over life of loan</p>
+        <div className="rounded-xl bg-surface-container-lowest p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Total Interest</p>
+          <p className="mt-2 text-xl font-bold text-tertiary">{formatCurrency(baseAmort.totalInterest)}</p>
+          <p className="mt-1 text-[12px] text-on-surface-variant">over life of loan</p>
         </div>
-        <div className="rounded-xl border border-border bg-elevated p-5">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Payoff In</p>
-          <p className="mt-2 font-heading text-xl font-bold text-text">{formatMonths(baseAmort.payoffMonths)}</p>
-          <p className="mt-1 text-[12px] text-text-tertiary">{baseAmort.payoffMonths} payments left</p>
+        <div className="rounded-xl bg-surface-container-lowest p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Payoff In</p>
+          <p className="mt-2 text-xl font-bold text-on-surface">{formatMonths(baseAmort.payoffMonths)}</p>
+          <p className="mt-1 text-[12px] text-on-surface-variant">{baseAmort.payoffMonths} payments left</p>
         </div>
       </div>
 
       {/* Progress */}
-      <div className="mt-6 rounded-xl border border-border bg-elevated p-6">
+      <div className="mt-6 rounded-xl bg-surface-container-lowest p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Paid Off</p>
-            <p className="mt-1 font-heading text-2xl font-bold text-green">{paidDown.toFixed(1)}%</p>
+            <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Paid Off</p>
+            <p className="mt-1 text-2xl font-bold text-secondary">{paidDown.toFixed(1)}%</p>
           </div>
           <div className="text-right">
-            <p className="text-[12px] text-text-tertiary">
+            <p className="text-[12px] text-on-surface-variant">
               {formatCurrency(debt.originalBalance - debt.balance)} of {formatCurrency(debt.originalBalance)}
             </p>
           </div>
         </div>
-        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-surface">
+        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-surface-container-highest">
           <div
-            className="h-full rounded-full bg-green transition-all"
+            className="h-full rounded-full bg-secondary transition-all"
             style={{ width: `${Math.min(100, paidDown)}%` }}
           />
         </div>
       </div>
 
       {/* Amortization chart */}
-      <div className="mt-8 rounded-2xl border border-border bg-elevated p-8">
+      <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[2px] text-teal">Amortization</p>
-            <h2 className="mt-1 font-heading text-xl font-bold text-text">Payoff Schedule</h2>
+            <p className="text-[11px] uppercase tracking-[2px] text-primary">Amortization</p>
+            <h2 className="mt-1 text-xl font-bold text-on-surface">Payoff Schedule</h2>
           </div>
           {scenarioActive && scenarioAmort && (
             <div className="flex items-center gap-4">
-              <div className="rounded-full bg-green-light px-3 py-1.5">
-                <span className="font-mono text-[12px] font-semibold text-green">
+              <div className="rounded-full bg-secondary-fixed/30 px-3 py-1.5">
+                <span className="text-[12px] font-semibold text-secondary">
                   {monthsSaved > 0 ? `${formatMonths(monthsSaved)} sooner` : "No change"}
                 </span>
               </div>
               {interestSaved > 0 && (
-                <div className="rounded-full bg-green-light px-3 py-1.5">
-                  <span className="font-mono text-[12px] font-semibold text-green">
+                <div className="rounded-full bg-secondary-fixed/30 px-3 py-1.5">
+                  <span className="text-[12px] font-semibold text-secondary">
                     {formatCurrency(interestSaved)} saved
                   </span>
                 </div>
@@ -359,18 +359,18 @@ export default function LiabilityDetailPage() {
           />
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-4 text-[12px] text-text-secondary">
+        <div className="mt-4 flex flex-wrap gap-4 text-[12px] text-on-surface-variant">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-0.5 w-5 rounded bg-red" />
+            <span className="inline-block h-0.5 w-5 rounded bg-error" />
             {scenarioActive ? "Scenario balance" : "Remaining balance"}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-5 rounded bg-amber-light" />
+            <span className="inline-block h-3 w-5 rounded bg-tertiary-fixed" />
             Cumulative interest
           </span>
           {scenarioActive && (
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-0.5 w-5 rounded border-t border-dashed border-green" />
+              <span className="inline-block h-0.5 w-5 rounded border-t border-dashed border-secondary" />
               Original payoff
             </span>
           )}
@@ -378,27 +378,27 @@ export default function LiabilityDetailPage() {
       </div>
 
       {/* What-If Scenario Panel */}
-      <div className="mt-8 rounded-2xl border border-border bg-elevated p-8">
+      <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[2px] text-teal">What If</p>
-            <h2 className="mt-1 font-heading text-xl font-bold text-text">Extra Payment Scenarios</h2>
+            <p className="text-[11px] uppercase tracking-[2px] text-primary">What If</p>
+            <h2 className="mt-1 text-xl font-bold text-on-surface">Extra Payment Scenarios</h2>
           </div>
           <div className="flex gap-2">
             {scenarioActive && (
               <>
                 <button
                   onClick={() => setSaveModalOpen(true)}
-                  className="flex items-center gap-2 rounded-[10px] bg-teal px-4 py-2.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-4 py-2.5 text-[13px] font-semibold text-on-primary transition-transform active:scale-95"
                 >
-                  <i className="fa-solid fa-bookmark text-[12px]" />
+                  <span className="material-symbols-outlined text-[14px]">bookmark</span>
                   Save Scenario
                 </button>
                 <button
                   onClick={clearScenario}
-                  className="flex items-center gap-2 rounded-[10px] border border-border px-4 py-2.5 text-[13px] font-medium text-text-secondary hover:bg-surface hover:text-text"
+                  className="flex items-center gap-2 rounded-full bg-surface-container-low px-4 py-2.5 text-[13px] font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
                 >
-                  <i className="fa-solid fa-xmark text-[12px]" />
+                  <span className="material-symbols-outlined text-[18px]">close</span>
                   Discard
                 </button>
               </>
@@ -406,17 +406,17 @@ export default function LiabilityDetailPage() {
           </div>
         </div>
 
-        <p className="mt-3 text-[14px] text-text-secondary">
+        <p className="mt-3 text-[14px] text-on-surface-variant">
           See how extra payments affect your payoff timeline and total interest paid.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text">
+            <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
               Extra Monthly Payment
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
               <input
                 type="number"
                 min="0"
@@ -424,18 +424,18 @@ export default function LiabilityDetailPage() {
                 placeholder="200"
                 value={extraMonthly}
                 onChange={(e) => setExtraMonthly(e.target.value)}
-                className="w-full rounded-[10px] border-[1.5px] border-border bg-bg pl-7 pr-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                className="w-full rounded-[10px] bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
               />
             </div>
-            <p className="mt-1 text-[11px] text-text-tertiary">Added to every monthly payment</p>
+            <p className="mt-1 text-[11px] text-on-surface-variant">Added to every monthly payment</p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text">
+            <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
               Extra Annual Payment
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
               <input
                 type="number"
                 min="0"
@@ -443,18 +443,18 @@ export default function LiabilityDetailPage() {
                 placeholder="1000"
                 value={extraYearly}
                 onChange={(e) => setExtraYearly(e.target.value)}
-                className="w-full rounded-[10px] border-[1.5px] border-border bg-bg pl-7 pr-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                className="w-full rounded-[10px] bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
               />
             </div>
-            <p className="mt-1 text-[11px] text-text-tertiary">One extra payment each year</p>
+            <p className="mt-1 text-[11px] text-on-surface-variant">One extra payment each year</p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text">
+            <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
               Lump Sum Payment
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
               <input
                 type="number"
                 min="0"
@@ -462,14 +462,14 @@ export default function LiabilityDetailPage() {
                 placeholder="5000"
                 value={lumpSum}
                 onChange={(e) => setLumpSum(e.target.value)}
-                className="w-full rounded-[10px] border-[1.5px] border-border bg-bg pl-7 pr-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+                className="w-full rounded-[10px] bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
               />
             </div>
-            <p className="mt-1 text-[11px] text-text-tertiary">One-time additional payment</p>
+            <p className="mt-1 text-[11px] text-on-surface-variant">One-time additional payment</p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-medium text-text">
+            <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
               Lump Sum in Month
             </label>
             <input
@@ -480,39 +480,39 @@ export default function LiabilityDetailPage() {
               placeholder="1"
               value={lumpSumMonth}
               onChange={(e) => setLumpSumMonth(e.target.value)}
-              className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+              className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
             />
-            <p className="mt-1 text-[11px] text-text-tertiary">When the lump sum is applied</p>
+            <p className="mt-1 text-[11px] text-on-surface-variant">When the lump sum is applied</p>
           </div>
         </div>
 
         {/* Scenario comparison summary */}
         {scenarioActive && scenarioAmort && (
-          <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-green/20 bg-green-light/30 p-6 sm:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-4 rounded-xl border border-secondary/20 bg-secondary-fixed/30 p-6 sm:grid-cols-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">New Payoff Time</p>
-              <p className="mt-1 font-heading text-xl font-bold text-green">
+              <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">New Payoff Time</p>
+              <p className="mt-1 text-xl font-bold text-secondary">
                 {formatMonths(scenarioAmort.payoffMonths)}
               </p>
               {monthsSaved > 0 && (
-                <p className="mt-0.5 text-[12px] text-green">{formatMonths(monthsSaved)} sooner</p>
+                <p className="mt-0.5 text-[12px] text-secondary">{formatMonths(monthsSaved)} sooner</p>
               )}
             </div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">New Total Interest</p>
-              <p className="mt-1 font-heading text-xl font-bold text-green">
+              <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">New Total Interest</p>
+              <p className="mt-1 text-xl font-bold text-secondary">
                 {formatCurrency(scenarioAmort.totalInterest)}
               </p>
               {interestSaved > 0 && (
-                <p className="mt-0.5 text-[12px] text-green">{formatCurrency(interestSaved)} saved</p>
+                <p className="mt-0.5 text-[12px] text-secondary">{formatCurrency(interestSaved)} saved</p>
               )}
             </div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">New Total Cost</p>
-              <p className="mt-1 font-heading text-xl font-bold text-text">
+              <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">New Total Cost</p>
+              <p className="mt-1 text-xl font-bold text-on-surface">
                 {formatCurrency(scenarioAmort.totalPaid)}
               </p>
-              <p className="mt-0.5 text-[12px] text-text-tertiary">
+              <p className="mt-0.5 text-[12px] text-on-surface-variant">
                 was {formatCurrency(baseAmort.totalPaid)}
               </p>
             </div>
@@ -522,19 +522,19 @@ export default function LiabilityDetailPage() {
 
       {/* Saved Scenarios */}
       {savedScenarios.length > 0 && (
-        <div className="mt-8 rounded-2xl border border-border bg-elevated p-8">
-          <p className="font-mono text-[11px] uppercase tracking-[2px] text-teal">Saved</p>
-          <h2 className="mt-1 font-heading text-xl font-bold text-text">Saved Scenarios</h2>
+        <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
+          <p className="text-[11px] uppercase tracking-[2px] text-primary">Saved</p>
+          <h2 className="mt-1 text-xl font-bold text-on-surface">Saved Scenarios</h2>
 
           <div className="mt-4 space-y-3">
             {savedScenarios.map((scenario) => (
               <div
                 key={scenario.id}
-                className="flex items-center justify-between rounded-xl border border-border bg-surface p-4"
+                className="flex items-center justify-between rounded-xl bg-surface-container-low p-4"
               >
                 <div>
-                  <p className="font-heading text-[15px] font-semibold text-text">{scenario.name}</p>
-                  <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-text-secondary">
+                  <p className="text-[15px] font-semibold text-on-surface">{scenario.name}</p>
+                  <div className="mt-1 flex flex-wrap gap-3 text-[12px] text-on-surface-variant">
                     {scenario.extraMonthlyPayment > 0 && (
                       <span>+{formatCurrencyPrecise(scenario.extraMonthlyPayment)}/mo</span>
                     )}
@@ -549,13 +549,13 @@ export default function LiabilityDetailPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => loadScenario(scenario)}
-                    className="rounded-lg px-3 py-2 text-[12px] font-medium text-teal hover:bg-teal-light"
+                    className="rounded-lg px-3 py-2 text-[12px] font-medium text-primary hover:bg-primary-fixed/30"
                   >
                     Load
                   </button>
                   <button
                     onClick={() => handleDeleteScenario(scenario.id)}
-                    className="rounded-lg px-3 py-2 text-[12px] font-medium text-text-tertiary hover:bg-red-light hover:text-red"
+                    className="rounded-lg px-3 py-2 text-[12px] font-medium text-on-surface-variant hover:bg-error-container hover:text-error"
                   >
                     Delete
                   </button>
@@ -568,55 +568,55 @@ export default function LiabilityDetailPage() {
 
       {/* Loan breakdown info */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-elevated p-6">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Loan Summary</p>
+        <div className="rounded-xl bg-surface-container-lowest p-6">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Loan Summary</p>
           <div className="mt-4 space-y-3">
             <div className="flex justify-between text-[14px]">
-              <span className="text-text-secondary">Original Balance</span>
-              <span className="font-heading font-bold text-text">{formatCurrency(debt.originalBalance)}</span>
+              <span className="text-on-surface-variant">Original Balance</span>
+              <span className="font-bold text-on-surface">{formatCurrency(debt.originalBalance)}</span>
             </div>
             <div className="flex justify-between text-[14px]">
-              <span className="text-text-secondary">Principal Paid</span>
-              <span className="font-heading font-bold text-green">{formatCurrency(debt.originalBalance - debt.balance)}</span>
+              <span className="text-on-surface-variant">Principal Paid</span>
+              <span className="font-bold text-secondary">{formatCurrency(debt.originalBalance - debt.balance)}</span>
             </div>
             <div className="flex justify-between text-[14px]">
-              <span className="text-text-secondary">Remaining Balance</span>
-              <span className="font-heading font-bold text-red">{formatCurrency(debt.balance)}</span>
+              <span className="text-on-surface-variant">Remaining Balance</span>
+              <span className="font-bold text-error">{formatCurrency(debt.balance)}</span>
             </div>
-            <div className="border-t border-border pt-3 flex justify-between text-[14px]">
-              <span className="text-text-secondary">Total Interest (remaining)</span>
-              <span className="font-heading font-bold text-amber">{formatCurrency(baseAmort.totalInterest)}</span>
+            <div className="pt-3 flex justify-between text-[14px]">
+              <span className="text-on-surface-variant">Total Interest (remaining)</span>
+              <span className="font-bold text-tertiary">{formatCurrency(baseAmort.totalInterest)}</span>
             </div>
             <div className="flex justify-between text-[14px]">
-              <span className="text-text-secondary">Total Cost (remaining)</span>
-              <span className="font-heading font-bold text-text">{formatCurrency(baseAmort.totalPaid)}</span>
+              <span className="text-on-surface-variant">Total Cost (remaining)</span>
+              <span className="font-bold text-on-surface">{formatCurrency(baseAmort.totalPaid)}</span>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-elevated p-6">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Payment Breakdown</p>
+        <div className="rounded-xl bg-surface-container-lowest p-6">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Payment Breakdown</p>
           <div className="mt-4 space-y-3">
             <div className="flex justify-between text-[14px]">
-              <span className="text-text-secondary">Principal &amp; Interest</span>
-              <span className="font-heading font-bold text-text">{formatCurrencyPrecise(debt.minimumPayment)}/mo</span>
+              <span className="text-on-surface-variant">Principal &amp; Interest</span>
+              <span className="font-bold text-on-surface">{formatCurrencyPrecise(debt.minimumPayment)}/mo</span>
             </div>
             {debt.escrowAmount != null && debt.escrowAmount > 0 && (
               <>
                 <div className="flex justify-between text-[14px]">
-                  <span className="text-text-secondary">Escrow (Tax &amp; Ins.)</span>
-                  <span className="font-heading font-bold text-text">{formatCurrencyPrecise(debt.escrowAmount)}/mo</span>
+                  <span className="text-on-surface-variant">Escrow (Tax &amp; Ins.)</span>
+                  <span className="font-bold text-on-surface">{formatCurrencyPrecise(debt.escrowAmount)}/mo</span>
                 </div>
-                <div className="border-t border-border pt-3 flex justify-between text-[14px]">
-                  <span className="font-medium text-text">Total Monthly</span>
-                  <span className="font-heading font-bold text-text">{formatCurrencyPrecise(totalWithEscrow)}/mo</span>
+                <div className="pt-3 flex justify-between text-[14px]">
+                  <span className="font-medium text-on-surface">Total Monthly</span>
+                  <span className="font-bold text-on-surface">{formatCurrencyPrecise(totalWithEscrow)}/mo</span>
                 </div>
               </>
             )}
             {debt.remainingMonths != null && (
               <div className="flex justify-between text-[14px]">
-                <span className="text-text-secondary">Remaining Term</span>
-                <span className="font-heading font-bold text-text">{formatMonths(debt.remainingMonths)}</span>
+                <span className="text-on-surface-variant">Remaining Term</span>
+                <span className="font-bold text-on-surface">{formatMonths(debt.remainingMonths)}</span>
               </div>
             )}
           </div>
@@ -625,21 +625,21 @@ export default function LiabilityDetailPage() {
 
       {/* Notes */}
       {debt.notes && (
-        <div className="mt-6 rounded-xl border border-border bg-elevated p-6">
-          <p className="font-mono text-[10px] uppercase tracking-[1.2px] text-text-tertiary">Notes</p>
-          <p className="mt-2 text-[14px] text-text-secondary">{debt.notes}</p>
+        <div className="mt-6 rounded-xl bg-surface-container-lowest p-6">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Notes</p>
+          <p className="mt-2 text-[14px] text-on-surface-variant">{debt.notes}</p>
         </div>
       )}
 
       {/* Save Scenario Modal */}
       {saveModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-text/20"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
           onClick={(e) => { if (e.target === e.currentTarget) setSaveModalOpen(false); }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-elevated p-8 shadow-xl">
-            <h2 className="font-display text-2xl text-text">Save Scenario</h2>
-            <p className="mt-2 text-[14px] text-text-secondary">
+          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <h2 className="font-headline font-extrabold text-2xl text-on-surface">Save Scenario</h2>
+            <p className="mt-2 text-[14px] text-on-surface-variant">
               Give this scenario a name so you can load it later.
             </p>
             <input
@@ -647,20 +647,20 @@ export default function LiabilityDetailPage() {
               placeholder="e.g. Aggressive payoff"
               value={scenarioName}
               onChange={(e) => setScenarioName(e.target.value)}
-              className="mt-4 w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text placeholder:text-text-tertiary focus:border-teal focus:outline-none"
+              className="mt-4 w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
               autoFocus
             />
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setSaveModalOpen(false)}
-                className="flex-1 rounded-[10px] border-[1.5px] border-border py-3 text-[14px] font-semibold text-text-secondary hover:bg-surface"
+                className="flex-1 rounded-[10px] bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant hover:bg-surface-container"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveScenario}
                 disabled={savingScenario || !scenarioName.trim()}
-                className="flex-1 rounded-[10px] bg-teal py-3 text-[14px] font-semibold text-white disabled:opacity-50"
+                className="flex-1 rounded-[10px] bg-gradient-to-r from-primary to-primary-container py-3 text-[14px] font-semibold text-on-primary disabled:opacity-50"
               >
                 {savingScenario ? "Saving…" : "Save"}
               </button>
@@ -672,35 +672,35 @@ export default function LiabilityDetailPage() {
       {/* Edit Modal */}
       {editOpen && form && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-text/20 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-on-surface/20 sm:items-center"
           onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false); }}
         >
-          <div className="w-full max-w-lg rounded-t-2xl bg-elevated p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
+          <div className="w-full max-w-lg rounded-t-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-2xl text-text">Edit Liability</h2>
+              <h2 className="font-headline font-extrabold text-2xl text-on-surface">Edit Liability</h2>
               <button
                 onClick={() => setEditOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-tertiary hover:bg-surface hover:text-text"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
               >
-                <i className="fa-solid fa-xmark" />
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
 
             <form onSubmit={handleSave} className="mt-6 space-y-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text">Name</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Name</label>
                 <input
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                  className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">Balance</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Balance</label>
                   <input
                     type="number"
                     required
@@ -708,11 +708,11 @@ export default function LiabilityDetailPage() {
                     step="0.01"
                     value={form.balance}
                     onChange={(e) => setForm({ ...form, balance: e.target.value })}
-                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 font-heading text-[15px] font-bold text-text focus:border-teal focus:outline-none"
+                    className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[15px] font-bold text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">Original Balance</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Original Balance</label>
                   <input
                     type="number"
                     required
@@ -720,15 +720,15 @@ export default function LiabilityDetailPage() {
                     step="0.01"
                     value={form.originalBalance}
                     onChange={(e) => setForm({ ...form, originalBalance: e.target.value })}
-                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 font-heading text-[15px] font-bold text-text focus:border-teal focus:outline-none"
+                    className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[15px] font-bold text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">
-                    Interest Rate <span className="font-normal text-text-tertiary">(%)</span>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                    Interest Rate <span className="font-normal text-on-surface-variant">(%)</span>
                   </label>
                   <div className="relative">
                     <input
@@ -739,13 +739,13 @@ export default function LiabilityDetailPage() {
                       step="0.01"
                       value={form.interestRate}
                       onChange={(e) => setForm({ ...form, interestRate: e.target.value })}
-                      className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 pr-8 text-[14px] text-text focus:border-teal focus:outline-none"
+                      className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 pr-8 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">%</span>
                   </div>
                 </div>
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">Monthly Payment</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Monthly Payment</label>
                   <input
                     type="number"
                     required
@@ -753,13 +753,13 @@ export default function LiabilityDetailPage() {
                     step="0.01"
                     value={form.minimumPayment}
                     onChange={(e) => setForm({ ...form, minimumPayment: e.target.value })}
-                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                    className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text">Remaining Months</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Remaining Months</label>
                 <input
                   type="number"
                   min="1"
@@ -767,14 +767,14 @@ export default function LiabilityDetailPage() {
                   step="1"
                   value={form.remainingMonths}
                   onChange={(e) => setForm({ ...form, remainingMonths: e.target.value })}
-                  className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                  className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {form.type === "mortgage" && (
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-text">
-                    Escrow (Taxes &amp; Insurance) <span className="font-normal text-text-tertiary">(per month)</span>
+                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                    Escrow (Taxes &amp; Insurance) <span className="font-normal text-on-surface-variant">(per month)</span>
                   </label>
                   <input
                     type="number"
@@ -782,18 +782,18 @@ export default function LiabilityDetailPage() {
                     step="0.01"
                     value={form.escrowAmount}
                     onChange={(e) => setForm({ ...form, escrowAmount: e.target.value })}
-                    className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                    className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                   />
                 </div>
               )}
 
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-text">Notes</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Notes</label>
                 <textarea
                   rows={2}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full rounded-[10px] border-[1.5px] border-border bg-bg px-4 py-3.5 text-[14px] text-text focus:border-teal focus:outline-none"
+                  className="w-full rounded-[10px] bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -801,14 +801,14 @@ export default function LiabilityDetailPage() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(false)}
-                  className="flex-1 rounded-[10px] border-[1.5px] border-border py-3 text-[14px] font-semibold text-text-secondary hover:border-text-secondary hover:bg-surface"
+                  className="flex-1 rounded-[10px] bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant hover:bg-surface-container"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-[10px] bg-text py-3 text-[14px] font-semibold text-bg disabled:opacity-50"
+                  className="flex-1 rounded-[10px] bg-gradient-to-r from-primary to-primary-container py-3 text-[14px] font-semibold text-on-primary disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
@@ -821,24 +821,24 @@ export default function LiabilityDetailPage() {
       {/* Delete Modal */}
       {deleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-text/20"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(false); }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-elevated p-8 shadow-xl">
-            <h2 className="font-display text-2xl text-text">Delete liability?</h2>
-            <p className="mt-2 text-[14px] text-text-secondary">
+          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <h2 className="font-headline font-extrabold text-2xl text-on-surface">Delete liability?</h2>
+            <p className="mt-2 text-[14px] text-on-surface-variant">
               This will permanently remove this liability and all its saved scenarios. This cannot be undone.
             </p>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(false)}
-                className="flex-1 rounded-[10px] border-[1.5px] border-border py-3 text-[14px] font-semibold text-text-secondary hover:bg-surface"
+                className="flex-1 rounded-[10px] bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant hover:bg-surface-container"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 rounded-[10px] bg-red py-3 text-[14px] font-semibold text-white"
+                className="flex-1 rounded-[10px] bg-error py-3 text-[14px] font-semibold text-white"
               >
                 Delete
               </button>

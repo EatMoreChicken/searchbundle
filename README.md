@@ -78,7 +78,17 @@ npm run db:migrate
 
 `db:generate` creates SQL migration files from the schema. `db:migrate` applies them to your database. Run both whenever the schema changes.
 
-#### 5. Start the development servers
+#### 5. Seed development data (optional)
+
+```bash
+npm run db:seed:dev
+```
+
+Populates the database with realistic test data: 6 assets (401k, IRA, checking, savings, HSA, home), 3 liabilities (mortgage, car loan, student loans), and 15 months of net worth tracker entries (all of 2025 + Jan–Mar 2026). Safe to re-run at any time — it clears and re-inserts the seeded data without affecting anything else.
+
+Sign in with `dev@searchbundle.io` / `password123`.
+
+#### 6. Start the development servers
 
 ```bash
 npm run dev
@@ -135,6 +145,18 @@ npm run db:migrate    # applies it to your local database
 ```
 
 Commit the generated migration files in `packages/db/migrations/` — they are the source of truth for the database structure.
+
+---
+
+## Database: Dev Seed Data
+
+To populate the database with realistic test data (assets, liabilities, and net worth history):
+
+```bash
+npm run db:seed:dev
+```
+
+This is idempotent — safe to run multiple times. Use it to reset test data to a known state after manual edits. The script lives at `packages/db/src/seed-dev.ts` if you want to customize it.
 
 ---
 

@@ -10,7 +10,8 @@
     "build": "npm run build --workspace=apps/web && npm run build --workspace=apps/api",
     "db:generate": "npm run db:generate --workspace=packages/db",
     "db:migrate": "npm run db:migrate --workspace=packages/db",
-    "db:seed": "npm run db:seed --workspace=packages/db"
+    "db:seed": "npm run db:seed --workspace=packages/db",
+    "db:seed:dev": "npm run db:seed:dev --workspace=packages/db"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
