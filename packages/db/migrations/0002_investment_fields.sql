@@ -2,7 +2,11 @@
 ALTER TYPE "account_type" ADD VALUE 'hsa';
 
 -- Create contribution_frequency enum
-CREATE TYPE "contribution_frequency" AS ENUM('weekly', 'biweekly', 'monthly', 'quarterly', 'yearly');
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contribution_frequency') THEN
+    CREATE TYPE "contribution_frequency" AS ENUM('weekly', 'biweekly', 'monthly', 'quarterly', 'yearly');
+  END IF;
+END $$;
 
 -- Add investment-specific columns to accounts table
 ALTER TABLE "accounts" ADD COLUMN "contribution_amount" numeric(14,2);
