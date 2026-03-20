@@ -6,7 +6,7 @@ export default function CooperPage() {
       overline="AI Companion"
       title="Cooper"
       summary="Get guided, forward-looking advice based on your accounts, debts, and goals."
-      icon="fa-robot"
+      icon="smart_toy"
       bullets={[
         "Natural-language Q&A grounded in your financial profile",
         "Scenario planning support for major decisions",

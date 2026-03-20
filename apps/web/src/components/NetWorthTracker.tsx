@@ -240,14 +240,14 @@ export default function NetWorthTracker() {
   }
 
   function getCellClasses(month: number): string {
-    return "bg-bg";
+    return "bg-surface";
   }
 
   function getValueClasses(month: number): string {
-    if (!isCurrentYear) return "text-text";
+    if (!isCurrentYear) return "text-on-surface";
     const state = getCellState(month, currentMonth);
-    if (state === "future") return "text-text-tertiary";
-    return "text-text";
+    if (state === "future") return "text-on-surface-variant";
+    return "text-on-surface";
   }
 
   function renderValueCell(
@@ -264,7 +264,7 @@ export default function NetWorthTracker() {
         <td
           key={month}
           ref={isCurrent ? currentMonthRef : undefined}
-          className={`px-4 py-2.5 text-right whitespace-nowrap font-heading font-bold text-sm ${getCellClasses(month)} border-b border-border`}
+          className={`px-4 py-2.5 text-right whitespace-nowrap font-bold text-sm ${getCellClasses(month)}`}
         >
           <span className={getValueClasses(month)}>
             {hasData ? formatCurrency(totalValue!) : "–"}
@@ -281,7 +281,7 @@ export default function NetWorthTracker() {
       return (
         <td
           key={month}
-          className={`px-1 py-1 ${getCellClasses(month)} border-b border-border`}
+          className={`px-1 py-1 ${getCellClasses(month)}`}
         >
           <input
             ref={inputRef}
@@ -292,7 +292,7 @@ export default function NetWorthTracker() {
             onBlur={() => handleSaveEntry(categoryId, month)}
             onKeyDown={(e) => handleCellKeyDown(e, categoryId, month)}
             disabled={savingEntry}
-            className="w-full px-2 py-1.5 text-right text-sm font-heading font-bold rounded-lg border-1.5 border-teal bg-elevated focus:outline-none"
+            className="w-full px-2 py-1.5 text-right text-sm font-bold rounded-lg bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </td>
       );
@@ -302,10 +302,10 @@ export default function NetWorthTracker() {
       <td
         key={month}
         ref={isCurrent ? currentMonthRef : undefined}
-        className={`px-4 py-2.5 text-right whitespace-nowrap cursor-pointer hover:bg-teal-light/40 transition-colors ${getCellClasses(month)} border-b border-border`}
+        className={`px-4 py-2.5 text-right whitespace-nowrap cursor-pointer hover:bg-primary-fixed/30 transition-colors ${getCellClasses(month)}`}
         onClick={() => startEditing(categoryId, month)}
       >
-        <span className={`text-sm font-heading font-bold ${getValueClasses(month)}`}>
+        <span className={`text-sm font-bold ${getValueClasses(month)}`}>
           {value !== null ? formatCurrency(value) : "–"}
         </span>
       </td>
@@ -321,10 +321,10 @@ export default function NetWorthTracker() {
       hasAnyValue(assets, month) || hasAnyValue(liabilities, month);
 
     const colorClass = !hasData
-      ? "text-text-tertiary"
+      ? "text-on-surface-variant"
       : netWorth >= 0
-        ? "text-green"
-        : "text-red";
+        ? "text-secondary"
+        : "text-error";
 
     return (
       <td
@@ -332,7 +332,7 @@ export default function NetWorthTracker() {
         ref={isCurrent && !currentMonthRef.current ? currentMonthRef : undefined}
         className={`px-4 py-3 text-right whitespace-nowrap ${getCellClasses(month)}`}
       >
-        <span className={`text-sm font-heading font-extrabold ${colorClass}`}>
+        <span className={`text-sm font-extrabold ${colorClass}`}>
           {hasData ? formatCurrency(netWorth) : "–"}
         </span>
       </td>
@@ -346,28 +346,28 @@ export default function NetWorthTracker() {
   ) {
     return (
       <tr>
-        <td className="sticky left-0 z-10 bg-surface px-4 py-2 border-b border-border">
+        <td className="sticky left-0 z-10 bg-surface-container-low px-4 py-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setAddingType(type);
                 setNewCategoryName("");
               }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-border text-text-tertiary hover:text-teal hover:border-teal transition-colors cursor-pointer"
+              className="w-5 h-5 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
               title={`Add ${type}`}
             >
-              <i className="fa-solid fa-plus text-[10px]" />
+              <span className="material-symbols-outlined text-[16px]">add</span>
             </button>
-            <span className="font-mono text-[11px] uppercase tracking-[1.2px] text-teal font-medium">
+            <span className="text-[11px] uppercase tracking-[1.2px] text-primary font-bold">
               {label}
             </span>
-            <i className={`fa-solid ${icon} text-[11px] text-teal`} />
+            <span className="material-symbols-outlined text-[14px] text-primary">{icon}</span>
           </div>
         </td>
         {MONTHS.map((_, i) => (
           <td
             key={i + 1}
-            className={`border-b border-border ${getCellClasses(i + 1)}`}
+            className={`${getCellClasses(i + 1)}`}
           />
         ))}
       </tr>
@@ -380,20 +380,20 @@ export default function NetWorthTracker() {
 
     return (
       <tr key={category.id} className="group">
-        <td className="sticky left-0 z-10 bg-bg px-4 py-2 border-b border-border">
+        <td className="sticky left-0 z-10 bg-surface px-4 py-2">
           <div className="flex items-center gap-2 min-w-[160px]">
             {isDeleting ? (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-red font-medium">Delete?</span>
+                <span className="text-xs text-error font-medium">Delete?</span>
                 <button
                   onClick={() => handleDeleteCategory(category.id)}
-                  className="text-[11px] text-red hover:text-red/80 font-semibold cursor-pointer"
+                  className="text-[11px] text-error hover:text-error/80 font-semibold cursor-pointer"
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setDeletingCategoryId(null)}
-                  className="text-[11px] text-text-secondary hover:text-text font-semibold cursor-pointer"
+                  className="text-[11px] text-on-surface-variant hover:text-on-surface font-semibold cursor-pointer"
                 >
                   No
                 </button>
@@ -409,12 +409,12 @@ export default function NetWorthTracker() {
                   if (e.key === "Enter") handleRenameCategory(category.id);
                   if (e.key === "Escape") setEditingCategoryId(null);
                 }}
-                className="text-sm font-body font-medium bg-elevated border border-border rounded-md px-2 py-0.5 w-full focus:outline-none focus:border-teal"
+                className="text-sm font-medium bg-surface-container-lowest rounded-md px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-primary"
               />
             ) : (
               <>
                 <span
-                  className="text-sm font-body font-medium text-text cursor-pointer hover:text-teal transition-colors"
+                  className="text-sm font-medium text-on-surface cursor-pointer hover:text-primary transition-colors"
                   onDoubleClick={() => {
                     setEditingCategoryId(category.id);
                     setEditCategoryName(category.name);
@@ -424,10 +424,10 @@ export default function NetWorthTracker() {
                 </span>
                 <button
                   onClick={() => setDeletingCategoryId(category.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary hover:text-red cursor-pointer ml-auto"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-error cursor-pointer ml-auto"
                   title="Delete category"
                 >
-                  <i className="fa-solid fa-xmark text-[11px]" />
+                  <span className="material-symbols-outlined text-[14px]">close</span>
                 </button>
               </>
             )}
@@ -442,16 +442,16 @@ export default function NetWorthTracker() {
     if (addingType !== type) {
       return (
         <tr>
-          <td className="sticky left-0 z-10 bg-bg px-4 py-1.5 border-b border-border">
+          <td className="sticky left-0 z-10 bg-surface px-4 py-1.5">
             <button
               onClick={() => {
                 setAddingType(type);
                 setNewCategoryName("");
               }}
-              className="flex items-center gap-1.5 text-xs text-text-tertiary hover:text-teal transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
             >
-              <i className="fa-solid fa-plus text-[10px]" />
-              <span className="font-body font-medium">
+              <span className="material-symbols-outlined text-[14px]">add</span>
+              <span className="font-medium">
                 Add {type === "asset" ? "asset" : "liability"}
               </span>
             </button>
@@ -459,7 +459,7 @@ export default function NetWorthTracker() {
           {MONTHS.map((_, i) => (
             <td
               key={i + 1}
-              className={`border-b border-border ${getCellClasses(i + 1)}`}
+              className={`${getCellClasses(i + 1)}`}
             />
           ))}
         </tr>
@@ -468,7 +468,7 @@ export default function NetWorthTracker() {
 
     return (
       <tr>
-        <td className="sticky left-0 z-10 bg-bg px-4 py-1.5 border-b border-border">
+        <td className="sticky left-0 z-10 bg-surface px-4 py-1.5">
           <div className="flex items-center gap-1.5">
             <input
               ref={addInputRef}
@@ -484,14 +484,14 @@ export default function NetWorthTracker() {
                 if (!newCategoryName.trim()) setAddingType(null);
                 else handleAddCategory(type);
               }}
-              className="text-sm font-body bg-elevated border border-border rounded-md px-2 py-0.5 w-full focus:outline-none focus:border-teal placeholder:text-text-tertiary"
+              className="text-sm bg-surface-container-lowest rounded-md px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant"
             />
           </div>
         </td>
         {MONTHS.map((_, i) => (
           <td
             key={i + 1}
-            className={`border-b border-border ${getCellClasses(i + 1)}`}
+            className={`${getCellClasses(i + 1)}`}
           />
         ))}
       </tr>
@@ -504,8 +504,8 @@ export default function NetWorthTracker() {
   ) {
     return (
       <tr>
-        <td className="sticky left-0 z-10 bg-surface px-4 py-2.5 border-b border-border">
-          <span className="text-sm font-heading font-bold text-text">
+        <td className="sticky left-0 z-10 bg-surface-container-low px-4 py-2.5">
+          <span className="text-sm font-bold text-on-surface">
             {label}
           </span>
         </td>
@@ -522,7 +522,7 @@ export default function NetWorthTracker() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-text-secondary font-body text-sm">Loading...</div>
+        <div className="text-on-surface-variant text-sm">Loading...</div>
       </div>
     );
   }
@@ -530,13 +530,13 @@ export default function NetWorthTracker() {
   if (categories.length === 0) {
     return (
       <div className="max-w-2xl mx-auto mt-24 text-center px-6">
-        <div className="w-16 h-16 rounded-2xl bg-teal-light flex items-center justify-center mx-auto mb-6">
-          <i className="fa-solid fa-chart-line text-teal text-xl" />
+        <div className="w-16 h-16 rounded-2xl bg-primary-fixed/30 flex items-center justify-center mx-auto mb-6">
+          <span className="material-symbols-outlined text-primary text-2xl">query_stats</span>
         </div>
-        <h1 className="font-display text-3xl text-text mb-3">
+        <h1 className="text-3xl font-extrabold text-on-surface mb-3">
           Track Your Net Worth
         </h1>
-        <p className="text-text-secondary font-body text-base mb-8 max-w-md mx-auto">
+        <p className="text-on-surface-variant text-base mb-8 max-w-md mx-auto">
           Add your assets and liabilities to see your net worth evolve month by
           month. Start by adding your first account.
         </p>
@@ -546,9 +546,9 @@ export default function NetWorthTracker() {
               setAddingType("asset");
               setNewCategoryName("");
             }}
-            className="px-6 py-3 rounded-xl bg-text text-bg font-body font-semibold text-sm hover:-translate-y-0.5 transition-transform cursor-pointer"
+            className="px-6 py-3 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-semibold text-sm transition-transform active:scale-95 cursor-pointer"
           >
-            <i className="fa-solid fa-plus mr-2 text-xs" />
+            <span className="material-symbols-outlined text-[16px] align-middle mr-1">add</span>
             Add Asset
           </button>
           <button
@@ -556,9 +556,9 @@ export default function NetWorthTracker() {
               setAddingType("liability");
               setNewCategoryName("");
             }}
-            className="px-6 py-3 rounded-xl bg-transparent border-[1.5px] border-border font-body font-semibold text-sm text-text hover:bg-surface hover:border-text-secondary transition-all cursor-pointer"
+            className="px-6 py-3 rounded-full bg-surface-container-low font-semibold text-sm text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
           >
-            <i className="fa-solid fa-plus mr-2 text-xs" />
+            <span className="material-symbols-outlined text-[16px] align-middle mr-1">add</span>
             Add Liability
           </button>
         </div>
@@ -580,18 +580,18 @@ export default function NetWorthTracker() {
                   if (e.key === "Enter") handleAddCategory(addingType);
                   if (e.key === "Escape") setAddingType(null);
                 }}
-                className="flex-1 text-sm font-body bg-elevated border-[1.5px] border-border rounded-xl px-4 py-3 focus:outline-none focus:border-teal placeholder:text-text-tertiary"
+                className="flex-1 text-sm bg-surface-container-high rounded-2xl px-4 py-3 focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant"
               />
               <button
                 onClick={() => handleAddCategory(addingType!)}
-                className="px-4 py-3 rounded-xl bg-teal text-white font-body font-semibold text-sm cursor-pointer hover:bg-teal/90 transition-colors"
+                className="px-4 py-3 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-semibold text-sm cursor-pointer transition-transform active:scale-95"
               >
                 Add
               </button>
             </div>
-            <p className="text-xs text-text-tertiary mt-2">
+            <p className="text-xs text-on-surface-variant mt-2">
               Adding as{" "}
-              <span className="font-medium text-teal">
+              <span className="font-medium text-primary">
                 {addingType === "asset" ? "an asset" : "a liability"}
               </span>
             </p>
@@ -606,62 +606,62 @@ export default function NetWorthTracker() {
       <style>{`
         .sb-scrollbar::-webkit-scrollbar { height: 5px; }
         .sb-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .sb-scrollbar::-webkit-scrollbar-thumb { background-color: #E8E5DF; border-radius: 100px; }
-        .sb-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #9A9A9A; }
+        .sb-scrollbar::-webkit-scrollbar-thumb { background-color: #bdc9c7; border-radius: 100px; }
+        .sb-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #3e4947; }
       `}</style>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <span className="font-mono text-[11px] uppercase tracking-[1.5px] text-teal mb-1 block">
+          <span className="text-[11px] uppercase tracking-[1.5px] text-primary font-bold mb-1 block">
             Dashboard
           </span>
-          <h1 className="font-display text-3xl lg:text-4xl text-text">
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-on-surface tracking-tight">
             Net Worth Tracker
           </h1>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setYear((y) => y - 1)}
-            className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-text-secondary hover:bg-surface hover:text-text transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer"
           >
-            <i className="fa-solid fa-chevron-left text-xs" />
+            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
           </button>
-          <span className="font-heading font-bold text-lg text-text min-w-[56px] text-center">
+          <span className="font-bold text-lg text-on-surface min-w-[56px] text-center">
             {year}
           </span>
           <button
             onClick={() => setYear((y) => y + 1)}
-            className="w-9 h-9 rounded-lg border border-border flex items-center justify-center text-text-secondary hover:bg-surface hover:text-text transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer"
           >
-            <i className="fa-solid fa-chevron-right text-xs" />
+            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
           </button>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-5 mb-4 text-xs font-body text-text-secondary">
+      <div className="flex items-center gap-5 mb-4 text-xs text-on-surface-variant">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-surface border border-border" />
+          <div className="w-3 h-3 rounded-sm bg-surface-container-low" />
           <span>Actual</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm border-b-2 border-amber bg-surface" />
+          <div className="w-3 h-3 rounded-sm border-b-2 border-tertiary bg-surface-container-low" />
           <span>Current month</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-bg border border-border" />
+          <div className="w-3 h-3 rounded-sm bg-surface" />
           <span>No data yet</span>
         </div>
       </div>
 
       {/* Table */}
-      <div className="border border-border rounded-2xl overflow-hidden bg-elevated">
+      <div className="rounded-2xl overflow-hidden bg-surface-container-lowest">
         <div ref={scrollContainerRef} className="overflow-x-auto sb-scrollbar">
           <table className="w-full border-collapse min-w-[900px]">
             <thead>
               <tr>
-                <th className="sticky left-0 z-20 bg-surface px-4 py-3 text-left border-b border-border min-w-[200px]">
-                  <span className="font-body text-xs font-semibold text-text-secondary uppercase tracking-wide">
+                <th className="sticky left-0 z-20 bg-surface-container-low px-4 py-3 text-left min-w-[200px]">
+                  <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
                     Category
                   </span>
                 </th>
@@ -671,20 +671,20 @@ export default function NetWorthTracker() {
                   return (
                     <th
                       key={m}
-                      className={`px-4 py-3 text-right bg-surface min-w-[100px] ${
+                      className={`px-4 py-3 text-right bg-surface-container-low min-w-[100px] ${
                         isCurrent
-                          ? "border-b-2 border-amber"
-                          : "border-b border-border"
+                          ? "border-b-2 border-tertiary"
+                          : ""
                       }`}
                     >
                       <div className="flex flex-col items-end">
-                        <span className={`font-body text-xs font-semibold ${
-                          isCurrent ? "text-amber" : "text-text-secondary"
+                        <span className={`text-xs font-semibold ${
+                          isCurrent ? "text-tertiary" : "text-on-surface-variant"
                         }`}>
                           {m}
                         </span>
                         {isCurrent && (
-                          <span className="font-mono text-[9px] uppercase tracking-[1px] text-amber/70 font-medium mt-0.5">
+                          <span className="text-[9px] uppercase tracking-[1px] text-tertiary/70 font-bold mt-0.5">
                             Now
                           </span>
                         )}
@@ -696,23 +696,23 @@ export default function NetWorthTracker() {
             </thead>
             <tbody>
               {/* Assets Section */}
-              {renderSectionHeader("Assets", "asset", "fa-arrow-trend-up")}
+              {renderSectionHeader("Assets", "asset", "trending_up")}
               {assets.map((cat) => renderCategoryRow(cat))}
               {renderAddRow("asset")}
               {renderTotalRow("Total Assets", assets)}
 
               {/* Liabilities Section */}
-              {renderSectionHeader("Liabilities", "liability", "fa-arrow-trend-down")}
+              {renderSectionHeader("Liabilities", "liability", "trending_down")}
               {liabilities.map((cat) => renderCategoryRow(cat))}
               {renderAddRow("liability")}
               {renderTotalRow("Total Liabilities", liabilities)}
 
               {/* Net Worth Row */}
               <tr>
-                <td className="sticky left-0 z-10 bg-text px-4 py-3">
+                <td className="sticky left-0 z-10 bg-gradient-to-r from-primary to-primary-container px-4 py-3 rounded-bl-2xl">
                   <div className="flex items-center gap-2">
-                    <i className="fa-solid fa-chart-line text-bg text-xs" />
-                    <span className="font-heading font-extrabold text-sm text-bg uppercase tracking-wide">
+                    <span className="material-symbols-outlined text-on-primary text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>leaderboard</span>
+                    <span className="font-extrabold text-sm text-on-primary uppercase tracking-wide">
                       Net Worth
                     </span>
                   </div>

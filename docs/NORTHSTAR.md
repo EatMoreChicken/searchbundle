@@ -239,15 +239,49 @@ Based on research across Reddit communities (r/personalfinance, r/ynab, r/financ
 
 ## Design & Styling Direction
 
-### Guiding Principles
+### The Financial Sanctuary
 
-- **Breathing room.** Generous whitespace. Nothing should feel cramped or dense.
-- **Calm palette.** Muted, warm neutrals as the base. Soft greens for positive trends, soft ambers for caution, nothing aggressive or alarming.
-- **One thing at a time.** Each screen has a single clear purpose. No dashboards packed with 15 widgets.
+The UI is a "sanctuary" — soft, layered, breathable. We reject the banking-as-a-fortress aesthetic. Surfaces feel physical, like frosted glass and floating paper. Depth comes from layered backgrounds, not drop shadows. Boundaries come from color shifts, not border lines.
+
+### Key Design Principles
+
+- **Breathing room.** Generous whitespace everywhere. Nothing cramped or dense.
+- **No-Line Rule.** Borders are prohibited for sectioning content. Use background color shifts between surface layers instead.
+- **Zero-Shadow Lift.** Stack surface tokens for clean depth without shadows.
+- **Glass & Gradient.** Hero sections and primary CTAs use subtle radial gradients. Floating elements use glassmorphism (80% opacity + 20px backdrop-blur).
+- **Organic Asymmetry.** Avoid rigid grids where possible. Editorial layouts with large numbers offset for visual interest.
 - **Progressive disclosure.** Show the summary first. Details on demand.
-- **Friendly typography.** A clean sans-serif for UI (like Inter or Plus Jakarta Sans), a slightly warmer serif for headings or the AI companion's responses (like Source Serif or Lora) to feel approachable and human.
-- **Illustrations over icons.** Where possible, use simple, warm illustrations (think Notion or Linear style) instead of icon-heavy UI.
-- **Dark mode from day one.** Not an afterthought.
+
+### Typography
+
+Single font family: **Manrope** (Google Fonts, weights 200–800). Geometric clarity, modern, approachable.
+
+- Display/Headlines: 3.5rem (56px), weight 800, letter-spacing -0.02em.
+- Body: 1rem (16px), weight 400–500.
+- Labels/Meta: 0.75rem (12px), uppercase, weight 600–700, tracking-widest.
+- Large monetary values: 3–3.75rem (48–60px), weight 900 (black), tracking tight.
+
+### Color Direction
+
+The palette is anchored in growth (Teal) and warmth (Amber). These colors serve as light sources within the UI.
+
+| Role | Color | Hex |
+|------|-------|-----|
+| Base canvas | Surface | #f7faf8 |
+| Primary containers | Surface container low | #f1f4f2 |
+| Elevated cards | Surface container lowest | #ffffff |
+| Primary text | On-surface | #181c1b |
+| Secondary text | On-surface variant | #3e4947 |
+| Primary interactive | Primary (Teal) | #006761 |
+| Gradient endpoint | Primary container | #15827b |
+| Positive/growth | Secondary (Mint) | #2c6956 |
+| Insight/curiosity | Tertiary (Amber) | #805200 |
+| Alert/negative | Error (Red) | #ba1a1a |
+| Cooper AI | Primary (Teal) | #006761 |
+
+### Iconography
+
+Material Symbols Outlined (Google) throughout. Variable font settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24. Filled variant for active states.
 
 ### Inspiration
 
@@ -256,32 +290,8 @@ Based on research across Reddit communities (r/personalfinance, r/ynab, r/financ
 - **Notion** for the warm, human feel and flexible notes/journal
 - **Apple Health** for the dashboard-with-drill-down pattern
 - **ProjectionLab** for projection charts and scenario modeling UI
-- **Copilot Money** for beautiful data visualization and graph styling
 
-### Color Direction
-
-| Role | Color | Hex |
-|------|-------|-----|
-| Background | Warm off-white | #FAFAF8 |
-| Surface | Soft cream | #F5F3EF |
-| Text primary | Near-black | #1A1A1A |
-| Text secondary | Warm gray | #6B6B6B |
-| Positive/growth | Sage green | #4A7C59 |
-| Caution | Warm amber | #C4842D |
-| Alert | Muted red | #B54A4A |
-| Accent/interactive | Deep teal | #2A7C8E |
-| AI companion | Soft indigo | #5B6ABF |
-
-### Check-In Flow UX
-
-The check-in should feel like a conversation, not a form:
-
-1. Full-screen welcome with a friendly message from Atlas
-2. One account at a time, centered on screen, with large input fields
-3. Gentle animations between steps (slide, not bounce)
-4. Progress indicator at the top (step 3 of 8)
-5. Summary at the end with a satisfying "You're all set" moment
-6. Optional: Atlas offers a brief insight or encouragement before you close
+> **Full design system reference:** See [docs/DESIGN.md](DESIGN.md) and [docs/screen.png](screen.png).
 
 ---
 

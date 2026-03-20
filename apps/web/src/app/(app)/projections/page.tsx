@@ -6,7 +6,7 @@ export default function ProjectionsPage() {
       overline="Plans"
       title="Projections"
       summary="Model future outcomes with contribution plans, assumptions, and scenario testing."
-      icon="fa-chart-line"
+      icon="query_stats"
       bullets={[
         "Target-date and target-amount planning for each account",
         "What-if sliders for growth rate and contribution changes",
