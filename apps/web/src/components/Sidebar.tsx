@@ -80,6 +80,7 @@ export default function Sidebar() {
     : "\u00A0";
 
   function isActive(href: string) {
+    if (!mounted) return false;
     return pathname === href || pathname.startsWith(href + "/");
   }
 
