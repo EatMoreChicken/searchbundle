@@ -603,6 +603,12 @@ export default function NetWorthTracker() {
 
   return (
     <div className="px-6 py-8 lg:px-12">
+      <style>{`
+        .sb-scrollbar::-webkit-scrollbar { height: 5px; }
+        .sb-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .sb-scrollbar::-webkit-scrollbar-thumb { background-color: #E8E5DF; border-radius: 100px; }
+        .sb-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #9A9A9A; }
+      `}</style>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -650,7 +656,7 @@ export default function NetWorthTracker() {
 
       {/* Table */}
       <div className="border border-border rounded-2xl overflow-hidden bg-elevated">
-        <div ref={scrollContainerRef} className="overflow-x-auto">
+        <div ref={scrollContainerRef} className="overflow-x-auto sb-scrollbar">
           <table className="w-full border-collapse min-w-[900px]">
             <thead>
               <tr>
