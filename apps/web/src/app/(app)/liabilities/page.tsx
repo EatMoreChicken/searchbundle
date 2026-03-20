@@ -154,7 +154,7 @@ export default function LiabilitiesPage() {
   const totalBalance = debtList.reduce((sum, d) => sum + d.balance, 0);
 
   return (
-    <div className="min-h-screen p-12">
+    <div className="min-h-screen p-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -210,7 +210,7 @@ export default function LiabilitiesPage() {
               <div
                 key={debt.id}
                 onClick={() => router.push(`/liabilities/${debt.id}`)}
-                className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-7 transition-transform hover:-translate-y-1"
+                className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -224,13 +224,13 @@ export default function LiabilitiesPage() {
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={(e) => openEdit(debt, e)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
                     >
                       <span className="material-symbols-outlined text-[14px]">edit</span>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteConfirm(debt.id); }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-on-surface-variant hover:bg-error-container hover:text-error"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
                     >
                       <span className="material-symbols-outlined text-[14px]">delete</span>
                     </button>
@@ -305,7 +305,7 @@ export default function LiabilitiesPage() {
               </h2>
               <button
                 onClick={closeModal}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>

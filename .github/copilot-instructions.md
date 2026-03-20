@@ -335,3 +335,62 @@ For floating navigation, modal overlays, and projection result cards:
 - Use standard 1px borders for content separation.
 - Use standard modal overlays. Use glassmorphism to keep the UI light and interconnected.
 - Use Font Awesome. Use Material Symbols Outlined.
+
+---
+
+# SearchBundle – UI Sizing System
+
+Use this as the source of truth for all sizing and spacing decisions. Follow these standards consistently when building new UI or reviewing existing code.
+
+## Border Radius
+
+| Context | Class |
+|---|---|
+| Buttons, pills, nav items, tags | `rounded-full` |
+| Cards, sections, modals, drawers | `rounded-2xl` |
+| Inputs, selects, textareas, sub-cards, list rows, dropdown items | `rounded-xl` |
+| Icon action buttons (small, in cards) | `rounded-xl` |
+| Inline badge/chip labels | `rounded-full` |
+| Dense data table cells (net worth grid only) | `rounded-lg` or smaller |
+| **Never use** `rounded-md`, `rounded-sm`, `rounded-lg` outside the dense data grid. | — |
+
+## Spacing
+
+| Context | Class |
+|---|---|
+| Page container padding | `p-6` |
+| Primary card / section padding | `p-8` |
+| Sub-card / nested card padding | `p-6` |
+| Compact metric tile | `p-5` |
+| List item row | `px-4 py-3` |
+| Between page sections | `space-y-6` / `gap-6` |
+| Between form fields | `space-y-4` |
+| Between grid columns | `gap-4` to `gap-6` |
+| Icon-to-label gap | `gap-3` |
+| Sibling buttons/chips gap | `gap-2` |
+
+## Buttons
+
+| Type | Key Classes |
+|---|---|
+| Primary CTA (pill) | `rounded-full px-6 py-2.5 text-sm font-semibold` |
+| Primary full-width (modal/form) | `rounded-full flex-1 py-3 text-sm font-semibold` |
+| Secondary ghost | `rounded-full px-4 py-2 text-sm font-medium` |
+| Icon action button (in cards) | `rounded-xl h-8 w-8 flex items-center justify-center` |
+
+## Icon Sizes
+
+| Context | Class |
+|---|---|
+| Section header decoration | `text-[20px]` |
+| Inline body icon | `text-[18px]` |
+| Small contextual icon | `text-[16px]` |
+| Tiny / label icon | `text-[14px]` |
+
+## Icon Containers
+
+| Context | Size | Radius |
+|---|---|---|
+| Section header | `w-10 h-10` | `rounded-full` |
+| Card-level type icon | `w-9 h-9` | `rounded-xl` |
+| Small action button | `w-8 h-8` | `rounded-xl` |

@@ -239,7 +239,7 @@ export default function AssetDetailPage() {
   const gain = projectedValue != null ? projectedValue - asset.balance : null;
 
   return (
-    <div className="min-h-screen p-12">
+    <div className="min-h-screen p-6">
       {/* Back + actions */}
       <div className="flex items-center justify-between">
         <button
