@@ -51,3 +51,6 @@ coverage/
 *.pem
 .vercel
 .turbo
+
+# Local database data (bind mount for Docker Compose)
+data/

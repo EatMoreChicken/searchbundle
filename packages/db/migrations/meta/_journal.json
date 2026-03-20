@@ -29,6 +29,13 @@
       "when": 1773879800000,
       "tag": "0003_liabilities_scenarios",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774028849800,
+      "tag": "0004_majestic_polaris",
+      "breakpoints": true
     }
   ]
 }

@@ -64,15 +64,10 @@ Open `.env` and fill in the two required values:
 Make sure Docker Desktop is open and running, then:
 
 ```bash
-docker run --name searchbundle-db \
-  -e POSTGRES_USER=user \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=searchbundle \
-  -p 5432:5432 \
-  -d postgres:17-bookworm
+docker compose up -d
 ```
 
-This creates and starts a PostgreSQL container. You only need to run this **once** — the container persists across reboots (see Daily Dev Workflow below for how to restart it).
+This starts a PostgreSQL container with data stored in `./data/postgres/` (gitignored). You only need to run this **once** — the container persists across reboots (see Daily Dev Workflow below for how to restart it).
 
 #### 4. Run database migrations
 
@@ -108,7 +103,7 @@ Open Docker Desktop from the Start menu and wait for it to finish loading.
 #### 2. Start the database container
 
 ```bash
-docker start searchbundle-db
+docker compose up -d
 ```
 
 #### 3. Start the dev servers
@@ -125,7 +120,7 @@ That's it — http://localhost:3000 is your app.
 # Stop the dev servers: Ctrl+C in the terminal running npm run dev
 
 # Stop the database container (optional — safe to leave running)
-docker stop searchbundle-db
+docker compose stop
 ```
 
 ---
