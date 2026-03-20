@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, numeric, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, timestamp, boolean, integer, pgEnum, unique } from "drizzle-orm/pg-core";
 
 // --- Enums ---
 
@@ -99,3 +99,29 @@ export const balanceHistory = pgTable("balance_history", {
   balance: numeric("balance", { precision: 14, scale: 2 }).notNull(),
   recordedAt: timestamp("recorded_at").defaultNow().notNull(),
 });
+
+// --- Net Worth Tracker ---
+
+export const categoryTypeEnum = pgEnum("category_type", ["asset", "liability"]);
+
+export const netWorthCategories = pgTable("net_worth_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: categoryTypeEnum("type").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const netWorthEntries = pgTable("net_worth_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  categoryId: uuid("category_id").notNull().references(() => netWorthCategories.id, { onDelete: "cascade" }),
+  year: integer("year").notNull(),
+  month: integer("month").notNull(),
+  value: numeric("value", { precision: 15, scale: 2 }).notNull().default("0"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  unique("net_worth_entries_category_year_month").on(table.categoryId, table.year, table.month),
+]);

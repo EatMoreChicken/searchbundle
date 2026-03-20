@@ -30,7 +30,7 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 
 ## Key Features
 
-- **Dashboard ("Your Position")** — Net worth with trend line, assets panel, liabilities panel, on-track indicators, next check-in reminder.
+- **Dashboard ("Net Worth Tracker")** — Spreadsheet-style monthly grid showing assets, liabilities, totals, and net worth. Users add categories and manually enter monthly balances. Current month highlighted, year selector, inline cell editing.
 - **Assets** — Balance cards with history, contribution plans, growth assumptions, projection charts, on-track status, and notes. Types: investment, savings, HSA, property, other.
 - **Liabilities** — Balance cards with loan terms, payoff projections, amortization view, and interest saved calculators.
 - **Check-In Flow** — Step-by-step guided update (one account at a time), change detection, goal review, summary, and AI debrief.
@@ -119,6 +119,22 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - Asset types: `investment`, `savings`, `hsa`, `property`, `other`
 - Investment assets have extra projection fields: `contributionAmount`, `contributionFrequency`, `returnRate`, `returnRateVariance`, `includeInflation`
 - `recharts` is installed in `apps/web` for investment projection charts (`InvestmentProjectionChart` component)
+
+### Net Worth Tracker (Dashboard)
+- The dashboard (`/dashboard`) is a spreadsheet-style **Net Worth Tracker** showing a monthly grid of assets and liabilities with calculated totals
+- Two new DB tables: `net_worth_categories` (rows: asset or liability names) and `net_worth_entries` (monthly balance values per category)
+- DB enum `category_type` with values `asset` | `liability`
+- `net_worth_entries` has a unique constraint on `(category_id, year, month)` — one value per category per month
+- API routes under `/api/dashboard`:
+  - `GET /api/dashboard?year=YYYY` — returns categories + entries for the year
+  - `POST /api/dashboard/categories` — create a category (name, type)
+  - `PUT /api/dashboard/categories/[id]` — rename a category
+  - `DELETE /api/dashboard/categories/[id]` — delete category + all its entries (cascade)
+  - `PUT /api/dashboard/entries` — upsert a monthly value (categoryId, year, month, value)
+- Main UI component: `NetWorthTracker` in `apps/web/src/components/NetWorthTracker.tsx`
+- Current month is highlighted with amber styling; past months show as "actual"; future months show dashes
+- Users can add/remove categories, inline-edit cell values, switch years, and see auto-calculated totals & net worth
+- The net worth categories are **standalone** — not yet linked to the existing `accounts`/`debts` tables. This will be connected in a future iteration.
 
 ---
 
