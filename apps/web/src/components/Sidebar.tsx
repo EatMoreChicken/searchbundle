@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -11,6 +11,12 @@ type NavItem = {
   label: string;
 };
 
+interface HouseholdMembership {
+  householdId: string;
+  householdName: string;
+  role: string;
+}
+
 const navItems: NavItem[] = [
   { href: "/dashboard", icon: "dashboard", label: "Dashboard" },
   { href: "/assets", icon: "account_balance_wallet", label: "Assets" },
@@ -20,21 +26,54 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, update: updateSession } = useSession();
   const [mounted, setMounted] = useState(false);
-  const [householdName, setHouseholdName] = useState<string | null>(null);
+  const [households, setHouseholds] = useState<HouseholdMembership[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
   const activeHouseholdId = (session as { activeHouseholdId?: string } | null)?.activeHouseholdId;
 
   useEffect(() => {
-    if (!activeHouseholdId) return;
-    fetch(`/api/households/${activeHouseholdId}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.name) setHouseholdName(d.name); })
+    if (!session?.user) return;
+    fetch("/api/households")
+      .then((r) => r.ok ? r.json() : [])
+      .then((list: HouseholdMembership[]) => setHouseholds(list))
       .catch(() => {});
-  }, [activeHouseholdId]);
+  }, [session?.user]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen]);
+
+  async function handleSwitch(householdId: string) {
+    if (householdId === activeHouseholdId || switching) return;
+    setSwitching(true);
+    setDropdownOpen(false);
+    try {
+      await fetch("/api/households/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ householdId }),
+      });
+      await updateSession({ activeHouseholdId: householdId });
+      window.location.reload();
+    } catch {
+      setSwitching(false);
+    }
+  }
+
+  const activeHousehold = households.find((h) => h.householdId === activeHouseholdId);
+  const activeHouseholdName = activeHousehold?.householdName ?? null;
 
   const displayName = mounted
     ? (session?.user?.name ?? session?.user?.email ?? "My Account")
@@ -49,12 +88,54 @@ export default function Sidebar() {
       {/* Welcome */}
       <div className="mb-12 px-4">
         <h2 className="text-lg font-bold text-primary">{displayName}</h2>
-        {householdName && (
-          <p className="text-xs font-medium text-on-surface-variant/80 flex items-center gap-1 mt-0.5">
-            <span className="material-symbols-outlined text-[14px]">group</span>
-            {householdName}
-          </p>
+
+        {/* Household switcher */}
+        {mounted && activeHouseholdName && (
+          <div className="relative mt-1" ref={dropdownRef}>
+            <button
+              onClick={() => households.length > 1 && setDropdownOpen((o) => !o)}
+              className={[
+                "flex items-center gap-1 text-xs font-medium text-on-surface-variant/80 transition-all",
+                households.length > 1 ? "hover:text-on-surface cursor-pointer" : "cursor-default",
+              ].join(" ")}
+            >
+              <span className="material-symbols-outlined text-[14px]">group</span>
+              <span>{switching ? "Switching…" : activeHouseholdName}</span>
+              {households.length > 1 && (
+                <span className={`material-symbols-outlined text-[14px] transition-transform ${dropdownOpen ? "rotate-180" : ""}`}>
+                  expand_more
+                </span>
+              )}
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute left-0 top-full mt-1 z-50 min-w-44 bg-surface-container-lowest rounded-2xl shadow-lg py-1.5 border border-outline-variant/20">
+                {households.map((h) => (
+                  <button
+                    key={h.householdId}
+                    onClick={() => handleSwitch(h.householdId)}
+                    className={[
+                      "w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition-colors",
+                      h.householdId === activeHouseholdId
+                        ? "text-primary font-semibold"
+                        : "text-on-surface hover:bg-surface-container-low font-medium",
+                    ].join(" ")}
+                  >
+                    {h.householdId === activeHouseholdId && (
+                      <span className="material-symbols-outlined text-[14px] text-primary">check</span>
+                    )}
+                    {h.householdId !== activeHouseholdId && (
+                      <span className="w-[14px]" />
+                    )}
+                    <span className="flex-1">{h.householdName}</span>
+                    <span className="text-[10px] text-on-surface-variant opacity-60">{h.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
+
         <p className="text-sm text-on-surface-variant mt-1">Your sanctuary is ready</p>
       </div>
 
