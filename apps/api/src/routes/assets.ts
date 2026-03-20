@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { getDb, accounts } from "@searchbundle/db";
 import { eq, and } from "drizzle-orm";
 
-const FIXTURE_USER_ID = "00000000-0000-0000-0000-000000000001";
+const FIXTURE_HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000010";
 
 type AssetType = "investment" | "savings" | "hsa" | "property" | "other";
 type ContributionFrequency = "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly";
@@ -35,7 +35,7 @@ export default async function assetRoutes(app: FastifyInstance) {
     const rows = await getDb()
       .select()
       .from(accounts)
-      .where(eq(accounts.userId, FIXTURE_USER_ID));
+      .where(eq(accounts.householdId, FIXTURE_HOUSEHOLD_ID));
     return reply.send(rows.map(parseAsset));
   });
 
@@ -58,7 +58,7 @@ export default async function assetRoutes(app: FastifyInstance) {
         returnRate: returnRate ?? null,
         returnRateVariance: returnRateVariance ?? null,
         includeInflation,
-        userId: FIXTURE_USER_ID,
+        householdId: FIXTURE_HOUSEHOLD_ID,
       })
       .returning();
 
@@ -70,7 +70,7 @@ export default async function assetRoutes(app: FastifyInstance) {
     const [row] = await getDb()
       .select()
       .from(accounts)
-      .where(and(eq(accounts.id, id), eq(accounts.userId, FIXTURE_USER_ID)));
+      .where(and(eq(accounts.id, id), eq(accounts.householdId, FIXTURE_HOUSEHOLD_ID)));
     if (!row) return reply.status(404).send({ message: "Asset not found" });
     return reply.send(parseAsset(row));
   });
@@ -99,7 +99,7 @@ export default async function assetRoutes(app: FastifyInstance) {
       const [row] = await getDb()
         .update(accounts)
         .set(updates)
-        .where(and(eq(accounts.id, id), eq(accounts.userId, FIXTURE_USER_ID)))
+        .where(and(eq(accounts.id, id), eq(accounts.householdId, FIXTURE_HOUSEHOLD_ID)))
         .returning();
 
       if (!row) return reply.status(404).send({ message: "Asset not found" });
@@ -111,7 +111,7 @@ export default async function assetRoutes(app: FastifyInstance) {
     const { id } = request.params;
     await getDb()
       .delete(accounts)
-      .where(and(eq(accounts.id, id), eq(accounts.userId, FIXTURE_USER_ID)));
+      .where(and(eq(accounts.id, id), eq(accounts.householdId, FIXTURE_HOUSEHOLD_ID)));
     return reply.status(204).send();
   });
 }

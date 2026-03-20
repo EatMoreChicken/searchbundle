@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, netWorthCategories, netWorthEntries } from "@searchbundle/db";
 import { eq, and } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { searchParams } = new URL(request.url);
   const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()), 10);
@@ -21,7 +19,7 @@ export async function GET(request: Request) {
   const categories = await db
     .select()
     .from(netWorthCategories)
-    .where(eq(netWorthCategories.userId, session.user.id))
+    .where(eq(netWorthCategories.householdId, session.householdId))
     .orderBy(netWorthCategories.type, netWorthCategories.sortOrder);
 
   const categoryIds = categories.map((c) => c.id);

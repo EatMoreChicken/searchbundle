@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, debts } from "@searchbundle/db";
 import { eq } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type DebtRow = typeof debts.$inferSelect;
 
@@ -18,24 +18,20 @@ function parseDebt(row: DebtRow) {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const rows = await getDb()
     .select()
     .from(debts)
-    .where(eq(debts.userId, session.user.id));
+    .where(eq(debts.householdId, session.householdId));
 
   return NextResponse.json(rows.map(parseDebt));
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const body = await request.json().catch(() => null);
   if (!body) {
@@ -44,7 +40,7 @@ export async function POST(request: Request) {
 
   const {
     name, type, balance, originalBalance, interestRate, minimumPayment,
-    escrowAmount, remainingMonths, notes,
+    escrowAmount, remainingMonths, notes, ownerId,
   } = body as {
     name?: string;
     type?: string;
@@ -55,6 +51,7 @@ export async function POST(request: Request) {
     escrowAmount?: unknown;
     remainingMonths?: unknown;
     notes?: string;
+    ownerId?: string | null;
   };
 
   if (!name || !type || balance === undefined || originalBalance === undefined || interestRate === undefined || minimumPayment === undefined) {
@@ -76,7 +73,8 @@ export async function POST(request: Request) {
       escrowAmount: escrowAmount != null ? String(escrowAmount) : null,
       remainingMonths: remainingMonths != null ? String(remainingMonths) : null,
       notes: notes || null,
-      userId: session.user.id,
+      householdId: session.householdId,
+      ownerId: ownerId ?? null,
     })
     .returning();
 

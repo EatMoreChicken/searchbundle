@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
   await getDb()
     .update(users)
-    .set({ passwordHash: newHash })
+    .set({ passwordHash: newHash, mustResetPassword: false })
     .where(eq(users.id, session.user.id));
 
   return NextResponse.json({ message: "Password updated successfully" });

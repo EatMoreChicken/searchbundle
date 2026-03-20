@@ -22,8 +22,19 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
+  const [householdName, setHouseholdName] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  const activeHouseholdId = (session as { activeHouseholdId?: string } | null)?.activeHouseholdId;
+
+  useEffect(() => {
+    if (!activeHouseholdId) return;
+    fetch(`/api/households/${activeHouseholdId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.name) setHouseholdName(d.name); })
+      .catch(() => {});
+  }, [activeHouseholdId]);
 
   const displayName = mounted
     ? (session?.user?.name ?? session?.user?.email ?? "My Account")
@@ -38,7 +49,13 @@ export default function Sidebar() {
       {/* Welcome */}
       <div className="mb-12 px-4">
         <h2 className="text-lg font-bold text-primary">{displayName}</h2>
-        <p className="text-sm text-on-surface-variant">Your sanctuary is ready</p>
+        {householdName && (
+          <p className="text-xs font-medium text-on-surface-variant/80 flex items-center gap-1 mt-0.5">
+            <span className="material-symbols-outlined text-[14px]">group</span>
+            {householdName}
+          </p>
+        )}
+        <p className="text-sm text-on-surface-variant mt-1">Your sanctuary is ready</p>
       </div>
 
       {/* Nav */}

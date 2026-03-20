@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, accounts } from "@searchbundle/db";
 import { eq } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type AccountRow = typeof accounts.$inferSelect;
 
@@ -10,36 +10,33 @@ function parseAccount(row: AccountRow) {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const rows = await getDb()
     .select()
     .from(accounts)
-    .where(eq(accounts.userId, session.user.id));
+    .where(eq(accounts.householdId, session.householdId));
 
   return NextResponse.json(rows.map(parseAccount));
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const body = await request.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
   }
 
-  const { name, type, balance, currency = "USD", notes } = body as {
+  const { name, type, balance, currency = "USD", notes, ownerId } = body as {
     name?: string;
     type?: string;
     balance?: unknown;
     currency?: string;
     notes?: string;
+    ownerId?: string | null;
   };
 
   if (!name || !type || balance === undefined) {
@@ -57,7 +54,8 @@ export async function POST(request: Request) {
       balance: String(balance),
       currency,
       notes,
-      userId: session.user.id,
+      householdId: session.householdId,
+      ownerId: ownerId ?? null,
     })
     .returning();
 

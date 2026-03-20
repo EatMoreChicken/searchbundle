@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, netWorthCategories } from "@searchbundle/db";
 import { eq, and } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
 
@@ -32,7 +30,7 @@ export async function PUT(
     .where(
       and(
         eq(netWorthCategories.id, id),
-        eq(netWorthCategories.userId, session.user.id),
+        eq(netWorthCategories.householdId, session.householdId),
       ),
     );
 
@@ -53,10 +51,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
   const db = getDb();
@@ -67,7 +63,7 @@ export async function DELETE(
     .where(
       and(
         eq(netWorthCategories.id, id),
-        eq(netWorthCategories.userId, session.user.id),
+        eq(netWorthCategories.householdId, session.householdId),
       ),
     );
 

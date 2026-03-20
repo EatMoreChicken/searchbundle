@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, scenarios, accounts } from "@searchbundle/db";
 import { eq, and } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type ScenarioRow = typeof scenarios.$inferSelect;
 
@@ -19,17 +19,15 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
 
   const [account] = await getDb()
     .select()
     .from(accounts)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, session.user.id)));
+    .where(and(eq(accounts.id, id), eq(accounts.householdId, session.householdId)));
 
   if (!account) {
     return NextResponse.json({ message: "Asset not found" }, { status: 404 });
@@ -38,7 +36,7 @@ export async function GET(
   const rows = await getDb()
     .select()
     .from(scenarios)
-    .where(and(eq(scenarios.accountId, id), eq(scenarios.userId, session.user.id)));
+    .where(and(eq(scenarios.accountId, id), eq(scenarios.householdId, session.householdId)));
 
   return NextResponse.json(rows.map(parseScenario));
 }
@@ -47,17 +45,15 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
 
   const [account] = await getDb()
     .select()
     .from(accounts)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, session.user.id)));
+    .where(and(eq(accounts.id, id), eq(accounts.householdId, session.householdId)));
 
   if (!account) {
     return NextResponse.json({ message: "Asset not found" }, { status: 404 });
@@ -83,7 +79,7 @@ export async function POST(
   const [row] = await getDb()
     .insert(scenarios)
     .values({
-      userId: session.user.id,
+      householdId: session.householdId,
       accountId: id,
       name,
       extraMonthlyPayment: extraMonthlyPayment != null ? String(extraMonthlyPayment) : "0",

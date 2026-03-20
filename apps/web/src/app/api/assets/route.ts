@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, accounts } from "@searchbundle/db";
 import { eq } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type AccountRow = typeof accounts.$inferSelect;
 
@@ -16,24 +16,20 @@ function parseAsset(row: AccountRow) {
 }
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const rows = await getDb()
     .select()
     .from(accounts)
-    .where(eq(accounts.userId, session.user.id));
+    .where(eq(accounts.householdId, session.householdId));
 
   return NextResponse.json(rows.map(parseAsset));
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const body = await request.json().catch(() => null);
   if (!body) {
@@ -41,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const {
-    name, type, balance, currency = "USD", notes,
+    name, type, balance, currency = "USD", notes, ownerId,
     contributionAmount, contributionFrequency, returnRate, returnRateVariance, includeInflation,
   } = body as {
     name?: string;
@@ -49,6 +45,7 @@ export async function POST(request: Request) {
     balance?: unknown;
     currency?: string;
     notes?: string;
+    ownerId?: string | null;
     contributionAmount?: unknown;
     contributionFrequency?: string;
     returnRate?: unknown;
@@ -76,7 +73,8 @@ export async function POST(request: Request) {
       returnRate: returnRate != null ? String(returnRate) : null,
       returnRateVariance: returnRateVariance != null ? String(returnRateVariance) : null,
       includeInflation: includeInflation ?? false,
-      userId: session.user.id,
+      householdId: session.householdId,
+      ownerId: ownerId ?? null,
     })
     .returning();
 
