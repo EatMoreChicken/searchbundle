@@ -110,7 +110,7 @@ export default function Sidebar() {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 z-50 min-w-44 bg-surface-container-lowest rounded-2xl shadow-lg p-1.5 border border-outline-variant/20">
+              <div className="absolute left-0 top-full mt-1 z-50 min-w-44 bg-surface-container-lowest rounded-2xl shadow-lg p-1.5 border border-outline-variant/20 flex flex-col gap-0.5">
                 {households.map((h) => (
                   <button
                     key={h.householdId}
