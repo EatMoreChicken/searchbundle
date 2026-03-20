@@ -88,7 +88,10 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
 
-  const activeHouseholdId = (session as { activeHouseholdId?: string } | null)?.activeHouseholdId;
+  const sessionHouseholdId = (session as { activeHouseholdId?: string } | null)?.activeHouseholdId;
+  const [resolvedHouseholdId, setResolvedHouseholdId] = useState<string | null>(null);
+
+  const activeHouseholdId = sessionHouseholdId ?? resolvedHouseholdId;
 
   const loadHouseholdData = useCallback(async (hId: string) => {
     try {
@@ -116,9 +119,13 @@ export default function SettingsPage() {
         retirementAge: user.retirementAge != null ? String(user.retirementAge) : "",
       });
       setHouseholds(hList);
+      if (!sessionHouseholdId) {
+        const fallbackId = user.activeHouseholdId ?? hList[0]?.householdId ?? null;
+        if (fallbackId) setResolvedHouseholdId(fallbackId);
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [session]);
+  }, [session, sessionHouseholdId]);
 
   useEffect(() => {
     if (activeHouseholdId) {
