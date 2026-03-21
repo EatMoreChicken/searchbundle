@@ -5,6 +5,7 @@ config({ path: resolve(__dirname, "../../../.env") });
 
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { eq, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { users, households, householdMembers, accounts, debts, netWorthCategories, netWorthEntries } from "./schema";
 
@@ -47,6 +48,12 @@ async function seed() {
 
   const client = postgres(connectionString);
   const db = drizzle(client);
+
+  // Clean up existing seeded data so re-runs don't leave duplicates.
+  // net_worth_entries cascade-delete with categories; accounts/debts cascade with household.
+  await db.delete(accounts).where(inArray(accounts.householdId, [HOUSEHOLD_ID, SECOND_HOUSEHOLD_ID]));
+  await db.delete(debts).where(inArray(debts.householdId, [HOUSEHOLD_ID, SECOND_HOUSEHOLD_ID]));
+  await db.delete(netWorthCategories).where(inArray(netWorthCategories.householdId, [HOUSEHOLD_ID, SECOND_HOUSEHOLD_ID]));
 
   const passwordHash = await bcrypt.hash("password123", 12);
 
