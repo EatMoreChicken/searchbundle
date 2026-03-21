@@ -162,3 +162,29 @@ This is idempotent — safe to run multiple times. Use it to reset test data to 
 
 ## Deployment Steps
 
+---
+
+## Feature Notes
+
+### Net Worth Tracker — Cell Math Expressions
+
+When editing a cell in the Net Worth Tracker (Dashboard), you can type a simple math expression instead of an absolute value:
+
+| Input | Meaning |
+|---|---|
+| `+100` | Add 100 to the previous month's value |
+| `-50` | Subtract 50 from the previous month's value |
+| `*1.05` | Multiply the previous month's value by 1.05 (5% growth) |
+| `/2` | Divide the previous month's value by 2 |
+
+The app finds the **nearest cell to the left** in the same row that contains a value, applies the operation, and saves the result. The formula itself is **never stored** — only the calculated number.
+
+The reference cell is highlighted in amber while you type so you can confirm which month's value is being used as the base.
+
+#### Planned enhancements (future phases)
+
+- Allow the user to arrow-key or click a different reference cell after typing an operator.
+- Support chained operations (e.g. `+100 +50`).
+- Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).
+- Cross-row references (e.g. reference a value in a different category).
+- Optionally display the original expression as a sub-label inside the saved cell.

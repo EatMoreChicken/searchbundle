@@ -88,6 +88,15 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
 
+  const [savedProfile, setSavedProfile] = useState({ name: "", email: "" });
+  const [savedPersonal, setSavedPersonal] = useState({
+    dateOfBirth: "",
+    timezone: "America/Chicago",
+    preferredCurrency: "USD",
+    retirementAge: "",
+  });
+  const [savedHousehold, setSavedHousehold] = useState({ name: "", financialGoalNote: "" });
+
   const sessionHouseholdId = (session as { activeHouseholdId?: string } | null)?.activeHouseholdId;
   const [resolvedHouseholdId, setResolvedHouseholdId] = useState<string | null>(null);
 
@@ -101,6 +110,7 @@ export default function SettingsPage() {
       ]);
       setHouseholdName(hData.name);
       setFinancialGoalNote(hData.financialGoalNote ?? "");
+      setSavedHousehold({ name: hData.name, financialGoalNote: hData.financialGoalNote ?? "" });
       setMembers(mData);
     } catch { /* ignore */ }
   }, []);
@@ -112,12 +122,15 @@ export default function SettingsPage() {
       apiClient.get<HouseholdMembership[]>("/api/households"),
     ]).then(([user, hList]) => {
       setProfile({ name: user.name ?? "", email: user.email });
-      setPersonal({
+      setSavedProfile({ name: user.name ?? "", email: user.email });
+      const loadedPersonal = {
         dateOfBirth: user.dateOfBirth ?? "",
         timezone: user.timezone ?? "America/Chicago",
         preferredCurrency: user.preferredCurrency ?? "USD",
         retirementAge: user.retirementAge != null ? String(user.retirementAge) : "",
-      });
+      };
+      setPersonal(loadedPersonal);
+      setSavedPersonal(loadedPersonal);
       setHouseholds(hList);
       if (!sessionHouseholdId) {
         const fallbackId = user.activeHouseholdId ?? hList[0]?.householdId ?? null;
@@ -142,6 +155,7 @@ export default function SettingsPage() {
         name: profile.name,
         email: profile.email,
       });
+      setSavedProfile({ name: profile.name, email: profile.email });
       setProfileStatus("success");
       setTimeout(() => setProfileStatus("idle"), 3000);
     } catch (err: unknown) {
@@ -162,6 +176,7 @@ export default function SettingsPage() {
         preferredCurrency: personal.preferredCurrency,
         retirementAge: personal.retirementAge ? Number(personal.retirementAge) : null,
       });
+      setSavedPersonal({ ...personal });
       setPersonalStatus("success");
       setTimeout(() => setPersonalStatus("idle"), 3000);
     } catch (err: unknown) {
@@ -212,6 +227,7 @@ export default function SettingsPage() {
         name: householdName,
         financialGoalNote: financialGoalNote || null,
       });
+      setSavedHousehold({ name: householdName, financialGoalNote });
       setHouseholdStatus("success");
       setTimeout(() => setHouseholdStatus("idle"), 3000);
     } catch (err: unknown) {
@@ -260,6 +276,11 @@ export default function SettingsPage() {
       window.location.reload();
     } catch { /* ignore */ }
   }
+
+  const isProfileDirty = profile.name !== savedProfile.name || profile.email !== savedProfile.email;
+  const isPersonalDirty = JSON.stringify(personal) !== JSON.stringify(savedPersonal);
+  const isHouseholdDirty = householdName !== savedHousehold.name || financialGoalNote !== savedHousehold.financialGoalNote;
+  const isPasswordDirty = Boolean(password.currentPassword && password.newPassword && password.confirmPassword);
 
   if (loading) {
     return (
@@ -317,8 +338,12 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
-              disabled={profileStatus === "saving"}
-              className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
+              disabled={profileStatus === "saving" || !isProfileDirty}
+              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
+                isProfileDirty
+                  ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
+                  : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+              }`}
             >
               {profileStatus === "saving" ? "Saving…" : "Save changes"}
             </button>
@@ -403,8 +428,12 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
-              disabled={personalStatus === "saving"}
-              className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
+              disabled={personalStatus === "saving" || !isPersonalDirty}
+              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
+                isPersonalDirty
+                  ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
+                  : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+              }`}
             >
               {personalStatus === "saving" ? "Saving…" : "Save changes"}
             </button>
@@ -482,8 +511,12 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="submit"
-                disabled={householdStatus === "saving"}
-                className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
+                disabled={householdStatus === "saving" || !isHouseholdDirty}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
+                  isHouseholdDirty
+                    ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
+                    : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                }`}
               >
                 {householdStatus === "saving" ? "Saving…" : "Save changes"}
               </button>
@@ -551,7 +584,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium text-on-tertiary-fixed-variant">
                     Account created! Share this temporary password:
                   </p>
-                  <p className="mt-1 font-mono text-sm font-bold text-on-tertiary-fixed-variant select-all">
+                  <p className="mt-1 tracking-wider text-sm font-bold text-on-tertiary-fixed-variant select-all">
                     {inviteResult.tempPassword}
                   </p>
                   <p className="mt-1 text-xs text-on-tertiary-fixed-variant/70">
@@ -566,7 +599,12 @@ export default function SettingsPage() {
 
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-secondary-container bg-secondary-container hover:scale-105 active:scale-95 transition-all"
+                disabled={!inviteEmail}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
+                  inviteEmail
+                    ? "text-on-secondary-container bg-secondary-container hover:scale-105 active:scale-95"
+                    : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                }`}
               >
                 Send invite
               </button>
@@ -630,8 +668,12 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
-              disabled={passwordStatus === "saving"}
-              className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
+              disabled={passwordStatus === "saving" || !isPasswordDirty}
+              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
+                isPasswordDirty
+                  ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
+                  : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+              }`}
             >
               {passwordStatus === "saving" ? "Updating…" : "Update password"}
             </button>
