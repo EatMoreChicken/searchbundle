@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
 import type { User, RetirementTarget, TargetMode } from "@/types";
+import OnboardingWizard from "@/components/OnboardingWizard";
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) {
@@ -42,6 +43,8 @@ function calculateMonthlySavings(target: number, annualReturn: number, years: nu
   return (target * r) / (Math.pow(1 + r, n) - 1);
 }
 
+const INFLATION_RATE = 0.03;
+
 const INPUT_CLASS =
   "w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all";
 
@@ -61,8 +64,6 @@ function FieldHint({ children }: { children: React.ReactNode }) {
     <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">{children}</p>
   );
 }
-
-const INFLATION_RATE = 0.03;
 
 function PrefixedInput({
   prefix,
@@ -131,13 +132,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
 
-  // Onboarding form
-  const [obDob, setObDob] = useState("");
-  const [obAge, setObAge] = useState("");
-  const [obSaving, setObSaving] = useState(false);
-  const [obDone, setObDone] = useState(false);
-
-  // Target configurator form
+  // Target configurator form (for edit mode)
   const [mode, setMode] = useState<TargetMode>("income_replacement");
   const [fixedAmount, setFixedAmount] = useState("");
   const [targetAge, setTargetAge] = useState("");
@@ -164,7 +159,6 @@ export default function DashboardPage() {
         setAnnualIncome(t.annualIncome != null ? String(t.annualIncome) : "");
         setWithdrawalRate(String((t.withdrawalRate ?? 0.04) * 100));
         setExpectedReturn(String((t.expectedReturn ?? 0.07) * 100));
-
       }
     } catch {
       /* ignore */
@@ -177,33 +171,25 @@ export default function DashboardPage() {
     if (session?.user) loadData();
   }, [session, loadData]);
 
-  const needsOnboarding = user && !obDone && (!user.dateOfBirth || user.retirementAge == null);
+  // Show the wizard when the user hasn't completed onboarding (no DOB or retirement age) AND has no target
+  const needsOnboarding = user && (!user.dateOfBirth || user.retirementAge == null) && !target;
 
-  async function saveOnboarding(e: React.FormEvent) {
-    e.preventDefault();
-    if (!obDob || !obAge) return;
-    setObSaving(true);
-    try {
-      await apiClient.patch("/api/users/me", {
-        dateOfBirth: obDob,
-        retirementAge: Number(obAge),
-      });
-      setUser((u) => u ? { ...u, dateOfBirth: obDob, retirementAge: Number(obAge) } : u);
-      setObDone(true);
-      if (!targetAge) setTargetAge(obAge);
-    } catch {
-      /* ignore */
-    } finally {
-      setObSaving(false);
-    }
+  function handleWizardComplete(updatedUser: User, savedTarget: RetirementTarget) {
+    setUser(updatedUser);
+    setTarget(savedTarget);
+    setTargetAge(String(savedTarget.targetAge));
+    setMode(savedTarget.mode);
+    setFixedAmount(savedTarget.mode === "fixed" ? String(savedTarget.targetAmount) : "");
+    setAnnualIncome(savedTarget.annualIncome != null ? String(savedTarget.annualIncome) : "");
+    setWithdrawalRate(String((savedTarget.withdrawalRate ?? 0.04) * 100));
+    setExpectedReturn(String((savedTarget.expectedReturn ?? 0.07) * 100));
   }
 
-  // Live calculations
+  // Live calculations (for edit mode)
   const currentAge = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
   const tAge = Number(targetAge) || 0;
   const yearsRemaining = currentAge != null ? tAge - currentAge : null;
 
-  // If the user entered income in today's dollars, convert it to future dollars before calculating the portfolio size
   const annualIncomeInFutureDollars = useMemo(() => {
     const income = Number(annualIncome) || 0;
     if (incomeValueType === "future" || !yearsRemaining || yearsRemaining <= 0) return income;
@@ -221,8 +207,6 @@ export default function DashboardPage() {
   }, [mode, fixedAmount, annualIncomeInFutureDollars, withdrawalRate]);
 
   const inflationAdjustedTarget = useMemo(() => {
-    // In income_replacement mode the portfolio target is already in future dollars (income was converted above)
-    // In fixed mode we still inflate the entered amount forward
     if (mode === "income_replacement") return portfolioTarget;
     if (!yearsRemaining || yearsRemaining <= 0) return portfolioTarget;
     return portfolioTarget * Math.pow(1 + INFLATION_RATE, yearsRemaining);
@@ -288,7 +272,6 @@ export default function DashboardPage() {
     setEditing(true);
   }
 
-  // Summary calculations for saved target
   const savedSummary = useMemo(() => {
     if (!target || !currentAge) return null;
     const years = target.targetAge - currentAge;
@@ -302,7 +285,7 @@ export default function DashboardPage() {
     return { years, monthly, annual: monthly * 12, inflAdjTarget };
   }, [target, currentAge]);
 
-  const showConfigurator = !target || editing;
+  const showConfigurator = editing;
   const firstName = user?.name?.split(" ")[0] ?? "there";
 
   if (loading) {
@@ -311,6 +294,11 @@ export default function DashboardPage() {
         <span className="material-symbols-outlined text-primary animate-spin text-[32px]">progress_activity</span>
       </div>
     );
+  }
+
+  // Show the onboarding wizard for new users
+  if (needsOnboarding) {
+    return <OnboardingWizard user={user} onComplete={handleWizardComplete} />;
   }
 
   return (
@@ -322,58 +310,6 @@ export default function DashboardPage() {
           Hey {firstName}
         </h1>
       </div>
-
-      {/* Onboarding card */}
-      {needsOnboarding && (
-        <section className="bg-tertiary-fixed rounded-2xl p-8 space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/40 flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[20px]">cake</span>
-            </div>
-            <div>
-              <h2 className="text-title-md font-bold text-on-tertiary-fixed-variant">Two quick things before we start</h2>
-              <p className="text-sm text-on-tertiary-fixed-variant/80">We use these to calculate how many years you have to reach your goal</p>
-            </div>
-          </div>
-
-          <form onSubmit={saveOnboarding} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-on-tertiary-fixed-variant mb-2">Your birthday</label>
-                <input
-                  type="date"
-                  value={obDob}
-                  onChange={(e) => setObDob(e.target.value)}
-                  required
-                  className="w-full bg-white/60 rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-tertiary transition-all"
-                />
-                <p className="text-xs text-on-tertiary-fixed-variant/70 mt-1.5">Used to calculate years until your goal. Never shared.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-on-tertiary-fixed-variant mb-2">Age you&apos;d like to retire</label>
-                <input
-                  type="number"
-                  min={20}
-                  max={100}
-                  value={obAge}
-                  onChange={(e) => setObAge(e.target.value)}
-                  placeholder="e.g. 65"
-                  required
-                  className="w-full bg-white/60 rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-tertiary transition-all"
-                />
-                <p className="text-xs text-on-tertiary-fixed-variant/70 mt-1.5">You can change this anytime in Settings</p>
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={obSaving || !obDob || !obAge}
-              className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-on-tertiary-fixed-variant hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
-            >
-              {obSaving ? "Saving…" : "Let's build my plan →"}
-            </button>
-          </form>
-        </section>
-      )}
 
       {/* Financial Independence Target */}
       <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
@@ -397,7 +333,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Configurator */}
+        {/* Configurator (edit mode only, not shown for new users since they use the wizard) */}
         {showConfigurator && (
           <form onSubmit={saveTarget} className="space-y-6">
 
@@ -654,17 +590,15 @@ export default function DashboardPage() {
                 disabled={targetSaving || portfolioTarget <= 0}
                 className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
               >
-                {targetSaving ? "Saving…" : target ? "Update Target" : "Save my target"}
+                {targetSaving ? "Saving…" : "Update Target"}
               </button>
-              {editing && (
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-all"
-                >
-                  Cancel
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-all"
+              >
+                Cancel
+              </button>
             </div>
           </form>
         )}

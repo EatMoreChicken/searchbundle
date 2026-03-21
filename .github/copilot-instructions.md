@@ -208,13 +208,19 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 
 ### Dashboard (Financial Independence Target)
 - The dashboard (`/dashboard`) is the primary landing page after sign-in: greeting, onboarding, and financial goal setup
-- **Onboarding card**: Shown only when user is missing `dateOfBirth` or `retirementAge`. Amber-themed card prompting birthday + retirement age. Saves via `PATCH /api/users/me`, then hides.
+- **Onboarding Wizard**: Three-step "Getting Started" wizard shown when user needs onboarding (no `dateOfBirth` or `retirementAge`) AND has no retirement target. Component: `OnboardingWizard` in `apps/web/src/components/OnboardingWizard.tsx`. Steps:
+  - **Step 1: Age**: Year/month/day dropdown selectors (pre-filled ~30 years ago), retirement age slider (default 65) + number input. Live sidebar shows current age, years remaining, life timeline progress bar.
+  - **Step 2: Income Target**: Two modes via card selector: "Help me figure it out" (default, annual income in today's dollars with optional expandable monthly expense calculator) and "I already have a number" (direct target amount). Expandable expense categories (Housing, Transportation, Healthcare, etc.) auto-sum to monthly/yearly with inflation adjustment. Assumptions section: inflation (3%), withdrawal rate (4%), expected return (7%) with InfoTooltips. Live sidebar shows portfolio target, monthly/annual savings, years to go.
+  - **Step 3: Summary**: Hero target display, 4-tile summary (age range, monthly savings, annual savings, retirement income), projected savings growth area chart (recharts), disclaimer about estimates.
+  - On completion, saves to `PATCH /api/users/me` (birthday + retirement age) and `PUT /api/retirement-target` (financial target).
+- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card and Edit button.
+- **Edit mode**: Inline form configurator (same as before) with mode selector, inputs, live summary, and save/cancel buttons. Separate from the wizard.
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age
   - **Income Replacement**: user enters desired annual retirement income, safe withdrawal rate (default 4%), and target age. Portfolio target = `annualIncome / withdrawalRate`.
-- Inflation adjustment toggle: when enabled, target is adjusted using `target × (1 + inflationRate)^years`
+- Inflation adjustment: automatically applied using `target x (1 + inflationRate)^years`
 - **Live summary panel**: Shows portfolio target, years remaining, required monthly savings (PMT formula), required annual savings. Updates in real-time as user adjusts inputs.
-- **PMT formula**: `monthlySavings = target × r / ((1 + r)^n − 1)` where `r = expectedReturn/12`, `n = years × 12`
+- **PMT formula**: `monthlySavings = target x r / ((1 + r)^n - 1)` where `r = expectedReturn/12`, `n = years x 12`
 - After save, configurator collapses to a static summary card (4-tile grid) with Edit button
 - DB table: `retirement_targets` (one per household, UNIQUE on `household_id`)
 - DB enum: `target_mode` with values `fixed` | `income_replacement`

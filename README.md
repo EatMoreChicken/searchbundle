@@ -188,3 +188,5 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 - Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).
 - Cross-row references (e.g. reference a value in a different category).
 - Optionally display the original expression as a sub-label inside the saved cell.
+- Right now, we just do just-in-time investment, so as you're putting money in and you have a goal, you reach that goal just in time for retirement, for example, at age 67. We want to add other alternative investment approaches where you front-load savings, for example, like with coast fire or coast barista-style investing. You front-load a lot of your savings so that the compounding can do more of the work, and then potentially you can take on a less stressful savings approach going into the future. We want to add in some of these personas into that initial onboarding step. 
+- Dark mode. 
