@@ -192,13 +192,29 @@ Single font family:
 Manrope (all weights: 200–800)
 ```
 
+**Rule:** Only Manrope is used throughout the entire app. Never use `font-mono`, `font-sans`, or any other font family.
+
+### Type Scale Utilities
+
+Defined in `globals.css → @theme {}`. Use these for all semantic text roles:
+
+| Utility class | Size | Role |
+|---|---|---|
+| `text-display-lg` | 3.5rem (56px) | Hero headlines, large number displays |
+| `text-headline-lg` | 2rem (32px) | Page headings |
+| `text-title-md` | 1.125rem (18px) | Card titles, section headings, nav items |
+| `text-body-lg` | 1rem (16px) | Primary body text |
+| `text-label-sm` | 0.75rem (12px) | Labels, overlines, metadata |
+
+Font-family utilities (all resolve to Manrope — use for semantic clarity): `font-headline`, `font-body`, `font-label`
+
 ### Usage Rules
-- **Display & Headlines**: `display-lg` (3.5rem / 56px) and `headline-lg` (2rem / 32px). Letter-spacing: -0.02em for a premium, editorial look. Weight 800 (extrabold).
-- **Titles & Cards**: `title-md` (1.125rem / 18px). Used for nav items, card headings. Weight 700.
-- **Body**: `body-lg` (1rem / 16px). Primary readable text. Weight 400–500.
-- **Labels & Meta**: `label-sm` (0.75rem / 12px). Uppercase with `tracking-widest` for overlines and small labels. Weight 600–700.
-- **Large monetary values**: 3rem–3.75rem (48–60px), weight 900 (black), tracking tight (-0.02em).
-- **Medium monetary values**: 1.875rem (30px), weight 700.
+- **Display & Headlines**: `text-display-lg` and `text-headline-lg`. Letter-spacing: `tracking-tight` (-0.02em). Weight: `font-extrabold` (800).
+- **Titles & Cards**: `text-title-md`. Used for nav items, card headings. Weight: `font-bold` (700).
+- **Body**: `text-body-lg`. Primary readable text. Weight: `font-normal` / `font-medium` (400–500).
+- **Labels & Meta**: `text-label-sm`. Uppercase with `tracking-widest` for overlines and small labels. Weight: `font-semibold` / `font-bold` (600–700).
+- **Large monetary values**: 3rem–3.75rem (48–60px), weight: `font-extrabold` (800, maximum for Manrope), `tracking-tight`.
+- **Medium monetary values**: 1.875rem (30px), weight: `font-bold` (700).
 
 ## Colors
 

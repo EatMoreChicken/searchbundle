@@ -584,7 +584,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-medium text-on-tertiary-fixed-variant">
                     Account created! Share this temporary password:
                   </p>
-                  <p className="mt-1 font-mono text-sm font-bold text-on-tertiary-fixed-variant select-all">
+                  <p className="mt-1 tracking-wider text-sm font-bold text-on-tertiary-fixed-variant select-all">
                     {inviteResult.tempPassword}
                   </p>
                   <p className="mt-1 text-xs text-on-tertiary-fixed-variant/70">

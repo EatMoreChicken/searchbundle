@@ -41,6 +41,13 @@
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
   --color-on-error-container: #93000a;
+
+  /* Type Scale */
+  --text-display-lg: 3.5rem;
+  --text-headline-lg: 2rem;
+  --text-title-md: 1.125rem;
+  --text-body-lg: 1rem;
+  --text-label-sm: 0.75rem;
 }
 
 .material-symbols-outlined {

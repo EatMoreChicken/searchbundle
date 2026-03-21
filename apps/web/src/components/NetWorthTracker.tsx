@@ -329,6 +329,7 @@ export default function NetWorthTracker() {
   }
 
   function getCellClasses(month: number): string {
+    if (isCurrentYear && month === currentMonth) return "bg-tertiary-fixed/20";
     return "bg-surface";
   }
 
@@ -409,15 +410,15 @@ export default function NetWorthTracker() {
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-[11px] text-on-surface-variant leading-tight">Type an operator to adjust</span>
                     <div className="flex items-center gap-1 shrink-0">
-                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">-100</span>
-                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">+500</span>
-                      <span className="font-mono text-[11px] font-bold text-surface bg-on-surface px-2 py-0.5 rounded-full">×1.05</span>
+                      <span className="text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">-100</span>
+                      <span className="text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">+500</span>
+                      <span className="text-[11px] font-bold text-surface bg-on-surface px-2 py-0.5 rounded-full">×1.05</span>
                     </div>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-[11px] text-on-surface-variant leading-tight">Or type a full expression</span>
                     <div className="shrink-0">
-                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">{value}-100</span>
+                      <span className="text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">{value}-100</span>
                     </div>
                   </div>
                 </div>
@@ -426,9 +427,9 @@ export default function NetWorthTracker() {
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-[11px] text-on-surface-variant leading-tight">Inherits nearest value to the left</span>
                     <div className="flex items-center gap-1 shrink-0">
-                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">+100</span>
-                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">-50</span>
-                      <span className="font-mono text-[11px] font-bold text-surface bg-on-surface px-2 py-0.5 rounded-full">×2</span>
+                      <span className="text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">+100</span>
+                      <span className="text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">-50</span>
+                      <span className="text-[11px] font-bold text-surface bg-on-surface px-2 py-0.5 rounded-full">×2</span>
                     </div>
                   </div>
                 </div>
@@ -481,7 +482,9 @@ export default function NetWorthTracker() {
       <td
         key={month}
         ref={isCurrent && !currentMonthRef.current ? currentMonthRef : undefined}
-        className={`sticky bottom-0 z-10 bg-surface-container-low px-4 py-3 text-right whitespace-nowrap`}
+        className={`sticky bottom-0 z-10 px-4 py-3 text-right whitespace-nowrap ${
+          isCurrent ? "bg-tertiary-fixed/30" : "bg-surface-container-low"
+        }`}
       >
         <span className={`text-sm font-extrabold ${colorClass}`}>
           {hasData ? formatCurrency(netWorth) : "–"}
@@ -499,16 +502,6 @@ export default function NetWorthTracker() {
       <tr>
         <td className="sticky left-0 z-10 bg-surface-container-low px-4 py-2">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setAddingType(type);
-                setNewCategoryName("");
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-              title={`Add ${type}`}
-            >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-            </button>
             <span className="text-[11px] uppercase tracking-[1.2px] text-primary font-bold">
               {label}
             </span>
@@ -578,7 +571,10 @@ export default function NetWorthTracker() {
                   className="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-error cursor-pointer ml-auto"
                   title="Delete category"
                 >
-                  <span className="material-symbols-outlined text-[14px]">close</span>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: "20px", fontVariationSettings: "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
+                  >delete</span>
                 </button>
               </>
             )}
