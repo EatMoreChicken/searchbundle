@@ -158,6 +158,14 @@ export const netWorthEntries = pgTable("net_worth_entries", {
 
 export const targetModeEnum = pgEnum("target_mode", ["fixed", "income_replacement"]);
 
+export const savingsStrategyEnum = pgEnum("savings_strategy", [
+  "traditional",
+  "front_loaded",
+  "coast_fire",
+  "barista_fire",
+  "back_loaded",
+]);
+
 export const retirementTargets = pgTable("retirement_targets", {
   id: uuid("id").primaryKey().defaultRandom(),
   householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
@@ -169,6 +177,11 @@ export const retirementTargets = pgTable("retirement_targets", {
   expectedReturn: numeric("expected_return", { precision: 5, scale: 4 }).default("0.07"),
   inflationRate: numeric("inflation_rate", { precision: 5, scale: 4 }).default("0.03"),
   includeInflation: boolean("include_inflation").default(false).notNull(),
+  savingsStrategy: savingsStrategyEnum("savings_strategy").notNull().default("traditional"),
+  strategyPhase1Monthly: numeric("strategy_phase1_monthly", { precision: 14, scale: 2 }),
+  strategyPhase1Years: integer("strategy_phase1_years"),
+  strategyPhase2Monthly: numeric("strategy_phase2_monthly", { precision: 14, scale: 2 }),
+  strategyAnnualChangeRate: numeric("strategy_annual_change_rate", { precision: 5, scale: 4 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [

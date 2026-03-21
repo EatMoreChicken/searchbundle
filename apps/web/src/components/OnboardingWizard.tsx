@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { apiClient } from "@/lib/api-client";
 import type { User, RetirementTarget } from "@/types";
+import type { SavingsStrategy } from "@/lib/retirement-strategies";
+import StrategySelection from "./StrategySelection";
+import StrategyConfigurator, { type StrategyConfig } from "./StrategyConfigurator";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -302,27 +296,6 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
 
   const yearlyExpenseFuture = monthlyExpenseFuture * 12;
 
-  // ── Chart Data ──
-
-  const chartData = useMemo(() => {
-    if (!yearsRemaining || yearsRemaining <= 0 || monthlySavings <= 0) return [];
-    const data: { year: number; age: number; saved: number }[] = [];
-    const monthlyReturn = retDecimal / 12;
-    const monthly = monthlySavings;
-    let balance = 0;
-    for (let y = 0; y <= yearsRemaining; y++) {
-      data.push({
-        year: CURRENT_YEAR + y,
-        age: (currentAge ?? 0) + y,
-        saved: Math.round(balance),
-      });
-      for (let m = 0; m < 12; m++) {
-        balance = balance * (1 + monthlyReturn) + monthly;
-      }
-    }
-    return data;
-  }, [yearsRemaining, monthlySavings, retDecimal, currentAge]);
-
   // ── Expense Helpers ──
 
   const updateExpense = useCallback((index: number, field: "name" | "amount", value: string) => {
@@ -356,8 +329,21 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
     return (Number(annualIncome) || 0) > 0;
   }, [incomeMode, fixedAmount, annualIncome]);
 
+  // ── Step 3: Savings Strategy ──
+
+  const [selectedStrategy, setSelectedStrategy] = useState<SavingsStrategy | null>(null);
+  const [strategyConfig, setStrategyConfig] = useState<StrategyConfig | null>(null);
+
+  const handleStrategySelect = useCallback((s: SavingsStrategy) => {
+    setSelectedStrategy(s);
+  }, []);
+
+  const handleConfigChange = useCallback((config: StrategyConfig) => {
+    setStrategyConfig(config);
+  }, []);
+
   function goNext() {
-    if (step < 2) setStep(step + 1);
+    if (step < 3) setStep(step + 1);
   }
 
   function goBack() {
@@ -384,6 +370,11 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
         expectedReturn: retDecimal,
         inflationRate: inflRateDecimal,
         includeInflation: true,
+        savingsStrategy: selectedStrategy ?? "traditional",
+        strategyPhase1Monthly: strategyConfig?.phase1Monthly ?? null,
+        strategyPhase1Years: strategyConfig?.phase1Years ?? null,
+        strategyPhase2Monthly: strategyConfig?.phase2Monthly ?? null,
+        strategyAnnualChangeRate: strategyConfig?.annualChangeRate ?? null,
       });
 
       onComplete(updatedUser, savedTarget);
@@ -398,7 +389,7 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 max-w-4xl space-y-6">
+    <div className={`p-6 ${step === 3 ? "max-w-5xl" : "max-w-4xl"} space-y-6`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -408,10 +399,11 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
           <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
             {step === 0 && "Let\u2019s start with your age"}
             {step === 1 && "Plan your retirement income"}
-            {step === 2 && "Your plan at a glance"}
+            {step === 2 && "Choose your savings path"}
+            {step === 3 && "Customize your plan"}
           </h1>
         </div>
-        <StepIndicator current={step} total={3} />
+        <StepIndicator current={step} total={4} />
       </div>
 
       {/* Step Content */}
@@ -471,28 +463,39 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
       )}
 
       {step === 2 && (
-        <StepSummary
-          currentAge={currentAge}
-          retirementAge={retirementAge}
-          yearsRemaining={yearsRemaining}
-          portfolioTodayDollars={portfolioTodayDollars}
-          inflationAdjustedTarget={inflationAdjustedTarget}
-          monthlySavings={monthlySavings}
-          annualSavings={annualSavings}
-          annualIncomeToday={annualIncomeToday}
-          annualIncomeFuture={annualIncomeFuture}
-          incomeMode={incomeMode}
-          expectedReturn={expectedReturn}
-          inflationRate={inflationRate}
-          chartData={chartData}
-          error={error}
-          saving={saving}
+        <StrategySelection
+          targetAmount={inflationAdjustedTarget}
+          years={yearsRemaining ?? 0}
+          annualReturn={retDecimal}
+          selected={selectedStrategy}
+          onSelect={handleStrategySelect}
         />
+      )}
+
+      {step === 3 && selectedStrategy && currentAge != null && yearsRemaining != null && yearsRemaining > 0 && (
+        <>
+          <StrategyConfigurator
+            strategy={selectedStrategy}
+            targetAmount={inflationAdjustedTarget}
+            years={yearsRemaining}
+            annualReturn={retDecimal}
+            inflationRate={inflRateDecimal}
+            currentAge={currentAge}
+            retirementAge={retirementAge}
+            onConfigChange={handleConfigChange}
+            onBack={() => setStep(2)}
+          />
+          {error && (
+            <div className="bg-error-container rounded-xl p-4">
+              <p className="text-sm text-on-error-container">{error}</p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Navigation */}
       <div className="flex items-center gap-3 pt-2">
-        {step > 0 && (
+        {step > 0 && step < 3 && (
           <button
             type="button"
             onClick={goBack}
@@ -519,6 +522,19 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
           </button>
         )}
         {step === 2 && (
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!selectedStrategy}
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+          >
+            <span className="flex items-center gap-1">
+              Customize
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </span>
+          </button>
+        )}
+        {step === 3 && (
           <button
             type="button"
             onClick={handleComplete}
@@ -562,8 +578,8 @@ function StepAge({
   currentAge: number | null; yearsRemaining: number | null;
   yearOptions: number[]; maxDays: number;
 }) {
-  const lifePercent = currentAge != null && retirementAge > 0
-    ? Math.min(100, Math.max(0, (currentAge / retirementAge) * 100))
+  const lifePercent = currentAge != null
+    ? Math.min(100, Math.max(0, currentAge))
     : 0;
 
   return (
@@ -698,9 +714,14 @@ function StepAge({
                 style={{ left: `${Math.min(100, (retirementAge / 100) * 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-on-surface-variant">
+            <div className="relative flex justify-between text-xs text-on-surface-variant">
               <span>Born</span>
-              <span className="font-semibold text-tertiary">Retire at {retirementAge}</span>
+              <span
+                className="absolute font-semibold text-tertiary -translate-x-1/2"
+                style={{ left: `${Math.min(98, Math.max(2, retirementAge))}%` }}
+              >
+                Retire at {retirementAge}
+              </span>
               <span>100</span>
             </div>
           </div>
@@ -1146,172 +1167,6 @@ function StepIncome({
           </p>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// STEP 3: Summary
-// ═══════════════════════════════════════════════════════════════════════════
-
-function StepSummary({
-  currentAge, retirementAge, yearsRemaining,
-  portfolioTodayDollars, inflationAdjustedTarget,
-  monthlySavings, annualSavings,
-  annualIncomeToday, annualIncomeFuture,
-  incomeMode, expectedReturn, inflationRate,
-  chartData, error, saving,
-}: {
-  currentAge: number | null;
-  retirementAge: number;
-  yearsRemaining: number | null;
-  portfolioTodayDollars: number;
-  inflationAdjustedTarget: number;
-  monthlySavings: number;
-  annualSavings: number;
-  annualIncomeToday: number;
-  annualIncomeFuture: number;
-  incomeMode: "help" | "fixed";
-  expectedReturn: string;
-  inflationRate: string;
-  chartData: { year: number; age: number; saved: number }[];
-  error: string;
-  saving: boolean;
-}) {
-  return (
-    <div className="space-y-6">
-      {/* Hero metric */}
-      <div className="bg-surface-container-lowest rounded-2xl p-8 text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-fixed rounded-full mb-2">
-          <span className="material-symbols-outlined text-primary text-[14px]">flag</span>
-          <span className="text-xs font-bold text-primary uppercase tracking-wide">Your Target</span>
-        </div>
-        <p className="text-5xl font-extrabold text-on-surface tracking-tight">
-          {inflationAdjustedTarget > 0 ? formatCurrency(inflationAdjustedTarget) : "--"}
-        </p>
-        {inflationAdjustedTarget > 0 && portfolioTodayDollars > 0 && inflationAdjustedTarget !== portfolioTodayDollars && (
-          <p className="text-sm text-on-surface-variant">
-            {formatCurrency(portfolioTodayDollars)} in today&apos;s dollars
-          </p>
-        )}
-      </div>
-
-      {/* Summary tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-surface-container-lowest rounded-2xl p-5 text-center">
-          <div className="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center mx-auto mb-2">
-            <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[18px]">calendar_today</span>
-          </div>
-          <p className="text-xl font-extrabold text-on-surface tracking-tight">
-            {currentAge ?? "--"} → {retirementAge}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-0.5">
-            {yearsRemaining != null && yearsRemaining > 0 ? `${yearsRemaining} years` : "--"}
-          </p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-5 text-center">
-          <div className="w-9 h-9 rounded-xl bg-primary-fixed flex items-center justify-center mx-auto mb-2">
-            <span className="material-symbols-outlined text-primary text-[18px]">savings</span>
-          </div>
-          <p className="text-xl font-extrabold text-primary tracking-tight">
-            {monthlySavings > 0 ? formatFullCurrency(monthlySavings) : "--"}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-0.5">monthly savings</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-5 text-center">
-          <div className="w-9 h-9 rounded-xl bg-primary-fixed flex items-center justify-center mx-auto mb-2">
-            <span className="material-symbols-outlined text-primary text-[18px]">account_balance</span>
-          </div>
-          <p className="text-xl font-extrabold text-primary tracking-tight">
-            {annualSavings > 0 ? formatCurrency(annualSavings) : "--"}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-0.5">annual savings</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-2xl p-5 text-center">
-          <div className="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center mx-auto mb-2">
-            <span className="material-symbols-outlined text-on-secondary-container text-[18px]">paid</span>
-          </div>
-          <p className="text-xl font-extrabold text-on-surface tracking-tight">
-            {incomeMode === "help" && annualIncomeToday > 0 ? formatCurrency(annualIncomeFuture) : "--"}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-0.5">annual retirement income</p>
-        </div>
-      </div>
-
-      {/* Projection chart */}
-      {chartData.length > 0 && (
-        <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[18px]">show_chart</span>
-            <h3 className="text-sm font-bold text-on-surface">Projected savings growth</h3>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="wizardGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#006761" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#006761" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#bdc9c7" strokeOpacity={0.3} />
-                <XAxis
-                  dataKey="age"
-                  tick={{ fill: "#3e4947", fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  label={{ value: "Age", position: "insideBottom", offset: -2, fill: "#3e4947", fontSize: 11 }}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => formatCurrency(v)}
-                  tick={{ fill: "#3e4947", fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={70}
-                />
-                <RechartsTooltip
-                  formatter={(value) => [formatFullCurrency(Number(value)), "Saved"]}
-                  labelFormatter={(label) => `Age ${label}`}
-                  contentStyle={{
-                    background: "#181c1b",
-                    border: "none",
-                    borderRadius: "12px",
-                    color: "#fff",
-                    fontSize: "12px",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="saved"
-                  stroke="#006761"
-                  strokeWidth={2}
-                  fill="url(#wizardGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-xs text-on-surface-variant text-center">
-            Projection assumes {expectedReturn}% annual return with {formatFullCurrency(monthlySavings)} saved per month over {yearsRemaining} years.
-          </p>
-        </div>
-      )}
-
-      {/* Disclaimer */}
-      <div className="bg-surface-container rounded-2xl p-5 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-on-surface-variant text-[18px]">lightbulb</span>
-          <p className="text-sm font-semibold text-on-surface">These are starting estimates</p>
-        </div>
-        <p className="text-xs text-on-surface-variant leading-relaxed">
-          These numbers are based on historical averages and your inputs. They&apos;re meant to give you a starting point, not a guarantee. As you use SearchBundle, you can come back and refine your target, adjust assumptions, and track your real progress. The important thing is getting started.
-        </p>
-      </div>
-
-      {error && (
-        <div className="bg-error-container rounded-xl p-4">
-          <p className="text-sm text-on-error-container">{error}</p>
-        </div>
-      )}
     </div>
   );
 }

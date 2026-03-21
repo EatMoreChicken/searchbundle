@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
 import type { User, RetirementTarget, TargetMode } from "@/types";
+import { STRATEGY_LIST } from "@/lib/retirement-strategies";
 import OnboardingWizard from "@/components/OnboardingWizard";
 
 function formatCurrency(value: number): string {
@@ -624,9 +625,13 @@ export default function DashboardPage() {
               <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
             </div>
             <div className="bg-surface-container-low rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">{formatCurrency(savedSummary.annual)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Strategy</p>
+              <p className="text-xl font-extrabold text-primary tracking-tight">
+                {STRATEGY_LIST.find((s) => s.id === target.savingsStrategy)?.name ?? "Traditional"}
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {STRATEGY_LIST.find((s) => s.id === target.savingsStrategy)?.subtitle ?? "Steady and predictable"}
+              </p>
             </div>
           </div>
         )}

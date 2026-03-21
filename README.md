@@ -84,9 +84,11 @@ npm run db:migrate
 npm run db:seed:dev
 ```
 
-Populates the database with realistic test data: 6 assets (401k, IRA, checking, savings, HSA, home), 3 liabilities (mortgage, car loan, student loans), and 15 months of net worth tracker entries (all of 2025 + Jan–Mar 2026). Safe to re-run at any time — it clears and re-inserts the seeded data without affecting anything else.
+Populates the database with realistic test data: 6 assets (401k, IRA, checking, savings, HSA, home), 3 liabilities (mortgage, car loan, student loans), and 15 months of net worth tracker entries (all of 2025 + Jan–Mar 2026). Safe to re-run at any time.
 
-Sign in with `dev@searchbundle.io` / `password123`.
+Two fixture accounts are created:
+- `dev@searchbundle.io` / `password123` (household owner)
+- `partner@searchbundle.io` / `password123` (household member)
 
 #### 6. Start the development servers
 
@@ -160,6 +162,23 @@ This is idempotent — safe to run multiple times. Use it to reset test data to 
 
 ---
 
+## Database: Full Reset
+
+To wipe the database completely and start fresh (drops and recreates the DB, runs all migrations, and re-seeds dev data):
+
+```bash
+npm run db:reset
+```
+
+This is useful when:
+- You want a clean slate after testing
+- Migrations are out of sync
+- You need to reproduce a fresh-user onboarding flow
+
+> **Note:** Stop the dev servers (`Ctrl+C`) before running this — active connections will block the database drop. After the reset completes, **sign out and back in** to your browser session — the old JWT will reference a household ID that no longer exists.
+
+---
+
 ## Deployment Steps
 
 ---
@@ -188,5 +207,4 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 - Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).
 - Cross-row references (e.g. reference a value in a different category).
 - Optionally display the original expression as a sub-label inside the saved cell.
-- Right now, we just do just-in-time investment, so as you're putting money in and you have a goal, you reach that goal just in time for retirement, for example, at age 67. We want to add other alternative investment approaches where you front-load savings, for example, like with coast fire or coast barista-style investing. You front-load a lot of your savings so that the compounding can do more of the work, and then potentially you can take on a less stressful savings approach going into the future. We want to add in some of these personas into that initial onboarding step. 
-- Dark mode. 
+- Dark mode.

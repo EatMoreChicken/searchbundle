@@ -1,6 +1,16 @@
-CREATE TYPE "public"."contribution_frequency" AS ENUM('weekly', 'biweekly', 'monthly', 'quarterly', 'yearly');--> statement-breakpoint
-ALTER TYPE "public"."account_type" ADD VALUE 'hsa' BEFORE 'property';--> statement-breakpoint
-CREATE TABLE "scenarios" (
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'contribution_frequency') THEN
+    CREATE TYPE "public"."contribution_frequency" AS ENUM('weekly', 'biweekly', 'monthly', 'quarterly', 'yearly');
+  END IF;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'account_type' AND e.enumlabel = 'hsa') THEN
+    ALTER TYPE "public"."account_type" ADD VALUE 'hsa' BEFORE 'property';
+  END IF;
+END $$;
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "scenarios" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"debt_id" uuid,
@@ -13,13 +23,27 @@ CREATE TABLE "scenarios" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "accounts" ADD COLUMN "contribution_amount" numeric(14, 2);--> statement-breakpoint
-ALTER TABLE "accounts" ADD COLUMN "contribution_frequency" "contribution_frequency";--> statement-breakpoint
-ALTER TABLE "accounts" ADD COLUMN "return_rate" numeric(6, 4);--> statement-breakpoint
-ALTER TABLE "accounts" ADD COLUMN "return_rate_variance" numeric(6, 4) DEFAULT '0';--> statement-breakpoint
-ALTER TABLE "accounts" ADD COLUMN "include_inflation" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "debts" ADD COLUMN "escrow_amount" numeric(10, 2);--> statement-breakpoint
-ALTER TABLE "debts" ADD COLUMN "remaining_months" numeric(5, 0);--> statement-breakpoint
-ALTER TABLE "scenarios" ADD CONSTRAINT "scenarios_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "scenarios" ADD CONSTRAINT "scenarios_debt_id_debts_id_fk" FOREIGN KEY ("debt_id") REFERENCES "public"."debts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "scenarios" ADD CONSTRAINT "scenarios_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "accounts" ADD COLUMN IF NOT EXISTS "contribution_amount" numeric(14, 2);--> statement-breakpoint
+ALTER TABLE "accounts" ADD COLUMN IF NOT EXISTS "contribution_frequency" "contribution_frequency";--> statement-breakpoint
+ALTER TABLE "accounts" ADD COLUMN IF NOT EXISTS "return_rate" numeric(6, 4);--> statement-breakpoint
+ALTER TABLE "accounts" ADD COLUMN IF NOT EXISTS "return_rate_variance" numeric(6, 4) DEFAULT '0';--> statement-breakpoint
+ALTER TABLE "accounts" ADD COLUMN IF NOT EXISTS "include_inflation" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "debts" ADD COLUMN IF NOT EXISTS "escrow_amount" numeric(10, 2);--> statement-breakpoint
+ALTER TABLE "debts" ADD COLUMN IF NOT EXISTS "remaining_months" numeric(5, 0);--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "scenarios" ADD CONSTRAINT "scenarios_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "scenarios" ADD CONSTRAINT "scenarios_debt_id_debts_id_fk" FOREIGN KEY ("debt_id") REFERENCES "public"."debts"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "scenarios" ADD CONSTRAINT "scenarios_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;

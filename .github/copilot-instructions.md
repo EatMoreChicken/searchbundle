@@ -208,12 +208,20 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 
 ### Dashboard (Financial Independence Target)
 - The dashboard (`/dashboard`) is the primary landing page after sign-in: greeting, onboarding, and financial goal setup
-- **Onboarding Wizard**: Three-step "Getting Started" wizard shown when user needs onboarding (no `dateOfBirth` or `retirementAge`) AND has no retirement target. Component: `OnboardingWizard` in `apps/web/src/components/OnboardingWizard.tsx`. Steps:
+- **Onboarding Wizard**: Four-step "Getting Started" wizard shown when user needs onboarding (no `dateOfBirth` or `retirementAge`) AND has no retirement target. Component: `OnboardingWizard` in `apps/web/src/components/OnboardingWizard.tsx`. Steps:
   - **Step 1: Age**: Year/month/day dropdown selectors (pre-filled ~30 years ago), retirement age slider (default 65) + number input. Live sidebar shows current age, years remaining, life timeline progress bar.
   - **Step 2: Income Target**: Two modes via card selector: "Help me figure it out" (default, annual income in today's dollars with optional expandable monthly expense calculator) and "I already have a number" (direct target amount). Expandable expense categories (Housing, Transportation, Healthcare, etc.) auto-sum to monthly/yearly with inflation adjustment. Assumptions section: inflation (3%), withdrawal rate (4%), expected return (7%) with InfoTooltips. Live sidebar shows portfolio target, monthly/annual savings, years to go.
-  - **Step 3: Summary**: Hero target display, 4-tile summary (age range, monthly savings, annual savings, retirement income), projected savings growth area chart (recharts), disclaimer about estimates.
-  - On completion, saves to `PATCH /api/users/me` (birthday + retirement age) and `PUT /api/retirement-target` (financial target).
-- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card and Edit button.
+  - **Step 3: Strategy Selection**: Five savings strategy cards ordered best-to-worst. Each card shows icon, title, subtitle, "Best for" tag, mini dual-axis chart (portfolio area + contribution line), and year 1/final monthly preview. Component: `StrategySelection` in `apps/web/src/components/StrategySelection.tsx`.
+  - **Step 4: Strategy Configurator**: Full customization page with strategy-specific sliders, dual-axis ComposedChart (portfolio + contribution over time), live summary panel with on-track indicator, reset buttons (global + per-slider), and "Change Strategy" back button. Component: `StrategyConfigurator` in `apps/web/src/components/StrategyConfigurator.tsx`.
+  - On completion, saves to `PATCH /api/users/me` (birthday + retirement age) and `PUT /api/retirement-target` (financial target + strategy fields).
+- **Savings Strategies**: Five approaches to reaching the financial independence target, ordered best-to-worst:
+  - **Front-Loaded**: High contributions early, lower later. Two phases with configurable phase 1 monthly amount and duration.
+  - **Coast FIRE**: Aggressive saving for a set number of years, then $0 contributions. Uses binary search to find phase 1 amount that reaches target with compound growth alone after contributions stop.
+  - **Barista FIRE**: Two-phase approach, both phases have contributions. Phase 1 is aggressive, phase 2 is reduced.
+  - **Traditional**: Flat monthly amount for the entire period. Uses standard PMT formula.
+  - **Back-Loaded**: Starts low, increases contributions by a configurable annual percentage (e.g. 5%/year).
+- **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
+- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (including selected strategy name) and Edit button.
 - **Edit mode**: Inline form configurator (same as before) with mode selector, inputs, live summary, and save/cancel buttons. Separate from the wizard.
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age
@@ -224,9 +232,11 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - After save, configurator collapses to a static summary card (4-tile grid) with Edit button
 - DB table: `retirement_targets` (one per household, UNIQUE on `household_id`)
 - DB enum: `target_mode` with values `fixed` | `income_replacement`
+- DB enum: `savings_strategy` with values `front_loaded` | `coast_fire` | `barista_fire` | `traditional` | `back_loaded`
+- DB columns on `retirement_targets` for strategy: `savings_strategy` (enum, default `traditional`), `strategy_phase1_monthly` (numeric 14,2), `strategy_phase1_years` (integer), `strategy_phase2_monthly` (numeric 14,2), `strategy_annual_change_rate` (numeric 5,4). All nullable except `savings_strategy`.
 - API routes:
-  - `GET /api/retirement-target`: fetch household's target (or `null`)
-  - `PUT /api/retirement-target`: upsert (create or update) the household's target
+  - `GET /api/retirement-target`: fetch household's target (or `null`), includes strategy fields
+  - `PUT /api/retirement-target`: upsert (create or update) the household's target, accepts `savingsStrategy`, `strategyPhase1Monthly`, `strategyPhase1Years`, `strategyPhase2Monthly`, `strategyAnnualChangeRate`
 
 ### Account Settings
 - Settings page at `/settings`: four sections: Profile, Personal & Financial, Household, Security

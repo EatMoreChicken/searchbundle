@@ -5,6 +5,8 @@ import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type TargetRow = typeof retirementTargets.$inferSelect;
 
+const VALID_STRATEGIES = ["traditional", "front_loaded", "coast_fire", "barista_fire", "back_loaded"];
+
 function parseTarget(row: TargetRow) {
   return {
     ...row,
@@ -13,6 +15,9 @@ function parseTarget(row: TargetRow) {
     withdrawalRate: row.withdrawalRate != null ? parseFloat(row.withdrawalRate) : 0.04,
     expectedReturn: row.expectedReturn != null ? parseFloat(row.expectedReturn) : 0.07,
     inflationRate: row.inflationRate != null ? parseFloat(row.inflationRate) : 0.03,
+    strategyPhase1Monthly: row.strategyPhase1Monthly != null ? parseFloat(row.strategyPhase1Monthly) : null,
+    strategyPhase2Monthly: row.strategyPhase2Monthly != null ? parseFloat(row.strategyPhase2Monthly) : null,
+    strategyAnnualChangeRate: row.strategyAnnualChangeRate != null ? parseFloat(row.strategyAnnualChangeRate) : null,
   };
 }
 
@@ -44,6 +49,8 @@ export async function PUT(request: Request) {
   const {
     mode, targetAmount, targetAge, annualIncome,
     withdrawalRate, expectedReturn, inflationRate, includeInflation,
+    savingsStrategy, strategyPhase1Monthly, strategyPhase1Years,
+    strategyPhase2Monthly, strategyAnnualChangeRate,
   } = body as {
     mode?: string;
     targetAmount?: number;
@@ -53,6 +60,11 @@ export async function PUT(request: Request) {
     expectedReturn?: number;
     inflationRate?: number;
     includeInflation?: boolean;
+    savingsStrategy?: string;
+    strategyPhase1Monthly?: number | null;
+    strategyPhase1Years?: number | null;
+    strategyPhase2Monthly?: number | null;
+    strategyAnnualChangeRate?: number | null;
   };
 
   if (!mode || !["fixed", "income_replacement"].includes(mode)) {
@@ -63,6 +75,9 @@ export async function PUT(request: Request) {
   }
   if (targetAge == null || targetAge < 1 || targetAge > 120) {
     return NextResponse.json({ message: "targetAge must be between 1 and 120" }, { status: 400 });
+  }
+  if (savingsStrategy && !VALID_STRATEGIES.includes(savingsStrategy)) {
+    return NextResponse.json({ message: "savingsStrategy must be one of: " + VALID_STRATEGIES.join(", ") }, { status: 400 });
   }
 
   const [existing] = await getDb()
@@ -79,6 +94,11 @@ export async function PUT(request: Request) {
     expectedReturn: expectedReturn != null ? String(expectedReturn) : "0.07",
     inflationRate: inflationRate != null ? String(inflationRate) : "0.03",
     includeInflation: includeInflation ?? false,
+    savingsStrategy: (savingsStrategy ?? "traditional") as "traditional" | "front_loaded" | "coast_fire" | "barista_fire" | "back_loaded",
+    strategyPhase1Monthly: strategyPhase1Monthly != null ? String(strategyPhase1Monthly) : null,
+    strategyPhase1Years: strategyPhase1Years ?? null,
+    strategyPhase2Monthly: strategyPhase2Monthly != null ? String(strategyPhase2Monthly) : null,
+    strategyAnnualChangeRate: strategyAnnualChangeRate != null ? String(strategyAnnualChangeRate) : null,
     updatedAt: new Date(),
   };
 

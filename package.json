@@ -11,7 +11,8 @@
     "db:generate": "npm run db:generate --workspace=packages/db",
     "db:migrate": "npm run db:migrate --workspace=packages/db",
     "db:seed": "npm run db:seed --workspace=packages/db",
-    "db:seed:dev": "npm run db:seed:dev --workspace=packages/db"
+    "db:seed:dev": "npm run db:seed:dev --workspace=packages/db",
+    "db:reset": "docker compose exec -T db psql -U user postgres -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'searchbundle' AND pid <> pg_backend_pid();\" && docker compose exec -T db psql -U user postgres -c \"DROP DATABASE IF EXISTS searchbundle;\" && docker compose exec -T db psql -U user postgres -c \"CREATE DATABASE searchbundle;\" && npm run db:migrate && npm run db:seed:dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

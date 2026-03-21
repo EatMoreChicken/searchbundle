@@ -1,0 +1,279 @@
+"use client";
+
+import { useMemo } from "react";
+import {
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  STRATEGY_LIST,
+  getMiniChartData,
+  getStrategySummary,
+  type SavingsStrategy,
+} from "@/lib/retirement-strategies";
+
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000) {
+    const m = value / 1_000_000;
+    return `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+interface MiniChartProps {
+  strategy: SavingsStrategy;
+  years: number;
+}
+
+function MiniChart({ strategy, years }: MiniChartProps) {
+  const data = useMemo(() => getMiniChartData(strategy, years), [strategy, years]);
+
+  return (
+    <div className="h-16 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+          <defs>
+            <linearGradient id={`miniGrad-${strategy}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#006761" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="portfolio"
+            stroke="#006761"
+            strokeWidth={1.5}
+            fill={`url(#miniGrad-${strategy})`}
+            isAnimationActive={false}
+          />
+          <Line
+            type="stepAfter"
+            dataKey="contribution"
+            stroke="#805200"
+            strokeWidth={1.5}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// recharts LineChart needs Line imported but we're using it inside AreaChart.
+// Actually AreaChart can only have Area children. Let's use a ComposedChart.
+// Fixing: use two overlapping charts.
+function MiniChartDual({ strategy, years }: MiniChartProps) {
+  const data = useMemo(() => getMiniChartData(strategy, years), [strategy, years]);
+
+  return (
+    <div className="relative h-16 w-full">
+      {/* Portfolio area */}
+      <div className="absolute inset-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+            <defs>
+              <linearGradient id={`miniGrad-${strategy}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#006761" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey="portfolio"
+              stroke="#006761"
+              strokeWidth={1.5}
+              fill={`url(#miniGrad-${strategy})`}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      {/* Contribution line */}
+      <div className="absolute inset-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+            <Line
+              type="stepAfter"
+              dataKey="contribution"
+              stroke="#805200"
+              strokeWidth={1.5}
+              dot={false}
+              strokeDasharray="4 2"
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+interface StrategySelectionProps {
+  targetAmount: number;
+  years: number;
+  annualReturn: number;
+  selected: SavingsStrategy | null;
+  onSelect: (strategy: SavingsStrategy) => void;
+}
+
+export default function StrategySelection({
+  targetAmount,
+  years,
+  annualReturn,
+  selected,
+  onSelect,
+}: StrategySelectionProps) {
+  return (
+    <div className="space-y-6">
+      {/* Intro note */}
+      <div className="bg-surface-container rounded-2xl p-5 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[18px]">lightbulb</span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-on-surface mb-1">Choose a savings path to start with</p>
+          <p className="text-xs text-on-surface-variant leading-relaxed">
+            This is just a starting point. On the next page, you can customize every parameter: adjust sliders,
+            change the target, and see exactly how the numbers shift. Nothing is locked in.
+          </p>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 px-1">
+        <div className="flex items-center gap-1.5">
+          <div className="w-5 h-0.5 bg-primary rounded-full" />
+          <span className="text-xs text-on-surface-variant">Portfolio growth</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-5 h-0.5 bg-tertiary rounded-full" style={{ borderTop: "1.5px dashed #805200", height: 0 }} />
+          <span className="text-xs text-on-surface-variant">Monthly contribution</span>
+        </div>
+      </div>
+
+      {/* Strategy cards */}
+      <div className="space-y-3">
+        {STRATEGY_LIST.map((meta, idx) => (
+          <StrategyCard
+            key={meta.id}
+            meta={meta}
+            rank={idx + 1}
+            targetAmount={targetAmount}
+            years={years}
+            annualReturn={annualReturn}
+            isSelected={selected === meta.id}
+            onSelect={() => onSelect(meta.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface StrategyCardProps {
+  meta: (typeof STRATEGY_LIST)[number];
+  rank: number;
+  targetAmount: number;
+  years: number;
+  annualReturn: number;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+function StrategyCard({
+  meta,
+  rank,
+  targetAmount,
+  years,
+  annualReturn,
+  isSelected,
+  onSelect,
+}: StrategyCardProps) {
+  const summary = useMemo(
+    () => getStrategySummary(meta.id, targetAmount, years, annualReturn),
+    [meta.id, targetAmount, years, annualReturn]
+  );
+
+  const hasValidNumbers = targetAmount > 0 && years > 0 && summary.firstYearMonthly > 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full text-left rounded-2xl p-6 transition-all ${
+        isSelected
+          ? "bg-primary-fixed ring-2 ring-primary/20"
+          : "bg-surface-container-lowest hover:bg-surface-container"
+      }`}
+    >
+      <div className="flex items-start gap-5">
+        {/* Left: icon and rank */}
+        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+          <div
+            className={`w-11 h-11 rounded-full flex items-center justify-center ${
+              isSelected ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[22px]">{meta.icon}</span>
+          </div>
+          {rank === 1 && (
+            <span className="text-[10px] font-bold text-primary uppercase tracking-wide">Best</span>
+          )}
+        </div>
+
+        {/* Center: text */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className={`text-title-md font-bold ${isSelected ? "text-primary" : "text-on-surface"}`}>
+              {meta.name}
+            </h3>
+            <span className="text-xs text-on-surface-variant">{meta.subtitle}</span>
+          </div>
+          <p className="text-sm text-on-surface-variant leading-relaxed mb-3">{meta.description}</p>
+
+          {/* Monthly preview */}
+          {hasValidNumbers && (
+            <div className="flex items-center gap-4 text-xs">
+              <div>
+                <span className="text-on-surface-variant">Year 1: </span>
+                <span className="font-bold text-on-surface">{formatCurrency(summary.firstYearMonthly)}/mo</span>
+              </div>
+              {summary.firstYearMonthly !== summary.lastYearMonthly && (
+                <>
+                  <span className="text-on-surface-variant">→</span>
+                  <div>
+                    <span className="text-on-surface-variant">
+                      {meta.id === "coast_fire" ? `After ${summary.phase1Years ?? "?"} yrs: ` : "Final year: "}
+                    </span>
+                    <span className="font-bold text-on-surface">
+                      {summary.lastYearMonthly === 0 ? "$0/mo" : `${formatCurrency(summary.lastYearMonthly)}/mo`}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Best for tag */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="material-symbols-outlined text-[12px] text-on-surface-variant">person</span>
+            <span className="text-xs text-on-surface-variant italic">{meta.bestFor}</span>
+          </div>
+        </div>
+
+        {/* Right: mini chart */}
+        <div className="w-32 flex-shrink-0">
+          <MiniChartDual strategy={meta.id} years={years} />
+        </div>
+      </div>
+    </button>
+  );
+}

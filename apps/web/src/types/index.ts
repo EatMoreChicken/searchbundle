@@ -115,6 +115,8 @@ export interface DashboardData {
 
 export type TargetMode = "fixed" | "income_replacement";
 
+export type SavingsStrategy = "traditional" | "front_loaded" | "coast_fire" | "barista_fire" | "back_loaded";
+
 export interface RetirementTarget {
   id: string;
   householdId: string;
@@ -126,6 +128,11 @@ export interface RetirementTarget {
   expectedReturn: number;
   inflationRate: number;
   includeInflation: boolean;
+  savingsStrategy: SavingsStrategy;
+  strategyPhase1Monthly: number | null;
+  strategyPhase1Years: number | null;
+  strategyPhase2Monthly: number | null;
+  strategyAnnualChangeRate: number | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -17,6 +17,8 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import {
   users,
+  households,
+  householdMembers,
   accounts,
   debts,
   netWorthCategories,
@@ -25,7 +27,9 @@ import {
 
 // ─── Fixed IDs ─────────────────────────────────────────────────────────────
 
-const USER_ID = "00000000-0000-0000-0000-000000000001";
+const USER_ID       = "00000000-0000-0000-0000-000000000001";
+const PARTNER_ID    = "00000000-0000-0000-0000-000000000002";
+const HOUSEHOLD_ID  = "00000000-0000-0000-0001-000000000001";
 
 const ACCOUNT_401K    = "00000000-0000-0000-0002-000000000001";
 const ACCOUNT_IRA     = "00000000-0000-0000-0002-000000000002";
@@ -97,7 +101,7 @@ async function seed() {
   const client = postgres(connectionString);
   const db = drizzle(client);
 
-  // ── 1. Upsert fixture user ──────────────────────────────────────────────
+  // ── 1. Upsert fixture users ─────────────────────────────────────────────
 
   const passwordHash = await bcrypt.hash("password123", 12);
   await db.insert(users).values({
@@ -109,14 +113,53 @@ async function seed() {
     target: users.id,
     set: { passwordHash },
   });
-  console.log("✓ User upserted");
+  await db.insert(users).values({
+    id: PARTNER_ID,
+    email: "partner@searchbundle.io",
+    name: "Partner User",
+    passwordHash,
+  }).onConflictDoUpdate({
+    target: users.id,
+    set: { passwordHash },
+  });
+  console.log("✓ Users upserted");
 
-  // ── 2. Upsert assets ───────────────────────────────────────────────────
+  // ── 2. Upsert household ──────────────────────────────────────────────────
+
+  await db.insert(households).values({
+    id: HOUSEHOLD_ID,
+    name: "Dev Household",
+    createdBy: USER_ID,
+  }).onConflictDoUpdate({
+    target: households.id,
+    set: { name: "Dev Household" },
+  });
+
+  await db.insert(householdMembers).values({
+    householdId: HOUSEHOLD_ID,
+    userId: USER_ID,
+    role: "owner",
+  }).onConflictDoNothing();
+
+  await db.insert(householdMembers).values({
+    householdId: HOUSEHOLD_ID,
+    userId: PARTNER_ID,
+    role: "member",
+  }).onConflictDoNothing();
+
+  // Set active household on both users
+  await db.update(users).set({ activeHouseholdId: HOUSEHOLD_ID }).where(eq(users.id, USER_ID));
+  await db.update(users).set({ activeHouseholdId: HOUSEHOLD_ID }).where(eq(users.id, PARTNER_ID));
+
+  console.log("✓ Household upserted");
+
+  // ── 3. Upsert assets ───────────────────────────────────────────────────
 
   const assetRows = [
     {
       id: ACCOUNT_401K,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Fidelity 401(k)",
       type: "investment" as const,
       balance: "85000",
@@ -130,7 +173,8 @@ async function seed() {
     },
     {
       id: ACCOUNT_IRA,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Vanguard Roth IRA",
       type: "investment" as const,
       balance: "32000",
@@ -144,7 +188,8 @@ async function seed() {
     },
     {
       id: ACCOUNT_CHECKING,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Chase Checking",
       type: "savings" as const,
       balance: "8500",
@@ -153,7 +198,8 @@ async function seed() {
     },
     {
       id: ACCOUNT_SAVINGS,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Ally High-Yield Savings",
       type: "savings" as const,
       balance: "24000",
@@ -165,7 +211,8 @@ async function seed() {
     },
     {
       id: ACCOUNT_HSA,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "HealthEquity HSA",
       type: "hsa" as const,
       balance: "6200",
@@ -177,7 +224,8 @@ async function seed() {
     },
     {
       id: ACCOUNT_HOME,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Primary Residence",
       type: "property" as const,
       balance: "385000",
@@ -203,12 +251,13 @@ async function seed() {
   }
   console.log("✓ Assets upserted");
 
-  // ── 3. Upsert liabilities ─────────────────────────────────────────────
+  // ── 4. Upsert liabilities ─────────────────────────────────────────────
 
   const debtRows = [
     {
       id: DEBT_MORTGAGE,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Home Mortgage",
       type: "mortgage" as const,
       balance: "317200",
@@ -221,7 +270,8 @@ async function seed() {
     },
     {
       id: DEBT_CAR,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Toyota Camry Loan",
       type: "auto" as const,
       balance: "14500",
@@ -233,7 +283,8 @@ async function seed() {
     },
     {
       id: DEBT_STUDENT,
-      userId: USER_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
       name: "Federal Student Loans",
       type: "student_loan" as const,
       balance: "28000",
@@ -261,18 +312,18 @@ async function seed() {
   }
   console.log("✓ Liabilities upserted");
 
-  // ── 4. Upsert net worth categories ────────────────────────────────────
+  // ── 5. Upsert net worth categories ────────────────────────────────────
 
   const categoryRows = [
-    { id: CAT_401K,    userId: USER_ID, name: "401(k) — Fidelity",      type: "asset" as const,     sortOrder: 0 },
-    { id: CAT_IRA,     userId: USER_ID, name: "Roth IRA — Vanguard",    type: "asset" as const,     sortOrder: 1 },
-    { id: CAT_CHECKING,userId: USER_ID, name: "Checking Account",       type: "asset" as const,     sortOrder: 2 },
-    { id: CAT_SAVINGS, userId: USER_ID, name: "High-Yield Savings",     type: "asset" as const,     sortOrder: 3 },
-    { id: CAT_HSA,     userId: USER_ID, name: "HSA",                    type: "asset" as const,     sortOrder: 4 },
-    { id: CAT_HOME,    userId: USER_ID, name: "Home Value",             type: "asset" as const,     sortOrder: 5 },
-    { id: CAT_MORTGAGE,userId: USER_ID, name: "Mortgage",               type: "liability" as const, sortOrder: 0 },
-    { id: CAT_CAR,     userId: USER_ID, name: "Car Loan",               type: "liability" as const, sortOrder: 1 },
-    { id: CAT_STUDENT, userId: USER_ID, name: "Student Loans",          type: "liability" as const, sortOrder: 2 },
+    { id: CAT_401K,    householdId: HOUSEHOLD_ID, name: "401(k) — Fidelity",      type: "asset" as const,     sortOrder: 0 },
+    { id: CAT_IRA,     householdId: HOUSEHOLD_ID, name: "Roth IRA — Vanguard",    type: "asset" as const,     sortOrder: 1 },
+    { id: CAT_CHECKING,householdId: HOUSEHOLD_ID, name: "Checking Account",       type: "asset" as const,     sortOrder: 2 },
+    { id: CAT_SAVINGS, householdId: HOUSEHOLD_ID, name: "High-Yield Savings",     type: "asset" as const,     sortOrder: 3 },
+    { id: CAT_HSA,     householdId: HOUSEHOLD_ID, name: "HSA",                    type: "asset" as const,     sortOrder: 4 },
+    { id: CAT_HOME,    householdId: HOUSEHOLD_ID, name: "Home Value",             type: "asset" as const,     sortOrder: 5 },
+    { id: CAT_MORTGAGE,householdId: HOUSEHOLD_ID, name: "Mortgage",               type: "liability" as const, sortOrder: 0 },
+    { id: CAT_CAR,     householdId: HOUSEHOLD_ID, name: "Car Loan",               type: "liability" as const, sortOrder: 1 },
+    { id: CAT_STUDENT, householdId: HOUSEHOLD_ID, name: "Student Loans",          type: "liability" as const, sortOrder: 2 },
   ];
 
   for (const row of categoryRows) {
@@ -283,7 +334,7 @@ async function seed() {
   }
   console.log("✓ Net worth categories upserted");
 
-  // ── 5. Upsert net worth entries ───────────────────────────────────────
+  // ── 6. Upsert net worth entries ───────────────────────────────────────
   // Delete + re-insert for seeded categories to keep the script simple.
 
   const categoryIds = categoryRows.map((c) => c.id);
@@ -307,7 +358,7 @@ async function seed() {
   console.log(`✓ Net worth entries inserted (${entryRows.length} rows)`);
 
   await client.end();
-  console.log("\nDev seed complete. Sign in with dev@searchbundle.io / password123");
+  console.log("\nDev seed complete. Sign in with dev@searchbundle.io / password123 (or partner@searchbundle.io / password123)");
 }
 
 seed().catch((err) => {
