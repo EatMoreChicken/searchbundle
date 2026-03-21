@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, netWorthCategories } from "@searchbundle/db";
 import { eq, and } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const body = await request.json().catch(() => null);
   if (!body) {
@@ -30,7 +28,7 @@ export async function POST(request: Request) {
     .from(netWorthCategories)
     .where(
       and(
-        eq(netWorthCategories.userId, session.user.id),
+        eq(netWorthCategories.householdId, session.householdId),
         eq(netWorthCategories.type, type as "asset" | "liability"),
       ),
     );
@@ -40,7 +38,7 @@ export async function POST(request: Request) {
   const [row] = await db
     .insert(netWorthCategories)
     .values({
-      userId: session.user.id,
+      householdId: session.householdId,
       name: name.trim(),
       type: type as "asset" | "liability",
       sortOrder: maxSort + 1,

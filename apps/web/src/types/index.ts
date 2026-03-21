@@ -10,7 +10,27 @@ export interface User {
   timezone: string;
   preferredCurrency: string;
   retirementAge: number | null;
+  activeHouseholdId: string | null;
+  mustResetPassword: boolean;
+}
+
+export type HouseholdRole = "owner" | "admin" | "member";
+
+export interface Household {
+  id: string;
+  name: string;
   financialGoalNote: string | null;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface HouseholdMember {
+  id: string;
+  householdId: string;
+  userId: string;
+  role: HouseholdRole;
+  joinedAt: Date;
+  user?: { id: string; name: string | null; email: string };
 }
 
 export type AssetType = "investment" | "savings" | "hsa" | "property" | "other";
@@ -18,7 +38,8 @@ export type ContributionFrequency = "weekly" | "biweekly" | "monthly" | "quarter
 
 export interface Asset {
   id: string;
-  userId: string;
+  householdId: string;
+  ownerId: string | null;
   name: string;
   type: AssetType;
   balance: number;
@@ -35,7 +56,8 @@ export interface Asset {
 
 export interface Debt {
   id: string;
-  userId: string;
+  householdId: string;
+  ownerId: string | null;
   name: string;
   type: "mortgage" | "student_loan" | "auto" | "credit_card" | "other";
   balance: number;
@@ -53,7 +75,7 @@ export type DebtType = Debt["type"];
 
 export interface Scenario {
   id: string;
-  userId: string;
+  householdId: string;
   debtId: string | null;
   accountId: string | null;
   name: string;
@@ -68,7 +90,7 @@ export type CategoryType = "asset" | "liability";
 
 export interface NetWorthCategory {
   id: string;
-  userId: string;
+  householdId: string;
   name: string;
   type: CategoryType;
   sortOrder: number;

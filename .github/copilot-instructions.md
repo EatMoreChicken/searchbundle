@@ -86,10 +86,33 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - Auth.js route handler at `apps/web/src/app/api/auth/[...nextauth]/route.ts`
 - Route protection via `apps/web/src/middleware.ts` using `auth` as middleware wrapper
 - `SessionProvider` wrapped in `apps/web/src/components/SessionProviderWrapper.tsx`, added to root layout
-- Sign-in page: `/sign-in`, Sign-up page: `/sign-up` — both in `(auth)` route group (no sidebar)
+- Sign-in page: `/sign-in`, Sign-up page: `/sign-up`, Reset password: `/reset-password` — all in `(auth)` route group (no sidebar)
 - `apps/web` depends on `@searchbundle/db` directly for auth + route handler DB access
 - Passwords hashed with **bcryptjs** (12 rounds)
-- Dev fixture user: `dev@searchbundle.io` / `password123` (re-run `npm run db:seed` to set hash)
+- JWT session carries `activeHouseholdId` and `mustResetPassword` alongside standard user fields
+- Middleware redirects `mustResetPassword` users to `/reset-password` (except auth/user API routes)
+- Dev fixture users: `dev@searchbundle.io` / `password123` (owner), `partner@searchbundle.io` / `password123` (member). Re-run `npm run db:seed` to set.
+
+### Household Multi-Tenancy
+- **All data is scoped to households, not individual users.** Users are for auth only; data ownership is at the household level.
+- DB tables: `households` (id, name, financialGoalNote, createdBy, createdAt), `household_members` (id, householdId, userId, role, joinedAt)
+- DB enum `household_role` with values `owner` | `admin` | `member`
+- `accounts`, `debts`, `scenarios`, `check_ins`, `net_worth_categories` all have `household_id` (NOT NULL, FK → households CASCADE)
+- `accounts` and `debts` also have `owner_id` (nullable, FK → users SET NULL) for optional per-item ownership labeling (shared vs individual)
+- `scenarios` have `household_id` — scenarios are household-wide, not individually owned
+- On sign-up, a default household ("My Household") is auto-created with the user as owner
+- `users` table has `active_household_id` (nullable uuid) tracking which household the user is currently working in
+- `users` table has `must_reset_password` (boolean) for invited users who need to set their own password
+- Helper function `getHouseholdSession()` at `apps/web/src/lib/auth-helpers.ts` — validates session has userId AND activeHouseholdId, used by all data API routes
+- **All API routes use `householdId` for data scoping** — NOT `userId`. The pattern: `getHouseholdSession()` → use `session.householdId` in WHERE clauses and inserts
+- Household API routes:
+  - `GET /api/households` — list user's households
+  - `POST /api/households` — create new household
+  - `GET/PATCH/DELETE /api/households/[id]` — manage household (PATCH: name, financialGoalNote; requires admin/owner)
+  - `GET /api/households/[id]/members` — list members
+  - `POST /api/households/[id]/members` — invite member (creates user if needed with temp password + `mustResetPassword`)
+  - `PATCH/DELETE /api/households/[id]/members/[memberId]` — update role / remove member
+  - `POST /api/households/switch` — switch active household (updates user's `activeHouseholdId` + JWT session)
 
 ### Database
 - **PostgreSQL 17** (Docker image: `postgres:17-bookworm`) — primary database
@@ -137,12 +160,14 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - The net worth categories are **standalone** — not yet linked to the existing `accounts`/`debts` tables. This will be connected in a future iteration.
 
 ### Account Settings
-- Settings page at `/settings` — three sections: Profile, Personal & Financial, Security
-- DB: `users` table has extra profile columns: `date_of_birth` (date), `timezone` (text, default `America/Chicago`), `preferred_currency` (text, default `USD`), `retirement_age` (integer), `financial_goal_note` (text)
+- Settings page at `/settings` — four sections: Profile, Personal & Financial, Household, Security
+- DB: `users` table has extra profile columns: `date_of_birth` (date), `timezone` (text, default `America/Chicago`), `preferred_currency` (text, default `USD`), `retirement_age` (integer)
+- DB: `households` table has `financial_goal_note` (text) — moved from users to households
 - API routes:
-  - `GET /api/users/me` — returns full user profile (excludes passwordHash)
-  - `PATCH /api/users/me` — update name, email, dateOfBirth, timezone, preferredCurrency, retirementAge, financialGoalNote
-  - `POST /api/users/me/password` — change password; requires `{ currentPassword, newPassword }`
+  - `GET /api/users/me` — returns full user profile (excludes passwordHash, includes activeHouseholdId)
+  - `PATCH /api/users/me` — update name, email, dateOfBirth, timezone, preferredCurrency, retirementAge
+  - `POST /api/users/me/password` — change password; requires `{ currentPassword, newPassword }`. Also clears `mustResetPassword`.
+- Household section in settings: rename household, edit financial goal, manage members, invite new members, switch between households
 - Settings link is in the Sidebar footer (icon: `manage_accounts`)
 
 ---
@@ -310,3 +335,62 @@ For floating navigation, modal overlays, and projection result cards:
 - Use standard 1px borders for content separation.
 - Use standard modal overlays. Use glassmorphism to keep the UI light and interconnected.
 - Use Font Awesome. Use Material Symbols Outlined.
+
+---
+
+# SearchBundle – UI Sizing System
+
+Use this as the source of truth for all sizing and spacing decisions. Follow these standards consistently when building new UI or reviewing existing code.
+
+## Border Radius
+
+| Context | Class |
+|---|---|
+| Buttons, pills, nav items, tags | `rounded-full` |
+| Cards, sections, modals, drawers | `rounded-2xl` |
+| Inputs, selects, textareas, sub-cards, list rows, dropdown items | `rounded-xl` |
+| Icon action buttons (small, in cards) | `rounded-xl` |
+| Inline badge/chip labels | `rounded-full` |
+| Dense data table cells (net worth grid only) | `rounded-lg` or smaller |
+| **Never use** `rounded-md`, `rounded-sm`, `rounded-lg` outside the dense data grid. | — |
+
+## Spacing
+
+| Context | Class |
+|---|---|
+| Page container padding | `p-6` |
+| Primary card / section padding | `p-8` |
+| Sub-card / nested card padding | `p-6` |
+| Compact metric tile | `p-5` |
+| List item row | `px-4 py-3` |
+| Between page sections | `space-y-6` / `gap-6` |
+| Between form fields | `space-y-4` |
+| Between grid columns | `gap-4` to `gap-6` |
+| Icon-to-label gap | `gap-3` |
+| Sibling buttons/chips gap | `gap-2` |
+
+## Buttons
+
+| Type | Key Classes |
+|---|---|
+| Primary CTA (pill) | `rounded-full px-6 py-2.5 text-sm font-semibold` |
+| Primary full-width (modal/form) | `rounded-full flex-1 py-3 text-sm font-semibold` |
+| Secondary ghost | `rounded-full px-4 py-2 text-sm font-medium` |
+| Icon action button (in cards) | `rounded-xl h-8 w-8 flex items-center justify-center` |
+
+## Icon Sizes
+
+| Context | Class |
+|---|---|
+| Section header decoration | `text-[20px]` |
+| Inline body icon | `text-[18px]` |
+| Small contextual icon | `text-[16px]` |
+| Tiny / label icon | `text-[14px]` |
+
+## Icon Containers
+
+| Context | Size | Radius |
+|---|---|---|
+| Section header | `w-10 h-10` | `rounded-full` |
+| Card-level type icon | `w-9 h-9` | `rounded-xl` |
+| Small action button | `w-8 h-8` | `rounded-xl` |

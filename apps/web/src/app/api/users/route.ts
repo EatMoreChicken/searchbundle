@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getDb, users } from "@searchbundle/db";
+import { getDb, users, households, householdMembers } from "@searchbundle/db";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
@@ -43,10 +43,28 @@ export async function POST(request: Request) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const [user] = await getDb()
+  const db = getDb();
+
+  const [user] = await db
     .insert(users)
     .values({ email, name: name ?? null, passwordHash })
     .returning({ id: users.id, email: users.email });
+
+  const [household] = await db
+    .insert(households)
+    .values({ name: "My Household", createdBy: user.id })
+    .returning({ id: households.id });
+
+  await db.insert(householdMembers).values({
+    householdId: household.id,
+    userId: user.id,
+    role: "owner",
+  });
+
+  await db
+    .update(users)
+    .set({ activeHouseholdId: household.id })
+    .where(eq(users.id, user.id));
 
   return NextResponse.json(user, { status: 201 });
 }

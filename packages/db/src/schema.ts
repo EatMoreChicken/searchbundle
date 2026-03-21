@@ -26,6 +26,8 @@ export const debtTypeEnum = pgEnum("debt_type", [
   "other",
 ]);
 
+export const householdRoleEnum = pgEnum("household_role", ["owner", "admin", "member"]);
+
 // --- Tables ---
 
 export const users = pgTable("users", {
@@ -38,18 +40,37 @@ export const users = pgTable("users", {
   timezone: text("timezone").notNull().default("America/Chicago"),
   preferredCurrency: text("preferred_currency").notNull().default("USD"),
   retirementAge: integer("retirement_age"),
-  financialGoalNote: text("financial_goal_note"),
+  activeHouseholdId: uuid("active_household_id"),
+  mustResetPassword: boolean("must_reset_password").notNull().default(false),
 });
+
+export const households = pgTable("households", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().default("My Household"),
+  financialGoalNote: text("financial_goal_note"),
+  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const householdMembers = pgTable("household_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: householdRoleEnum("role").notNull().default("member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+}, (table) => [
+  unique("household_members_household_user").on(table.householdId, table.userId),
+]);
 
 export const accounts = pgTable("accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+  ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   type: accountTypeEnum("type").notNull(),
   balance: numeric("balance", { precision: 14, scale: 2 }).notNull().default("0"),
   currency: text("currency").notNull().default("USD"),
   notes: text("notes"),
-  // Investment-specific fields
   contributionAmount: numeric("contribution_amount", { precision: 14, scale: 2 }),
   contributionFrequency: contributionFrequencyEnum("contribution_frequency"),
   returnRate: numeric("return_rate", { precision: 6, scale: 4 }),
@@ -61,7 +82,8 @@ export const accounts = pgTable("accounts", {
 
 export const debts = pgTable("debts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+  ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   type: debtTypeEnum("type").notNull(),
   balance: numeric("balance", { precision: 14, scale: 2 }).notNull().default("0"),
@@ -77,7 +99,7 @@ export const debts = pgTable("debts", {
 
 export const scenarios = pgTable("scenarios", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
   debtId: uuid("debt_id").references(() => debts.id, { onDelete: "cascade" }),
   accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
@@ -90,6 +112,7 @@ export const scenarios = pgTable("scenarios", {
 
 export const checkIns = pgTable("check_ins", {
   id: uuid("id").primaryKey().defaultRandom(),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   completedAt: timestamp("completed_at").defaultNow().notNull(),
   netWorthSnapshot: numeric("net_worth_snapshot", { precision: 14, scale: 2 }),
@@ -111,7 +134,7 @@ export const categoryTypeEnum = pgEnum("category_type", ["asset", "liability"]);
 
 export const netWorthCategories = pgTable("net_worth_categories", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   type: categoryTypeEnum("type").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),

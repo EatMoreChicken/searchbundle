@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { getDb, accounts } from "@searchbundle/db";
 import { eq, and } from "drizzle-orm";
+import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type AccountRow = typeof accounts.$inferSelect;
 
@@ -19,16 +19,14 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
   const [row] = await getDb()
     .select()
     .from(accounts)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, session.user.id)));
+    .where(and(eq(accounts.id, id), eq(accounts.householdId, session.householdId)));
 
   if (!row) {
     return NextResponse.json({ message: "Asset not found" }, { status: 404 });
@@ -41,10 +39,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
   const body = await request.json().catch(() => null);
@@ -53,7 +49,7 @@ export async function PUT(
   }
 
   const {
-    name, type, balance, currency, notes,
+    name, type, balance, currency, notes, ownerId,
     contributionAmount, contributionFrequency, returnRate, returnRateVariance, includeInflation,
   } = body as {
     name?: string;
@@ -61,6 +57,7 @@ export async function PUT(
     balance?: unknown;
     currency?: string;
     notes?: string;
+    ownerId?: string | null;
     contributionAmount?: unknown;
     contributionFrequency?: string;
     returnRate?: unknown;
@@ -74,6 +71,7 @@ export async function PUT(
   if (balance !== undefined) updates.balance = String(balance);
   if (currency !== undefined) updates.currency = currency;
   if (notes !== undefined) updates.notes = notes;
+  if (ownerId !== undefined) updates.ownerId = ownerId;
   if (contributionAmount !== undefined) updates.contributionAmount = contributionAmount != null ? String(contributionAmount) : null;
   if (contributionFrequency !== undefined) updates.contributionFrequency = (contributionFrequency ?? null) as typeof accounts.$inferInsert["contributionFrequency"];
   if (returnRate !== undefined) updates.returnRate = returnRate != null ? String(returnRate) : null;
@@ -83,7 +81,7 @@ export async function PUT(
   const [row] = await getDb()
     .update(accounts)
     .set(updates)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, session.user.id)))
+    .where(and(eq(accounts.id, id), eq(accounts.householdId, session.householdId)))
     .returning();
 
   if (!row) {
@@ -97,15 +95,13 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getHouseholdSession();
+  if ("error" in session) return session.error;
 
   const { id } = await params;
   await getDb()
     .delete(accounts)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, session.user.id)));
+    .where(and(eq(accounts.id, id), eq(accounts.householdId, session.householdId)));
 
   return new NextResponse(null, { status: 204 });
 }

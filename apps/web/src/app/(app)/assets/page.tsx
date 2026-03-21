@@ -179,7 +179,7 @@ export default function AssetsPage() {
   const hasInvestments = assetList.some((a) => a.type === "investment");
 
   return (
-    <div className="min-h-screen p-12">
+    <div className="min-h-screen p-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -254,7 +254,7 @@ export default function AssetsPage() {
               <div
                 key={asset.id}
                 onClick={() => router.push(`/assets/${asset.id}`)}
-                className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-7 transition-transform hover:-translate-y-1"
+                className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -268,13 +268,13 @@ export default function AssetsPage() {
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={(e) => openEdit(asset, e)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
                     >
                       <span className="material-symbols-outlined text-[14px]">edit</span>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteConfirm(asset.id); }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-on-surface-variant hover:bg-error-container hover:text-error"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
                     >
                       <span className="material-symbols-outlined text-[14px]">delete</span>
                     </button>
@@ -339,7 +339,7 @@ export default function AssetsPage() {
               </h2>
               <button
                 onClick={closeModal}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
