@@ -112,3 +112,20 @@ export interface DashboardData {
   categories: NetWorthCategory[];
   entries: NetWorthEntry[];
 }
+
+export type TargetMode = "fixed" | "income_replacement";
+
+export interface RetirementTarget {
+  id: string;
+  householdId: string;
+  mode: TargetMode;
+  targetAmount: number;
+  targetAge: number;
+  annualIncome: number | null;
+  withdrawalRate: number;
+  expectedReturn: number;
+  inflationRate: number;
+  includeInflation: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

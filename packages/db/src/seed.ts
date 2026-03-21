@@ -15,32 +15,7 @@ const FRIEND_USER_ID = "00000000-0000-0000-0000-000000000003";
 const HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000010";
 const SECOND_HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000011";
 
-// Fixed IDs for seeded assets (household 1)
-const ACCT_SAVINGS_ID   = "00000000-0000-0001-0000-000000000001";
-const ACCT_401K_ID      = "00000000-0000-0001-0000-000000000002";
-const ACCT_ROTH_ID      = "00000000-0000-0001-0000-000000000003";
-const ACCT_HSA_ID       = "00000000-0000-0001-0000-000000000004";
-const ACCT_PROPERTY_ID  = "00000000-0000-0001-0000-000000000005";
-
-// Fixed IDs for seeded assets (household 2)
-const ACCT2_SAVINGS_ID  = "00000000-0000-0001-0001-000000000001";
-const ACCT2_BROKER_ID   = "00000000-0000-0001-0001-000000000002";
-
-// Fixed IDs for seeded debts
-const DEBT_MORTGAGE_ID  = "00000000-0000-0002-0000-000000000001";
-const DEBT_STUDENT_ID   = "00000000-0000-0002-0000-000000000002";
-const DEBT_AUTO_ID      = "00000000-0000-0002-0000-000000000003";
-
-// Fixed IDs for net worth categories (household 1)
-const CAT_SAVINGS_ID    = "00000000-0000-0003-0000-000000000001";
-const CAT_INVEST_ID     = "00000000-0000-0003-0000-000000000002";
-const CAT_PROPERTY_ID   = "00000000-0000-0003-0000-000000000003";
-const CAT_MORTGAGE_ID   = "00000000-0000-0003-0000-000000000004";
-const CAT_STUDENT_ID    = "00000000-0000-0003-0000-000000000005";
-
-// Fixed IDs for net worth categories (household 2)
-const CAT2_SAVINGS_ID   = "00000000-0000-0003-0001-000000000001";
-const CAT2_INVEST_ID    = "00000000-0000-0003-0001-000000000002";
+const ACCT_SAVINGS_ID = "00000000-0000-0001-0000-000000000001";
 
 async function seed() {
   const connectionString = process.env.DATABASE_URL;
@@ -141,83 +116,19 @@ async function seed() {
     ])
     .onConflictDoNothing();
 
-  // Sample assets for second household
+  // Single example asset — Joint Savings
   await db
     .insert(accounts)
-    .values([
-      { id: ACCT2_SAVINGS_ID, householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "High-Yield Savings", type: "savings" as const, balance: "15000.00", currency: "USD" },
-      { id: ACCT2_BROKER_ID,  householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "Brokerage", type: "investment" as const, balance: "55000.00", currency: "USD", returnRate: "0.0750" },
-    ])
+    .values({
+      id: ACCT_SAVINGS_ID,
+      householdId: HOUSEHOLD_ID,
+      ownerId: null,
+      name: "Joint Savings",
+      type: "savings" as const,
+      balance: "25000.00",
+      currency: "USD",
+    })
     .onConflictDoNothing();
-
-  // Sample net worth categories for second household
-  const secondHouseholdCategories = [
-    { id: CAT2_SAVINGS_ID, householdId: SECOND_HOUSEHOLD_ID, name: "Savings", type: "asset" as const, sortOrder: 0 },
-    { id: CAT2_INVEST_ID,  householdId: SECOND_HOUSEHOLD_ID, name: "Investments", type: "asset" as const, sortOrder: 1 },
-  ];
-  for (const cat of secondHouseholdCategories) {
-    await db.insert(netWorthCategories).values(cat).onConflictDoNothing();
-  }
-
-  // Sample assets (household-scoped)
-  const sampleAccounts = [
-    { id: ACCT_SAVINGS_ID,  householdId: HOUSEHOLD_ID, ownerId: null,           name: "Joint Savings",      type: "savings" as const,    balance: "25000.00",  currency: "USD" },
-    { id: ACCT_401K_ID,     householdId: HOUSEHOLD_ID, ownerId: DEV_USER_ID,    name: "401(k)",             type: "investment" as const, balance: "185000.00", currency: "USD", contributionAmount: "1500.00", contributionFrequency: "monthly" as const, returnRate: "0.0700", includeInflation: true },
-    { id: ACCT_ROTH_ID,     householdId: HOUSEHOLD_ID, ownerId: PARTNER_USER_ID,name: "Roth IRA",           type: "investment" as const, balance: "42000.00",  currency: "USD", contributionAmount: "500.00",  contributionFrequency: "monthly" as const, returnRate: "0.0800" },
-    { id: ACCT_HSA_ID,      householdId: HOUSEHOLD_ID, ownerId: null,           name: "HSA",                type: "hsa" as const,        balance: "8500.00",   currency: "USD" },
-    { id: ACCT_PROPERTY_ID, householdId: HOUSEHOLD_ID, ownerId: null,           name: "Primary Residence",  type: "property" as const,   balance: "420000.00", currency: "USD" },
-  ];
-
-  for (const acct of sampleAccounts) {
-    await db.insert(accounts).values(acct).onConflictDoNothing();
-  }
-
-  // Sample debts (household-scoped)
-  const sampleDebts = [
-    { id: DEBT_MORTGAGE_ID, householdId: HOUSEHOLD_ID, ownerId: null,            name: "Mortgage",       type: "mortgage" as const,     balance: "310000.00", originalBalance: "350000.00", interestRate: "0.0625", minimumPayment: "2150.00", escrowAmount: "450.00",  remainingMonths: "312" },
-    { id: DEBT_STUDENT_ID,  householdId: HOUSEHOLD_ID, ownerId: DEV_USER_ID,     name: "Student Loans",  type: "student_loan" as const,  balance: "18000.00",  originalBalance: "45000.00",  interestRate: "0.0450", minimumPayment: "350.00",  remainingMonths: "60"  },
-    { id: DEBT_AUTO_ID,     householdId: HOUSEHOLD_ID, ownerId: PARTNER_USER_ID, name: "Auto Loan",      type: "auto" as const,          balance: "12500.00",  originalBalance: "28000.00",  interestRate: "0.0390", minimumPayment: "425.00",  remainingMonths: "32"  },
-  ];
-
-  for (const debt of sampleDebts) {
-    await db.insert(debts).values(debt).onConflictDoNothing();
-  }
-
-  // Sample net worth categories
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-
-  const categoryData = [
-    { id: CAT_SAVINGS_ID,  householdId: HOUSEHOLD_ID, name: "Savings",       type: "asset" as const,     sortOrder: 0 },
-    { id: CAT_INVEST_ID,   householdId: HOUSEHOLD_ID, name: "Investments",   type: "asset" as const,     sortOrder: 1 },
-    { id: CAT_PROPERTY_ID, householdId: HOUSEHOLD_ID, name: "Property",      type: "asset" as const,     sortOrder: 2 },
-    { id: CAT_MORTGAGE_ID, householdId: HOUSEHOLD_ID, name: "Mortgage",      type: "liability" as const, sortOrder: 0 },
-    { id: CAT_STUDENT_ID,  householdId: HOUSEHOLD_ID, name: "Student Loans", type: "liability" as const, sortOrder: 1 },
-  ];
-
-  for (const cat of categoryData) {
-    await db.insert(netWorthCategories).values(cat).onConflictDoNothing();
-
-    if (currentMonth >= 1) {
-      const entries = [];
-      for (let m = 1; m <= Math.min(currentMonth, 12); m++) {
-        const baseValues: Record<string, number> = {
-          "Savings": 23000, "Investments": 210000, "Property": 420000,
-          "Mortgage": 315000, "Student Loans": 20000,
-        };
-        const base = baseValues[cat.name] ?? 10000;
-        const monthlyChange = cat.type === "liability" ? -500 : 1500;
-        entries.push({
-          categoryId: cat.id,
-          year: currentYear,
-          month: m,
-          value: String(base + monthlyChange * (m - 1)),
-        });
-      }
-      await db.insert(netWorthEntries).values(entries).onConflictDoNothing();
-    }
-  }
 
   console.log("Seed complete:");
   console.log(`  Dev user:     ${DEV_USER_ID} (dev@searchbundle.io / password123) — owner of Dev Household, member of Friend's Household`);
@@ -225,7 +136,7 @@ async function seed() {
   console.log(`  Friend user:  ${FRIEND_USER_ID} (friend@searchbundle.io / password123) — owner of Friend's Household`);
   console.log(`  Household 1: ${HOUSEHOLD_ID} (Dev Household)`);
   console.log(`  Household 2: ${SECOND_HOUSEHOLD_ID} (Friend's Household)`);
-  console.log("  Sample assets, debts, and net worth data seeded.");
+  console.log(`  Joint Savings account: ${ACCT_SAVINGS_ID}`);
 
   await client.end();
 }
