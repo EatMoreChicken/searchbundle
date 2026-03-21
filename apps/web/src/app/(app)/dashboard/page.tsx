@@ -637,7 +637,7 @@ export default function DashboardPage() {
               </div>
               {yearsRemaining != null && yearsRemaining > 0 && monthlySavings > 0 && (
                 <p className="text-xs text-on-surface-variant border-t border-outline-variant/20 pt-3">
-                  Based on a <strong>{expectedReturn}%</strong> annual return and 3% annual inflation over <strong>{yearsRemaining} years</strong>.
+                  Based on a <strong>{Number(expectedReturn).toFixed(1)}%</strong> annual return and 3% annual inflation over <strong>{yearsRemaining} years</strong>.
                   {mode === "income_replacement" && Number(annualIncome) > 0 && incomeValueType === "present"
                     ? ` Your ${formatCurrency(Number(annualIncome))}/yr in today's dollars grows to ${formatCurrency(Math.round(annualIncomeInFutureDollars))}/yr at retirement after inflation.`
                     : ""}
