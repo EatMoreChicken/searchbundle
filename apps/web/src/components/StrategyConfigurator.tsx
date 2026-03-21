@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ComposedChart,
   Area,
@@ -86,6 +86,13 @@ function SliderInput({
   hint?: string;
 }) {
   const showReset = onReset && defaultValue != null && Math.abs(value - defaultValue) > step * 0.5;
+  const [inputRaw, setInputRaw] = useState(String(value));
+  const [inputError, setInputError] = useState(false);
+
+  useEffect(() => {
+    setInputRaw(String(value));
+    setInputError(false);
+  }, [value]);
 
   return (
     <div className="space-y-2">
@@ -122,18 +129,25 @@ function SliderInput({
             </span>
           )}
           <input
-            type="number"
-            min={min}
-            max={max}
-            step={step}
-            value={Math.round(value * (suffix === "%" ? 100 : 1)) / (suffix === "%" ? 100 : 1)}
+            type="text"
+            inputMode="numeric"
+            value={inputRaw}
             onChange={(e) => {
-              const v = Number(e.target.value);
-              if (v >= min && v <= max) onChange(v);
+              setInputRaw(e.target.value.replace(/[^0-9]/g, ""));
+              setInputError(false);
             }}
-            className={`w-full bg-surface-container-high rounded-xl py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all ${
-              prefix ? "pl-6 pr-8" : suffix ? "pr-8" : ""
-            }`}
+            onBlur={() => {
+              const v = Number(inputRaw);
+              if (!inputRaw || isNaN(v) || v < min || v > max) {
+                setInputError(true);
+              } else {
+                setInputError(false);
+                onChange(v);
+              }
+            }}
+            className={`w-full bg-surface-container-high rounded-xl py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:bg-white focus:ring-1 transition-all ${
+              prefix ? "pl-6" : ""
+            } ${suffix ? "pr-6" : ""} ${inputError ? "ring-1 ring-error" : "focus:ring-primary"}`}
           />
           {suffix && (
             <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">
@@ -142,7 +156,135 @@ function SliderInput({
           )}
         </div>
       </div>
-      {hint && <p className="text-[11px] text-on-surface-variant leading-relaxed">{hint}</p>}
+      {inputError && <p className="text-[11px] text-error">Enter a value between {min} and {max}</p>}
+      {!inputError && hint && <p className="text-[11px] text-on-surface-variant leading-relaxed">{hint}</p>}
+    </div>
+  );
+}
+
+function CurrencyInput({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  tooltip,
+  onReset,
+  defaultValue,
+  hint,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  tooltip?: string;
+  onReset?: () => void;
+  defaultValue?: number;
+  hint?: string;
+}) {
+  const [raw, setRaw] = useState(String(value));
+  const [error, setError] = useState(false);
+  const showReset = onReset && defaultValue != null && Math.abs(value - defaultValue) > 50;
+
+  useEffect(() => {
+    setRaw(String(value));
+    setError(false);
+  }, [value]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold text-on-surface-variant flex items-center">
+          {label}
+          {tooltip && <InfoTooltip>{tooltip}</InfoTooltip>}
+        </label>
+        {showReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="text-[10px] font-medium text-primary hover:text-primary-container transition-colors flex items-center gap-0.5"
+          >
+            <span className="material-symbols-outlined text-[12px]">restart_alt</span>
+            Reset
+          </button>
+        )}
+      </div>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">$</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={raw}
+          onChange={(e) => {
+            setRaw(e.target.value.replace(/[^0-9]/g, ""));
+            setError(false);
+          }}
+          onBlur={() => {
+            const v = Number(raw);
+            if (!raw || isNaN(v) || v < min || v > max) {
+              setError(true);
+            } else {
+              setError(false);
+              onChange(v);
+            }
+          }}
+          className={`w-full bg-surface-container-high rounded-xl py-3 pl-8 pr-4 text-base font-bold text-on-surface focus:outline-none focus:bg-white focus:ring-1 transition-all ${
+            error ? "ring-1 ring-error" : "focus:ring-primary"
+          }`}
+        />
+      </div>
+      {error && (
+        <p className="text-[11px] text-error">Enter a monthly amount between ${min.toLocaleString()} and ${max.toLocaleString()}</p>
+      )}
+      {!error && hint && <p className="text-[11px] text-on-surface-variant leading-relaxed">{hint}</p>}
+    </div>
+  );
+}
+
+function AssumptionStepper({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+}) {
+  const STEP = 0.001;
+  const canDecrease = value > min + STEP * 0.5;
+  const canIncrease = value < max - STEP * 0.5;
+
+  return (
+    <div className="bg-surface-container-low rounded-xl p-3 text-center">
+      <div className="flex items-center justify-center gap-2 mb-1">
+        <button
+          type="button"
+          onClick={() => onChange(Math.round((value - STEP) * 10000) / 10000)}
+          disabled={!canDecrease}
+          className="w-7 h-7 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+          aria-label={`Decrease ${label}`}
+        >
+          <span className="material-symbols-outlined text-[16px] text-on-surface-variant">keyboard_arrow_down</span>
+        </button>
+        <p className="text-lg font-bold text-on-surface w-14 text-center tabular-nums">
+          {(value * 100).toFixed(1)}%
+        </p>
+        <button
+          type="button"
+          onClick={() => onChange(Math.round((value + STEP) * 10000) / 10000)}
+          disabled={!canIncrease}
+          className="w-7 h-7 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+          aria-label={`Increase ${label}`}
+        >
+          <span className="material-symbols-outlined text-[16px] text-on-surface-variant">keyboard_arrow_up</span>
+        </button>
+      </div>
+      <p className="text-[10px] text-on-surface-variant">{label}</p>
     </div>
   );
 }
@@ -183,6 +325,8 @@ export default function StrategyConfigurator({
   onBack,
 }: StrategyConfiguratorProps) {
   const meta = STRATEGY_LIST.find((s) => s.id === strategy)!;
+  const [localAnnualReturn, setLocalAnnualReturn] = useState(annualReturn);
+  const [localInflationRate, setLocalInflationRate] = useState(inflationRate);
 
   // Calculate defaults for this strategy
   const defaults = useMemo(
@@ -196,12 +340,12 @@ export default function StrategyConfigurator({
       strategy,
       targetAmount,
       years,
-      annualReturn,
+      annualReturn: localAnnualReturn,
       annualChangeRate: defaults.annualChangeRate,
       phase1Years: defaults.phase1Years,
       phase2Monthly: defaults.phase2Monthly,
     });
-  }, [strategy, targetAmount, years, annualReturn, defaults]);
+  }, [strategy, targetAmount, years, localAnnualReturn, defaults]);
 
   // State for user-adjustable parameters
   const [phase1Monthly, setPhase1Monthly] = useState(Math.round(autoStartMonthly));
@@ -219,7 +363,7 @@ export default function StrategyConfigurator({
       strategy,
       targetAmount,
       years,
-      annualReturn,
+      annualReturn: localAnnualReturn,
       annualChangeRate: defaults.annualChangeRate,
       phase1Years: defaults.phase1Years,
       phase2Monthly: defaults.phase2Monthly,
@@ -236,12 +380,12 @@ export default function StrategyConfigurator({
       strategy,
       targetAmount,
       years,
-      annualReturn,
+      annualReturn: localAnnualReturn,
       annualChangeRate: annualChangeRate / 100,
       phase1Years,
       phase2Monthly,
     }),
-    [strategy, targetAmount, years, annualReturn, annualChangeRate, phase1Years, phase2Monthly]
+    [strategy, targetAmount, years, localAnnualReturn, annualChangeRate, phase1Years, phase2Monthly]
   );
 
   // Generate chart data with current phase1Monthly
@@ -272,15 +416,22 @@ export default function StrategyConfigurator({
 
   // Reset to defaults
   const resetAll = useCallback(() => {
-    setPhase1Monthly(Math.round(autoStartMonthly));
+    const resetAuto = calculateStartingMonthly({
+      strategy,
+      targetAmount,
+      years,
+      annualReturn,
+      annualChangeRate: defaults.annualChangeRate,
+      phase1Years: defaults.phase1Years,
+      phase2Monthly: defaults.phase2Monthly,
+    });
+    setPhase1Monthly(Math.round(resetAuto));
     setPhase1Years(defaults.phase1Years);
     setPhase2Monthly(defaults.phase2Monthly);
     setAnnualChangeRate(Math.round(defaults.annualChangeRate * 100));
-  }, [autoStartMonthly, defaults]);
-
-  // Max slider values
-  const maxMonthly = Math.max(Math.round(autoStartMonthly * 3), 20000);
-  const maxPhase2 = Math.max(Math.round(defaults.traditionalMonthly * 2), 5000);
+    setLocalAnnualReturn(annualReturn);
+    setLocalInflationRate(inflationRate);
+  }, [strategy, targetAmount, years, annualReturn, inflationRate, defaults]);
 
   // Contribution schedule summary
   const lastDataPoint = scheduleData[scheduleData.length - 1];
@@ -334,7 +485,7 @@ export default function StrategyConfigurator({
 
             {/* Starting monthly contribution (all strategies except traditional) */}
             {strategy !== "traditional" && (
-              <SliderInput
+              <CurrencyInput
                 label={
                   strategy === "coast_fire" || strategy === "barista_fire"
                     ? "Phase 1 monthly savings"
@@ -343,9 +494,7 @@ export default function StrategyConfigurator({
                 value={phase1Monthly}
                 onChange={setPhase1Monthly}
                 min={100}
-                max={maxMonthly}
-                step={50}
-                prefix="$"
+                max={99999}
                 tooltip={
                   strategy === "front_loaded"
                     ? "Your monthly contribution in year 1. This amount decreases each year by the change rate below."
@@ -394,7 +543,7 @@ export default function StrategyConfigurator({
                     strategy,
                     targetAmount,
                     years,
-                    annualReturn,
+                    annualReturn: localAnnualReturn,
                     phase1Years: v,
                     phase2Monthly: strategy === "barista_fire" ? phase2Monthly : 0,
                   });
@@ -420,7 +569,7 @@ export default function StrategyConfigurator({
 
             {/* Phase 2 monthly (barista only) */}
             {strategy === "barista_fire" && (
-              <SliderInput
+              <CurrencyInput
                 label="Reduced phase monthly savings"
                 value={phase2Monthly}
                 onChange={(v) => {
@@ -429,16 +578,14 @@ export default function StrategyConfigurator({
                     strategy,
                     targetAmount,
                     years,
-                    annualReturn,
+                    annualReturn: localAnnualReturn,
                     phase1Years,
                     phase2Monthly: v,
                   });
                   setPhase1Monthly(Math.round(newAuto));
                 }}
                 min={0}
-                max={maxPhase2}
-                step={25}
-                prefix="$"
+                max={99999}
                 tooltip="Monthly contribution after the aggressive phase ends. This is the lower amount you maintain for the remaining years."
                 onReset={() => {
                   setPhase2Monthly(defaults.phase2Monthly);
@@ -460,7 +607,7 @@ export default function StrategyConfigurator({
                     strategy,
                     targetAmount,
                     years,
-                    annualReturn,
+                    annualReturn: localAnnualReturn,
                     annualChangeRate: v / 100,
                   });
                   setPhase1Monthly(Math.round(newAuto));
@@ -495,17 +642,23 @@ export default function StrategyConfigurator({
               Assumptions
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                <p className="text-lg font-bold text-on-surface">{(annualReturn * 100).toFixed(1)}%</p>
-                <p className="text-[10px] text-on-surface-variant">Expected return</p>
-              </div>
-              <div className="bg-surface-container-low rounded-xl p-3 text-center">
-                <p className="text-lg font-bold text-on-surface">{(inflationRate * 100).toFixed(1)}%</p>
-                <p className="text-[10px] text-on-surface-variant">Inflation rate</p>
-              </div>
+              <AssumptionStepper
+                label="Expected return"
+                value={localAnnualReturn}
+                onChange={setLocalAnnualReturn}
+                min={0.01}
+                max={0.20}
+              />
+              <AssumptionStepper
+                label="Inflation rate"
+                value={localInflationRate}
+                onChange={setLocalInflationRate}
+                min={0}
+                max={0.10}
+              />
             </div>
             <p className="text-[11px] text-on-surface-variant">
-              You can adjust these in the previous step or later in Settings.
+              Tap ± to adjust by 0.1% and see how it affects your projection.
             </p>
           </div>
         </div>
@@ -680,7 +833,7 @@ export default function StrategyConfigurator({
             </div>
             <p className="text-xs text-on-surface-variant leading-relaxed">
               <span className="material-symbols-outlined text-[12px] align-middle mr-0.5">info</span>
-              Based on {(annualReturn * 100).toFixed(1)}% annual return and {(inflationRate * 100).toFixed(1)}% inflation.
+              Based on {(localAnnualReturn * 100).toFixed(1)}% annual return and {(localInflationRate * 100).toFixed(1)}% inflation.
               These are projections, not guarantees. You can refine these numbers anytime.
             </p>
           </div>
