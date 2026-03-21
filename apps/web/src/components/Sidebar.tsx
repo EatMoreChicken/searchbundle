@@ -19,9 +19,10 @@ interface HouseholdMembership {
 
 const navItems: NavItem[] = [
   { href: "/dashboard", icon: "dashboard", label: "Dashboard" },
+  { href: "/tracker", icon: "query_stats", label: "Tracker" },
   { href: "/assets", icon: "account_balance_wallet", label: "Assets" },
   { href: "/liabilities", icon: "payments", label: "Liabilities" },
-  { href: "/projections", icon: "query_stats", label: "Projections" },
+  { href: "/projections", icon: "area_chart", label: "Projections" },
 ];
 
 export default function Sidebar() {
