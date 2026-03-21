@@ -149,7 +149,6 @@ export default function Sidebar() {
             </div>
           )}
 
-          <p className="text-sm text-on-surface-variant mt-1">Your sanctuary is ready</p>
         </div>
       )}
 
