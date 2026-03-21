@@ -330,7 +330,7 @@ export default function NetWorthTracker() {
       <td
         key={month}
         ref={isCurrent && !currentMonthRef.current ? currentMonthRef : undefined}
-        className={`px-4 py-3 text-right whitespace-nowrap ${getCellClasses(month)}`}
+        className={`sticky bottom-0 z-10 bg-surface-container-low px-4 py-3 text-right whitespace-nowrap`}
       >
         <span className={`text-sm font-extrabold ${colorClass}`}>
           {hasData ? formatCurrency(netWorth) : "–"}
@@ -655,8 +655,7 @@ export default function NetWorthTracker() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl overflow-hidden bg-surface-container-lowest">
-        <div ref={scrollContainerRef} className="overflow-x-auto sb-scrollbar">
+      <div ref={scrollContainerRef} className="overflow-x-auto overflow-y-auto sb-scrollbar rounded-2xl bg-surface-container-lowest max-h-[calc(100vh-200px)]">
           <table className="w-full border-collapse min-w-[900px]">
             <thead>
               <tr>
@@ -701,15 +700,22 @@ export default function NetWorthTracker() {
               {renderAddRow("asset")}
               {renderTotalRow("Total Assets", assets)}
 
+              {/* Separator */}
+              <tr aria-hidden="true">
+                <td colSpan={13} className="h-3 bg-surface-container-high py-0" />
+              </tr>
+
               {/* Liabilities Section */}
               {renderSectionHeader("Liabilities", "liability", "trending_down")}
               {liabilities.map((cat) => renderCategoryRow(cat))}
               {renderAddRow("liability")}
               {renderTotalRow("Total Liabilities", liabilities)}
+            </tbody>
 
-              {/* Net Worth Row */}
+            {/* Net Worth Row — sticky to the bottom of the scroll container */}
+            <tfoot>
               <tr>
-                <td className="sticky left-0 z-10 bg-gradient-to-r from-primary to-primary-container px-4 py-3 rounded-bl-2xl">
+                <td className="sticky left-0 bottom-0 z-20 bg-gradient-to-r from-primary to-primary-container px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-on-primary text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>leaderboard</span>
                     <span className="font-extrabold text-sm text-on-primary uppercase tracking-wide">
@@ -719,10 +725,9 @@ export default function NetWorthTracker() {
                 </td>
                 {MONTHS.map((_, i) => renderNetWorthCell(i + 1))}
               </tr>
-            </tbody>
+            </tfoot>
           </table>
         </div>
-      </div>
     </div>
   );
 }

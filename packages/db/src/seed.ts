@@ -14,6 +14,33 @@ const FRIEND_USER_ID = "00000000-0000-0000-0000-000000000003";
 const HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000010";
 const SECOND_HOUSEHOLD_ID = "00000000-0000-0000-0000-000000000011";
 
+// Fixed IDs for seeded assets (household 1)
+const ACCT_SAVINGS_ID   = "00000000-0000-0001-0000-000000000001";
+const ACCT_401K_ID      = "00000000-0000-0001-0000-000000000002";
+const ACCT_ROTH_ID      = "00000000-0000-0001-0000-000000000003";
+const ACCT_HSA_ID       = "00000000-0000-0001-0000-000000000004";
+const ACCT_PROPERTY_ID  = "00000000-0000-0001-0000-000000000005";
+
+// Fixed IDs for seeded assets (household 2)
+const ACCT2_SAVINGS_ID  = "00000000-0000-0001-0001-000000000001";
+const ACCT2_BROKER_ID   = "00000000-0000-0001-0001-000000000002";
+
+// Fixed IDs for seeded debts
+const DEBT_MORTGAGE_ID  = "00000000-0000-0002-0000-000000000001";
+const DEBT_STUDENT_ID   = "00000000-0000-0002-0000-000000000002";
+const DEBT_AUTO_ID      = "00000000-0000-0002-0000-000000000003";
+
+// Fixed IDs for net worth categories (household 1)
+const CAT_SAVINGS_ID    = "00000000-0000-0003-0000-000000000001";
+const CAT_INVEST_ID     = "00000000-0000-0003-0000-000000000002";
+const CAT_PROPERTY_ID   = "00000000-0000-0003-0000-000000000003";
+const CAT_MORTGAGE_ID   = "00000000-0000-0003-0000-000000000004";
+const CAT_STUDENT_ID    = "00000000-0000-0003-0000-000000000005";
+
+// Fixed IDs for net worth categories (household 2)
+const CAT2_SAVINGS_ID   = "00000000-0000-0003-0001-000000000001";
+const CAT2_INVEST_ID    = "00000000-0000-0003-0001-000000000002";
+
 async function seed() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
@@ -111,15 +138,15 @@ async function seed() {
   await db
     .insert(accounts)
     .values([
-      { householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "High-Yield Savings", type: "savings" as const, balance: "15000.00", currency: "USD" },
-      { householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "Brokerage", type: "investment" as const, balance: "55000.00", currency: "USD", returnRate: "0.0750" },
+      { id: ACCT2_SAVINGS_ID, householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "High-Yield Savings", type: "savings" as const, balance: "15000.00", currency: "USD" },
+      { id: ACCT2_BROKER_ID,  householdId: SECOND_HOUSEHOLD_ID, ownerId: FRIEND_USER_ID, name: "Brokerage", type: "investment" as const, balance: "55000.00", currency: "USD", returnRate: "0.0750" },
     ])
     .onConflictDoNothing();
 
   // Sample net worth categories for second household
   const secondHouseholdCategories = [
-    { householdId: SECOND_HOUSEHOLD_ID, name: "Savings", type: "asset" as const, sortOrder: 0 },
-    { householdId: SECOND_HOUSEHOLD_ID, name: "Investments", type: "asset" as const, sortOrder: 1 },
+    { id: CAT2_SAVINGS_ID, householdId: SECOND_HOUSEHOLD_ID, name: "Savings", type: "asset" as const, sortOrder: 0 },
+    { id: CAT2_INVEST_ID,  householdId: SECOND_HOUSEHOLD_ID, name: "Investments", type: "asset" as const, sortOrder: 1 },
   ];
   for (const cat of secondHouseholdCategories) {
     await db.insert(netWorthCategories).values(cat).onConflictDoNothing();
@@ -127,11 +154,11 @@ async function seed() {
 
   // Sample assets (household-scoped)
   const sampleAccounts = [
-    { householdId: HOUSEHOLD_ID, ownerId: null, name: "Joint Savings", type: "savings" as const, balance: "25000.00", currency: "USD" },
-    { householdId: HOUSEHOLD_ID, ownerId: DEV_USER_ID, name: "401(k)", type: "investment" as const, balance: "185000.00", currency: "USD", contributionAmount: "1500.00", contributionFrequency: "monthly" as const, returnRate: "0.0700", includeInflation: true },
-    { householdId: HOUSEHOLD_ID, ownerId: PARTNER_USER_ID, name: "Roth IRA", type: "investment" as const, balance: "42000.00", currency: "USD", contributionAmount: "500.00", contributionFrequency: "monthly" as const, returnRate: "0.0800" },
-    { householdId: HOUSEHOLD_ID, ownerId: null, name: "HSA", type: "hsa" as const, balance: "8500.00", currency: "USD" },
-    { householdId: HOUSEHOLD_ID, ownerId: null, name: "Primary Residence", type: "property" as const, balance: "420000.00", currency: "USD" },
+    { id: ACCT_SAVINGS_ID,  householdId: HOUSEHOLD_ID, ownerId: null,           name: "Joint Savings",      type: "savings" as const,    balance: "25000.00",  currency: "USD" },
+    { id: ACCT_401K_ID,     householdId: HOUSEHOLD_ID, ownerId: DEV_USER_ID,    name: "401(k)",             type: "investment" as const, balance: "185000.00", currency: "USD", contributionAmount: "1500.00", contributionFrequency: "monthly" as const, returnRate: "0.0700", includeInflation: true },
+    { id: ACCT_ROTH_ID,     householdId: HOUSEHOLD_ID, ownerId: PARTNER_USER_ID,name: "Roth IRA",           type: "investment" as const, balance: "42000.00",  currency: "USD", contributionAmount: "500.00",  contributionFrequency: "monthly" as const, returnRate: "0.0800" },
+    { id: ACCT_HSA_ID,      householdId: HOUSEHOLD_ID, ownerId: null,           name: "HSA",                type: "hsa" as const,        balance: "8500.00",   currency: "USD" },
+    { id: ACCT_PROPERTY_ID, householdId: HOUSEHOLD_ID, ownerId: null,           name: "Primary Residence",  type: "property" as const,   balance: "420000.00", currency: "USD" },
   ];
 
   for (const acct of sampleAccounts) {
@@ -140,9 +167,9 @@ async function seed() {
 
   // Sample debts (household-scoped)
   const sampleDebts = [
-    { householdId: HOUSEHOLD_ID, ownerId: null, name: "Mortgage", type: "mortgage" as const, balance: "310000.00", originalBalance: "350000.00", interestRate: "0.0625", minimumPayment: "2150.00", escrowAmount: "450.00", remainingMonths: "312" },
-    { householdId: HOUSEHOLD_ID, ownerId: DEV_USER_ID, name: "Student Loans", type: "student_loan" as const, balance: "18000.00", originalBalance: "45000.00", interestRate: "0.0450", minimumPayment: "350.00", remainingMonths: "60" },
-    { householdId: HOUSEHOLD_ID, ownerId: PARTNER_USER_ID, name: "Auto Loan", type: "auto" as const, balance: "12500.00", originalBalance: "28000.00", interestRate: "0.0390", minimumPayment: "425.00", remainingMonths: "32" },
+    { id: DEBT_MORTGAGE_ID, householdId: HOUSEHOLD_ID, ownerId: null,            name: "Mortgage",       type: "mortgage" as const,     balance: "310000.00", originalBalance: "350000.00", interestRate: "0.0625", minimumPayment: "2150.00", escrowAmount: "450.00",  remainingMonths: "312" },
+    { id: DEBT_STUDENT_ID,  householdId: HOUSEHOLD_ID, ownerId: DEV_USER_ID,     name: "Student Loans",  type: "student_loan" as const,  balance: "18000.00",  originalBalance: "45000.00",  interestRate: "0.0450", minimumPayment: "350.00",  remainingMonths: "60"  },
+    { id: DEBT_AUTO_ID,     householdId: HOUSEHOLD_ID, ownerId: PARTNER_USER_ID, name: "Auto Loan",      type: "auto" as const,          balance: "12500.00",  originalBalance: "28000.00",  interestRate: "0.0390", minimumPayment: "425.00",  remainingMonths: "32"  },
   ];
 
   for (const debt of sampleDebts) {
@@ -155,20 +182,17 @@ async function seed() {
   const currentMonth = now.getMonth() + 1;
 
   const categoryData = [
-    { householdId: HOUSEHOLD_ID, name: "Savings", type: "asset" as const, sortOrder: 0 },
-    { householdId: HOUSEHOLD_ID, name: "Investments", type: "asset" as const, sortOrder: 1 },
-    { householdId: HOUSEHOLD_ID, name: "Property", type: "asset" as const, sortOrder: 2 },
-    { householdId: HOUSEHOLD_ID, name: "Mortgage", type: "liability" as const, sortOrder: 0 },
-    { householdId: HOUSEHOLD_ID, name: "Student Loans", type: "liability" as const, sortOrder: 1 },
+    { id: CAT_SAVINGS_ID,  householdId: HOUSEHOLD_ID, name: "Savings",       type: "asset" as const,     sortOrder: 0 },
+    { id: CAT_INVEST_ID,   householdId: HOUSEHOLD_ID, name: "Investments",   type: "asset" as const,     sortOrder: 1 },
+    { id: CAT_PROPERTY_ID, householdId: HOUSEHOLD_ID, name: "Property",      type: "asset" as const,     sortOrder: 2 },
+    { id: CAT_MORTGAGE_ID, householdId: HOUSEHOLD_ID, name: "Mortgage",      type: "liability" as const, sortOrder: 0 },
+    { id: CAT_STUDENT_ID,  householdId: HOUSEHOLD_ID, name: "Student Loans", type: "liability" as const, sortOrder: 1 },
   ];
 
   for (const cat of categoryData) {
-    const [inserted] = await db
-      .insert(netWorthCategories)
-      .values(cat)
-      .returning({ id: netWorthCategories.id });
+    await db.insert(netWorthCategories).values(cat).onConflictDoNothing();
 
-    if (inserted && currentMonth >= 1) {
+    if (currentMonth >= 1) {
       const entries = [];
       for (let m = 1; m <= Math.min(currentMonth, 12); m++) {
         const baseValues: Record<string, number> = {
@@ -178,7 +202,7 @@ async function seed() {
         const base = baseValues[cat.name] ?? 10000;
         const monthlyChange = cat.type === "liability" ? -500 : 1500;
         entries.push({
-          categoryId: inserted.id,
+          categoryId: cat.id,
           year: currentYear,
           month: m,
           value: String(base + monthlyChange * (m - 1)),
