@@ -62,6 +62,67 @@ function FieldHint({ children }: { children: React.ReactNode }) {
   );
 }
 
+const INFLATION_RATE = 0.03;
+
+function PrefixedInput({
+  prefix,
+  suffix,
+  children,
+}: {
+  prefix?: string;
+  suffix?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative flex items-center">
+      {prefix && (
+        <span className="pointer-events-none absolute left-4 text-sm font-medium text-on-surface-variant select-none">
+          {prefix}
+        </span>
+      )}
+      <div className={["w-full", prefix ? "[&_input]:pl-8" : "", suffix ? "[&_input]:pr-10" : ""].join(" ")}>
+        {children}
+      </div>
+      {suffix && (
+        <span className="pointer-events-none absolute right-4 text-sm font-medium text-on-surface-variant select-none">
+          {suffix}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function NumericInput({
+  value,
+  onChange,
+  className,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  const displayValue =
+    !focused && value ? parseInt(value, 10).toLocaleString("en-US") : value;
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={displayValue}
+      onChange={(e) => {
+        const raw = e.target.value.replace(/,/g, "");
+        if (raw === "" || /^\d+$/.test(raw)) onChange(raw);
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      className={className}
+      placeholder={placeholder}
+    />
+  );
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession();
 
@@ -77,14 +138,13 @@ export default function DashboardPage() {
   const [obDone, setObDone] = useState(false);
 
   // Target configurator form
-  const [mode, setMode] = useState<TargetMode>("fixed");
+  const [mode, setMode] = useState<TargetMode>("income_replacement");
   const [fixedAmount, setFixedAmount] = useState("");
   const [targetAge, setTargetAge] = useState("");
   const [annualIncome, setAnnualIncome] = useState("");
+  const [incomeValueType, setIncomeValueType] = useState<"present" | "future">("present");
   const [withdrawalRate, setWithdrawalRate] = useState("4");
   const [expectedReturn, setExpectedReturn] = useState("7");
-  const [includeInflation, setIncludeInflation] = useState(false);
-  const [inflationRate, setInflationRate] = useState("3");
   const [targetSaving, setTargetSaving] = useState(false);
   const [targetError, setTargetError] = useState("");
 
@@ -104,8 +164,7 @@ export default function DashboardPage() {
         setAnnualIncome(t.annualIncome != null ? String(t.annualIncome) : "");
         setWithdrawalRate(String((t.withdrawalRate ?? 0.04) * 100));
         setExpectedReturn(String((t.expectedReturn ?? 0.07) * 100));
-        setIncludeInflation(t.includeInflation);
-        setInflationRate(String((t.inflationRate ?? 0.03) * 100));
+
       }
     } catch {
       /* ignore */
@@ -144,21 +203,30 @@ export default function DashboardPage() {
   const tAge = Number(targetAge) || 0;
   const yearsRemaining = currentAge != null ? tAge - currentAge : null;
 
+  // If the user entered income in today's dollars, convert it to future dollars before calculating the portfolio size
+  const annualIncomeInFutureDollars = useMemo(() => {
+    const income = Number(annualIncome) || 0;
+    if (incomeValueType === "future" || !yearsRemaining || yearsRemaining <= 0) return income;
+    return income * Math.pow(1 + INFLATION_RATE, yearsRemaining);
+  }, [annualIncome, incomeValueType, yearsRemaining]);
+
   const portfolioTarget = useMemo(() => {
     if (mode === "fixed") {
       return Number(fixedAmount) || 0;
     }
-    const income = Number(annualIncome) || 0;
+    const income = annualIncomeInFutureDollars;
     const wr = (Number(withdrawalRate) || 4) / 100;
     if (wr === 0) return 0;
     return income / wr;
-  }, [mode, fixedAmount, annualIncome, withdrawalRate]);
+  }, [mode, fixedAmount, annualIncomeInFutureDollars, withdrawalRate]);
 
   const inflationAdjustedTarget = useMemo(() => {
-    if (!includeInflation || !yearsRemaining || yearsRemaining <= 0) return portfolioTarget;
-    const rate = (Number(inflationRate) || 3) / 100;
-    return portfolioTarget * Math.pow(1 + rate, yearsRemaining);
-  }, [portfolioTarget, includeInflation, inflationRate, yearsRemaining]);
+    // In income_replacement mode the portfolio target is already in future dollars (income was converted above)
+    // In fixed mode we still inflate the entered amount forward
+    if (mode === "income_replacement") return portfolioTarget;
+    if (!yearsRemaining || yearsRemaining <= 0) return portfolioTarget;
+    return portfolioTarget * Math.pow(1 + INFLATION_RATE, yearsRemaining);
+  }, [mode, portfolioTarget, yearsRemaining]);
 
   const monthlySavings = useMemo(() => {
     if (!yearsRemaining || yearsRemaining <= 0) return 0;
@@ -172,8 +240,7 @@ export default function DashboardPage() {
     e.preventDefault();
     setTargetError("");
 
-    const tAmt = inflationAdjustedTarget;
-    if (tAmt <= 0) {
+    if (portfolioTarget <= 0) {
       setTargetError("Please enter a valid target amount.");
       return;
     }
@@ -190,13 +257,13 @@ export default function DashboardPage() {
     try {
       const saved = await apiClient.put<RetirementTarget>("/api/retirement-target", {
         mode,
-        targetAmount: tAmt,
+        targetAmount: portfolioTarget,
         targetAge: tAge,
         annualIncome: mode === "income_replacement" ? Number(annualIncome) || null : null,
         withdrawalRate: (Number(withdrawalRate) || 4) / 100,
         expectedReturn: (Number(expectedReturn) || 7) / 100,
-        inflationRate: (Number(inflationRate) || 3) / 100,
-        includeInflation,
+        inflationRate: INFLATION_RATE,
+        includeInflation: true,
       });
       setTarget(saved);
       setEditing(false);
@@ -214,10 +281,9 @@ export default function DashboardPage() {
       setFixedAmount(target.mode === "fixed" ? String(target.targetAmount) : "");
       setTargetAge(String(target.targetAge));
       setAnnualIncome(target.annualIncome != null ? String(target.annualIncome) : "");
+      setIncomeValueType("present");
       setWithdrawalRate(String((target.withdrawalRate ?? 0.04) * 100));
       setExpectedReturn(String((target.expectedReturn ?? 0.07) * 100));
-      setIncludeInflation(target.includeInflation);
-      setInflationRate(String((target.inflationRate ?? 0.03) * 100));
     }
     setEditing(true);
   }
@@ -227,12 +293,13 @@ export default function DashboardPage() {
     if (!target || !currentAge) return null;
     const years = target.targetAge - currentAge;
     if (years <= 0) return null;
+    const inflAdjTarget = target.targetAmount * Math.pow(1 + INFLATION_RATE, years);
     const monthly = calculateMonthlySavings(
-      target.targetAmount,
+      inflAdjTarget,
       target.expectedReturn ?? 0.07,
       years,
     );
-    return { years, monthly, annual: monthly * 12 };
+    return { years, monthly, annual: monthly * 12, inflAdjTarget };
   }, [target, currentAge]);
 
   const showConfigurator = !target || editing;
@@ -336,20 +403,21 @@ export default function DashboardPage() {
 
             {/* Mode selector */}
             <div>
-              <p className="text-sm font-semibold text-on-surface mb-3">How do you think about your goal?</p>
+              <p className="text-sm font-semibold text-on-surface mb-1">How do you want to describe your goal?</p>
+              <p className="text-xs text-on-surface-variant mb-3">Choose the approach that feels more natural to you.</p>
               <div className="grid grid-cols-2 gap-3">
                 {([
-                  {
-                    id: "fixed" as TargetMode,
-                    icon: "savings",
-                    title: "I know my number",
-                    desc: 'I have a specific total in mind, like "I want $2 million saved."',
-                  },
                   {
                     id: "income_replacement" as TargetMode,
                     icon: "paid",
                     title: "I know my lifestyle",
-                    desc: 'I know how much I want to spend in retirement, like "$80,000/year."',
+                    desc: "Tell us your desired annual spending and we'll calculate the total you need to save.",
+                  },
+                  {
+                    id: "fixed" as TargetMode,
+                    icon: "savings",
+                    title: "I know my number",
+                    desc: "You already have a total portfolio target in mind and want to work backward from it.",
                   },
                 ] as const).map((opt) => (
                   <button
@@ -381,62 +449,96 @@ export default function DashboardPage() {
               {mode === "fixed" ? (
                 <div>
                   <label className="block text-sm font-semibold text-on-surface mb-2">
-                    How much do you want to have saved?
+                    What is your total savings target?
                   </label>
-                  <input
-                    type="number"
-                    min={1}
-                    step="any"
-                    value={fixedAmount}
-                    onChange={(e) => setFixedAmount(e.target.value)}
-                    placeholder="e.g. 2000000"
-                    className={INPUT_CLASS}
-                  />
+                  <PrefixedInput prefix="$">
+                    <NumericInput
+                      value={fixedAmount}
+                      onChange={setFixedAmount}
+                      placeholder="2,000,000"
+                      className={INPUT_CLASS}
+                    />
+                  </PrefixedInput>
                   <FieldHint>
-                    Your total investment portfolio target: retirement accounts, index funds, brokerage, etc.
-                    Common targets: <strong>$1M</strong> (lean), <strong>$2M</strong> (comfortable), <strong>$3M+</strong> (abundant).
-                    Not sure? Try <em>I know my lifestyle</em> mode.
+                    The total amount you want invested across all accounts when you reach your goal: retirement funds, index funds, brokerage, etc. We&apos;ll adjust this for inflation automatically.
                   </FieldHint>
                 </div>
               ) : (
                 <div className="space-y-5">
                   <div>
                     <label className="block text-sm font-semibold text-on-surface mb-2">
-                      How much would you like to spend per year in retirement?
+                      How much do you want to spend per year in retirement?
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      step="any"
-                      value={annualIncome}
-                      onChange={(e) => setAnnualIncome(e.target.value)}
-                      placeholder="e.g. 80000"
-                      className={INPUT_CLASS}
-                    />
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <PrefixedInput prefix="$">
+                          <NumericInput
+                            value={annualIncome}
+                            onChange={setAnnualIncome}
+                            placeholder="80,000"
+                            className={INPUT_CLASS}
+                          />
+                        </PrefixedInput>
+                      </div>
+                      {/* Present / future value toggle */}
+                      <div className="flex rounded-xl overflow-hidden border border-outline-variant/30 flex-shrink-0">
+                        {([
+                          {
+                            key: "present" as const,
+                            label: "Today",
+                            tooltip: "Enter your goal in today's dollars. We'll inflate this forward to account for rising prices. For example, $80,000 today will need to be more in 30 years to buy the same things.",
+                          },
+                          {
+                            key: "future" as const,
+                            label: "Future",
+                            tooltip: "Enter your goal as the actual dollar amount you expect to spend at retirement, already accounting for inflation. Use this if you've already done that math yourself.",
+                          },
+                        ]).map(({ key, label, tooltip }) => (
+                          <div key={key} className="relative group">
+                            <button
+                              type="button"
+                              onClick={() => setIncomeValueType(key)}
+                              className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
+                                incomeValueType === key
+                                  ? "bg-primary text-white"
+                                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container"
+                              }`}
+                            >
+                              {label}
+                            </button>
+                            <span className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 w-56 rounded-xl bg-on-surface px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                              {tooltip}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <FieldHint>
-                      Annual budget in retirement. Think housing, food, healthcare, travel, hobbies.
-                    US median: ~$60k/year. Comfortable lifestyle: $80–120k/year.
+                      {incomeValueType === "present"
+                        ? "In today's dollars. We'll inflate this forward automatically so your goal keeps pace with rising prices."
+                        : "The actual dollar amount you expect to spend at retirement, already adjusted for inflation."}
                     </FieldHint>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
-                      Safe withdrawal rate (%)
+                      Safe withdrawal rate
                       <InfoTooltip>
-                        The percentage of your portfolio you withdraw each year. The widely accepted "4% rule" means your savings should last 30+ years without running out. Lower = more conservative and more savings needed. Higher = more risk.
+                        The percentage of your portfolio you withdraw each year. The widely accepted "4% rule" means your savings should last 30+ years without running out. A lower rate is more conservative but requires more savings. A higher rate requires less savings but carries more risk of running out.
                       </InfoTooltip>
                     </label>
-                    <input
-                      type="number"
-                      min={0.5}
-                      max={20}
-                      step="0.1"
-                      value={withdrawalRate}
-                      onChange={(e) => setWithdrawalRate(e.target.value)}
-                      className={INPUT_CLASS}
-                    />
+                    <PrefixedInput suffix="%">
+                      <input
+                        type="number"
+                        min={0.5}
+                        max={20}
+                        step="0.1"
+                        value={withdrawalRate}
+                        onChange={(e) => setWithdrawalRate(e.target.value)}
+                        className={INPUT_CLASS}
+                      />
+                    </PrefixedInput>
                     <FieldHint>
-                      At <strong>4%</strong> (the recommended default): $80k/year needs <strong>$2,000,000</strong> saved.
-                      At 3%: needs $2.67M. At 5%: needs $1.6M.
+                      Default 4%: your portfolio is designed to last 30+ years. Lower is more conservative; higher carries more risk.
                     </FieldHint>
                   </div>
                 </div>
@@ -445,83 +547,46 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-on-surface mb-2">
-                    At what age do you want to reach this goal?
+                    Target age
                   </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={120}
-                    value={targetAge}
-                    onChange={(e) => setTargetAge(e.target.value)}
-                    placeholder="e.g. 65"
-                    className={INPUT_CLASS}
-                  />
-                  <FieldHint>The age you want to be financially independent. Doesn&apos;t have to be when you stop working.</FieldHint>
+                  <PrefixedInput suffix="yrs">
+                    <input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={targetAge}
+                      onChange={(e) => setTargetAge(e.target.value)}
+                      placeholder="65"
+                      className={INPUT_CLASS}
+                    />
+                  </PrefixedInput>
+                  <FieldHint>The age you want to be financially independent. This doesn&apos;t have to be when you stop working.</FieldHint>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
-                    Expected annual return (%)
+                    Expected annual return
                     <InfoTooltip>
-                      How much you expect your investments to grow each year. Historically, a diversified index fund portfolio has returned ~7% annually after inflation. Conservative estimate: 5–6%. Optimistic: 8–9%.
+                      How much you expect your investments to grow each year on average. Historically, a diversified index fund portfolio has returned around 7% per year over long periods. A conservative estimate is 5-6%. A more optimistic estimate is 8-9%.
                     </InfoTooltip>
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={30}
-                    step="0.1"
-                    value={expectedReturn}
-                    onChange={(e) => setExpectedReturn(e.target.value)}
-                    className={INPUT_CLASS}
-                  />
-                  <FieldHint>Default is 7%, the long-term average for a diversified stock portfolio.</FieldHint>
-                </div>
-              </div>
-
-              {/* Inflation toggle */}
-              <div className="bg-surface-container rounded-2xl p-5 space-y-3">
-                <div className="flex items-start gap-3">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={includeInflation}
-                    onClick={() => setIncludeInflation(!includeInflation)}
-                    className={`mt-0.5 flex-shrink-0 relative w-11 h-6 rounded-full transition-colors ${
-                      includeInflation ? "bg-primary" : "bg-surface-container-highest"
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                        includeInflation ? "translate-x-5" : ""
-                      }`}
-                    />
-                  </button>
-                  <div>
-                    <p className="text-sm font-semibold text-on-surface">Account for inflation</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5 leading-relaxed">
-                      Prices rise over time. $1M today buys less in 20 years. Recommended for goals 10+ years out.
-                    </p>
-                  </div>
-                </div>
-                {includeInflation && (
-                  <div className="max-w-48 pl-14">
-                    <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
-                      Inflation rate (%)
-                      <InfoTooltip>
-                        The expected annual rise in the cost of goods and services. The US long-term average is ~3%. The Fed targets 2%.
-                      </InfoTooltip>
-                    </label>
+                  <PrefixedInput suffix="%">
                     <input
                       type="number"
                       min={0}
-                      max={20}
+                      max={30}
                       step="0.1"
-                      value={inflationRate}
-                      onChange={(e) => setInflationRate(e.target.value)}
+                      value={expectedReturn}
+                      onChange={(e) => setExpectedReturn(e.target.value)}
                       className={INPUT_CLASS}
                     />
-                  </div>
-                )}
+                  </PrefixedInput>
+                  <FieldHint>Default is 7%, the long-term historical average for a diversified stock portfolio.</FieldHint>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-container rounded-2xl px-4 py-3">
+                <span className="material-symbols-outlined text-[14px] flex-shrink-0">info</span>
+                <span>A 3% annual inflation rate is automatically applied so your goal reflects real future purchasing power.</span>
               </div>
             </div>
 
@@ -529,7 +594,7 @@ export default function DashboardPage() {
             <div className="bg-surface-container-low rounded-2xl p-6 space-y-4">
               <div>
                 <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">Your plan at a glance</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">Updates live as you fill in the fields above</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">Inflation-adjusted at 3% annually. Updates live as you fill in the fields.</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -537,7 +602,7 @@ export default function DashboardPage() {
                   <p className="text-2xl font-extrabold text-on-surface tracking-tight">
                     {inflationAdjustedTarget > 0 ? formatCurrency(inflationAdjustedTarget) : <span className="text-outline-variant">-</span>}
                   </p>
-                  {includeInflation && inflationAdjustedTarget > 0 && inflationAdjustedTarget !== portfolioTarget && (
+                  {inflationAdjustedTarget > 0 && portfolioTarget > 0 && (
                     <p className="text-xs text-on-surface-variant mt-0.5">
                       {formatCurrency(portfolioTarget)} in today&apos;s dollars
                     </p>
@@ -572,9 +637,11 @@ export default function DashboardPage() {
               </div>
               {yearsRemaining != null && yearsRemaining > 0 && monthlySavings > 0 && (
                 <p className="text-xs text-on-surface-variant border-t border-outline-variant/20 pt-3">
-                  Based on a <strong>{expectedReturn}%</strong> annual return over <strong>{yearsRemaining} years</strong>
-                  {includeInflation ? `, adjusted for ${inflationRate}% annual inflation` : ""}.
-                  Projections only. Actual results will vary.
+                  Based on a <strong>{expectedReturn}%</strong> annual return and 3% annual inflation over <strong>{yearsRemaining} years</strong>.
+                  {mode === "income_replacement" && Number(annualIncome) > 0 && incomeValueType === "present"
+                    ? ` Your ${formatCurrency(Number(annualIncome))}/yr in today's dollars grows to ${formatCurrency(Math.round(annualIncomeInFutureDollars))}/yr at retirement after inflation.`
+                    : ""}
+                  {" "}Projections only. Actual results will vary.
                 </p>
               )}
             </div>
@@ -607,9 +674,9 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-surface-container-low rounded-2xl p-5">
               <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(target.targetAmount)}</p>
+              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
               <p className="text-xs text-on-surface-variant mt-0.5">
-                {target.mode === "income_replacement" ? "Income Replacement" : "Fixed Amount"}
+                {formatCurrency(target.targetAmount)} in today&apos;s dollars
               </p>
             </div>
             <div className="bg-surface-container-low rounded-2xl p-5">
