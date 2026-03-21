@@ -23,14 +23,14 @@ const TIMEZONES = [
 ];
 
 const CURRENCIES = [
-  { code: "USD", label: "USD — US Dollar" },
-  { code: "EUR", label: "EUR — Euro" },
-  { code: "GBP", label: "GBP — British Pound" },
-  { code: "CAD", label: "CAD — Canadian Dollar" },
-  { code: "AUD", label: "AUD — Australian Dollar" },
-  { code: "JPY", label: "JPY — Japanese Yen" },
-  { code: "CHF", label: "CHF — Swiss Franc" },
-  { code: "INR", label: "INR — Indian Rupee" },
+  { code: "USD", label: "USD: US Dollar" },
+  { code: "EUR", label: "EUR: Euro" },
+  { code: "GBP", label: "GBP: British Pound" },
+  { code: "CAD", label: "CAD: Canadian Dollar" },
+  { code: "AUD", label: "AUD: Australian Dollar" },
+  { code: "JPY", label: "JPY: Japanese Yen" },
+  { code: "CHF", label: "CHF: Swiss Franc" },
+  { code: "INR", label: "INR: Indian Rupee" },
 ];
 
 type FormStatus = "idle" | "saving" | "success" | "error";

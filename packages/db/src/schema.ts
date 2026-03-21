@@ -153,3 +153,24 @@ export const netWorthEntries = pgTable("net_worth_entries", {
 }, (table) => [
   unique("net_worth_entries_category_year_month").on(table.categoryId, table.year, table.month),
 ]);
+
+// --- Financial Independence Target ---
+
+export const targetModeEnum = pgEnum("target_mode", ["fixed", "income_replacement"]);
+
+export const retirementTargets = pgTable("retirement_targets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+  mode: targetModeEnum("mode").notNull().default("fixed"),
+  targetAmount: numeric("target_amount", { precision: 15, scale: 2 }).notNull(),
+  targetAge: integer("target_age").notNull(),
+  annualIncome: numeric("annual_income", { precision: 15, scale: 2 }),
+  withdrawalRate: numeric("withdrawal_rate", { precision: 5, scale: 4 }).default("0.04"),
+  expectedReturn: numeric("expected_return", { precision: 5, scale: 4 }).default("0.07"),
+  inflationRate: numeric("inflation_rate", { precision: 5, scale: 4 }).default("0.03"),
+  includeInflation: boolean("include_inflation").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  unique("retirement_targets_household").on(table.householdId),
+]);
