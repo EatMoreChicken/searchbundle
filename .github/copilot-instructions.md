@@ -103,6 +103,12 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - Not a robo-advisor (no investment management)
 - Not a daily-use app (periodic check-ins by design)
 
+## Git Workflow
+
+- **Feature branch naming:** All feature branches use the `feature/` prefix, e.g. `feature/account-settings`, `feature/household-multi-tenancy`. Use lowercase kebab-case after the prefix.
+- **Merging to main:** Use the `merge-feature-branch` skill for the full pre-merge checklist (type checks, latest main, cleanup). Never force-push to `main`.
+- **Branch cleanup:** Delete the feature branch locally and remotely after a successful merge.
+
 ## Coding Practices
 
 - **Clean, readable code.** Prioritize clarity over cleverness. Use descriptive names, consistent formatting, and modular structure.
