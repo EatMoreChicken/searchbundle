@@ -28,6 +28,47 @@ function getEntryValue(
   return entry ? entry.value : null;
 }
 
+const EXPR_PATTERN = /^([+\-*/])\s*(\d+(?:\.\d+)?)$/;
+const FULL_EXPR_PATTERN = /^(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
+const OPERATOR_START = /^[+\-*/]/;
+
+function isExpression(raw: string): boolean {
+  const t = raw.trim();
+  return EXPR_PATTERN.test(t) || FULL_EXPR_PATTERN.test(t);
+}
+
+function applyExpression(raw: string, baseValue: number): number | null {
+  const t = raw.trim();
+
+  const fullMatch = t.match(FULL_EXPR_PATTERN);
+  if (fullMatch) {
+    const left = parseFloat(fullMatch[1]);
+    const op = fullMatch[2];
+    const right = parseFloat(fullMatch[3]);
+    if (isNaN(left) || isNaN(right)) return null;
+    switch (op) {
+      case "+": return left + right;
+      case "-": return left - right;
+      case "*": return left * right;
+      case "/": return right !== 0 ? left / right : null;
+      default:  return null;
+    }
+  }
+
+  const match = t.match(EXPR_PATTERN);
+  if (!match) return null;
+  const [, op, numStr] = match;
+  const num = parseFloat(numStr);
+  if (isNaN(num)) return null;
+  switch (op) {
+    case "+": return baseValue + num;
+    case "-": return baseValue - num;
+    case "*": return baseValue * num;
+    case "/": return num !== 0 ? baseValue / num : null;
+    default:  return null;
+  }
+}
+
 type CellState = "actual" | "current" | "future";
 
 function getCellState(month: number, currentMonth: number): CellState {
@@ -51,6 +92,7 @@ export default function NetWorthTracker() {
   const [addingType, setAddingType] = useState<"asset" | "liability" | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [savingEntry, setSavingEntry] = useState(false);
+  const [formulaRefMonth, setFormulaRefMonth] = useState<number | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState("");
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
@@ -88,7 +130,8 @@ export default function NetWorthTracker() {
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
+      const len = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(len, len);
     }
   }, [editingCell]);
 
@@ -131,12 +174,55 @@ export default function NetWorthTracker() {
     return cats.some((cat) => getEntryValue(entries, cat.id, month) !== null);
   }
 
+  function findLeftValueMonth(categoryId: string, month: number): number | null {
+    for (let m = month - 1; m >= 1; m--) {
+      if (getEntryValue(entries, categoryId, m) !== null) return m;
+    }
+    return null;
+  }
+
   async function handleSaveEntry(categoryId: string, month: number) {
-    const numValue = parseFloat(editValue.replace(/[^0-9.-]/g, ""));
-    if (isNaN(numValue)) {
-      setEditingCell(null);
-      setEditValue("");
-      return;
+    let numValue: number;
+    const trimmed = editValue.trim();
+
+    if (isExpression(trimmed)) {
+      // Full expression like "422000-499" — self-contained, no external reference needed
+      if (FULL_EXPR_PATTERN.test(trimmed)) {
+        const resolved = applyExpression(trimmed, 0);
+        if (resolved === null || isNaN(resolved)) {
+          setEditingCell(null);
+          setEditValue("");
+          setFormulaRefMonth(null);
+          return;
+        }
+        numValue = resolved;
+      } else {
+        // Operator-prefix expression like "-499" — input has been cleared of any base digit, scan left
+        const refMonth = findLeftValueMonth(categoryId, month);
+        const refValue = refMonth !== null ? getEntryValue(entries, categoryId, refMonth) : null;
+        if (refValue === null) {
+          setEditingCell(null);
+          setEditValue("");
+          setFormulaRefMonth(null);
+          return;
+        }
+        const resolved = applyExpression(trimmed, refValue);
+        if (resolved === null || isNaN(resolved)) {
+          setEditingCell(null);
+          setEditValue("");
+          setFormulaRefMonth(null);
+          return;
+        }
+        numValue = resolved;
+      }
+    } else {
+      numValue = parseFloat(trimmed.replace(/[^0-9.-]/g, ""));
+      if (isNaN(numValue)) {
+        setEditingCell(null);
+        setEditValue("");
+        setFormulaRefMonth(null);
+        return;
+      }
     }
 
     setSavingEntry(true);
@@ -157,6 +243,7 @@ export default function NetWorthTracker() {
     setSavingEntry(false);
     setEditingCell(null);
     setEditValue("");
+    setFormulaRefMonth(null);
   }
 
   async function handleAddCategory(type: "asset" | "liability") {
@@ -216,6 +303,7 @@ export default function NetWorthTracker() {
     const val = getEntryValue(entries, categoryId, month);
     setEditingCell({ categoryId, month });
     setEditValue(val !== null ? String(val) : "");
+    setFormulaRefMonth(null);
   }
 
   function handleCellKeyDown(
@@ -228,6 +316,7 @@ export default function NetWorthTracker() {
     } else if (e.key === "Escape") {
       setEditingCell(null);
       setEditValue("");
+      setFormulaRefMonth(null);
     } else if (e.key === "Tab") {
       e.preventDefault();
       handleSaveEntry(categoryId, month).then(() => {
@@ -276,6 +365,8 @@ export default function NetWorthTracker() {
     const isEditing =
       editingCell?.categoryId === categoryId && editingCell?.month === month;
     const value = getEntryValue(entries, categoryId, month);
+    const isRefCell =
+      formulaRefMonth === month && editingCell?.categoryId === categoryId;
 
     if (isEditing) {
       return (
@@ -283,17 +374,75 @@ export default function NetWorthTracker() {
           key={month}
           className={`px-1 py-1 ${getCellClasses(month)}`}
         >
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="decimal"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={() => handleSaveEntry(categoryId, month)}
-            onKeyDown={(e) => handleCellKeyDown(e, categoryId, month)}
-            disabled={savingEntry}
-            className="w-full px-2 py-1.5 text-right text-sm font-bold rounded-lg bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="decimal"
+              value={editValue}
+              onChange={(e) => {
+                const val = e.target.value;
+                setEditValue(val);
+                if (FULL_EXPR_PATTERN.test(val.trim())) {
+                  setFormulaRefMonth(null);
+                } else if (OPERATOR_START.test(val.trim())) {
+                  // Input starts with an operator — no base digit in the field, scan left
+                  setFormulaRefMonth(findLeftValueMonth(categoryId, month));
+                } else {
+                  setFormulaRefMonth(null);
+                }
+              }}
+              onBlur={() => handleSaveEntry(categoryId, month)}
+              onKeyDown={(e) => handleCellKeyDown(e, categoryId, month)}
+              disabled={savingEntry}
+              className="w-full px-2 py-1.5 text-right text-sm font-bold rounded-lg bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <div className="absolute left-0 top-full mt-1 z-30 bg-surface-container-lowest shadow-md rounded-xl px-4 py-3 pointer-events-none border border-outline-variant/20 min-w-[260px]">
+              {/* Header */}
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="material-symbols-outlined text-[14px] text-on-surface-variant">calculate</span>
+                <p className="text-[10px] uppercase tracking-widest font-semibold text-on-surface-variant">Math Shorthand</p>
+              </div>
+
+              {value !== null ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-[11px] text-on-surface-variant leading-tight">Type an operator to adjust</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">-100</span>
+                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">+500</span>
+                      <span className="font-mono text-[11px] font-bold text-surface bg-on-surface px-2 py-0.5 rounded-full">×1.05</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-[11px] text-on-surface-variant leading-tight">Or type a full expression</span>
+                    <div className="shrink-0">
+                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">{value}-100</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-[11px] text-on-surface-variant leading-tight">Inherits nearest value to the left</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">+100</span>
+                      <span className="font-mono text-[11px] font-bold text-on-surface bg-surface-container-high px-2 py-0.5 rounded-full">-50</span>
+                      <span className="font-mono text-[11px] font-bold text-surface bg-on-surface px-2 py-0.5 rounded-full">×2</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex items-center gap-1.5 mt-3 pt-2.5 border-t border-outline-variant/20">
+                <span className="material-symbols-outlined text-[13px] text-on-surface-variant/50">subdirectory_arrow_left</span>
+                <span className="text-[11px] text-on-surface-variant/60">Press</span>
+                <kbd className="text-[10px] font-semibold text-on-surface bg-surface-container-high border border-outline-variant/40 px-1.5 py-0.5 rounded-xl">Enter</kbd>
+                <span className="text-[11px] text-on-surface-variant/60">to apply</span>
+              </div>
+            </div>
+          </div>
         </td>
       );
     }
@@ -305,7 +454,9 @@ export default function NetWorthTracker() {
         className={`px-4 py-2.5 text-right whitespace-nowrap cursor-pointer hover:bg-primary-fixed/30 transition-colors ${getCellClasses(month)}`}
         onClick={() => startEditing(categoryId, month)}
       >
-        <span className={`text-sm font-bold ${getValueClasses(month)}`}>
+        <span className={`text-sm font-bold inline-block px-2 py-0.5 rounded-lg transition-colors ${getValueClasses(month)} ${
+          isRefCell ? "bg-tertiary-fixed/60 ring-1 ring-tertiary" : ""
+        }`}>
           {value !== null ? formatCurrency(value) : "–"}
         </span>
       </td>

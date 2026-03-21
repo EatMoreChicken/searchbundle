@@ -157,6 +157,7 @@ The AI companion is named **Cooper** (a reference to Interstellar — Cooper has
 - Main UI component: `NetWorthTracker` in `apps/web/src/components/NetWorthTracker.tsx`
 - Current month is highlighted with amber styling; past months show as "actual"; future months show dashes
 - Users can add/remove categories, inline-edit cell values, switch years, and see auto-calculated totals & net worth
+- **Cell math expressions**: Typing `+100`, `-50`, `*2`, or `/4` into a cell resolves the operation against the nearest cell to the left in the same row that has a value. Only the calculated result is saved (no formula persistence). The reference cell is highlighted in amber while typing. An inline tooltip explains the feature on cell open. Logic lives in `NetWorthTracker.tsx` via `EXPR_PATTERN`, `isExpression`, `applyExpression`, and `findLeftValueMonth`.
 - The net worth categories are **standalone** — not yet linked to the existing `accounts`/`debts` tables. This will be connected in a future iteration.
 
 ### Account Settings
