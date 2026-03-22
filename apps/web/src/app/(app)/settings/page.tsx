@@ -60,6 +60,7 @@ export default function SettingsPage() {
     timezone: "America/Chicago",
     preferredCurrency: "USD",
     retirementAge: "",
+    projectionEndAge: "100",
   });
   const [password, setPassword] = useState({
     currentPassword: "",
@@ -94,6 +95,7 @@ export default function SettingsPage() {
     timezone: "America/Chicago",
     preferredCurrency: "USD",
     retirementAge: "",
+    projectionEndAge: "100",
   });
   const [savedHousehold, setSavedHousehold] = useState({ name: "", financialGoalNote: "" });
 
@@ -128,6 +130,7 @@ export default function SettingsPage() {
         timezone: user.timezone ?? "America/Chicago",
         preferredCurrency: user.preferredCurrency ?? "USD",
         retirementAge: user.retirementAge != null ? String(user.retirementAge) : "",
+        projectionEndAge: String(user.projectionEndAge ?? 100),
       };
       setPersonal(loadedPersonal);
       setSavedPersonal(loadedPersonal);
@@ -175,6 +178,7 @@ export default function SettingsPage() {
         timezone: personal.timezone,
         preferredCurrency: personal.preferredCurrency,
         retirementAge: personal.retirementAge ? Number(personal.retirementAge) : null,
+        projectionEndAge: Number(personal.projectionEndAge) || 100,
       });
       setSavedPersonal({ ...personal });
       setPersonalStatus("success");
@@ -419,6 +423,22 @@ export default function SettingsPage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-on-surface mb-2">Projection end age</label>
+            <input
+              type="number"
+              min={50}
+              max={120}
+              value={personal.projectionEndAge}
+              onChange={(e) => setPersonal((p) => ({ ...p, projectionEndAge: e.target.value }))}
+              placeholder="100"
+              className="w-full max-w-48 bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+            />
+            <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+              How far into the future projection charts extend. Default is age 100. Charts will show your portfolio growth through this age.
+            </p>
           </div>
 
           {personalStatus === "error" && (

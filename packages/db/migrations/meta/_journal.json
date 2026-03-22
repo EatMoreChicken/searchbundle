@@ -71,6 +71,13 @@
       "when": 1774400000000,
       "tag": "0009_savings_strategies",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774500000000,
+      "tag": "0010_projection_end_age",
+      "breakpoints": true
     }
   ]
 }

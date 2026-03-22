@@ -226,8 +226,8 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
   - **Barista FIRE**: Two-phase approach, both phases have contributions. Phase 1 is aggressive, phase 2 is reduced.
   - **Traditional**: Flat monthly amount for the entire period. Uses standard PMT formula.
   - **Back-Loaded**: Starts low, increases contributions by a configurable annual percentage (e.g. 5%/year).
-- **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getExtendedSchedule()` (generates data from current age to 100, with $0 contributions post-retirement), `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
-- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (Target, Target Age, Monthly Savings, Annual Savings) and a savings trajectory chart showing portfolio value and monthly contribution over time. Edit button opens the inline configurator.
+- **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getExtendedSchedule()` (generates data from current age to `maxAge`, with $0 contributions post-retirement; accepts optional `maxAge` parameter, default 100), `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
+- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (Target, Target Age, Monthly Savings, Annual Savings) and a savings trajectory chart showing portfolio value and monthly contribution over time. Chart extends to the user's `projectionEndAge` (default 100) with a vertical ReferenceLine marking retirement age. Edit button opens the inline configurator.
 - **Edit mode**: Inline form configurator (same as before) with mode selector, inputs, live summary, and save/cancel buttons. Separate from the wizard.
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age
@@ -246,11 +246,12 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 
 ### Account Settings
 - Settings page at `/settings`: four sections: Profile, Personal & Financial, Household, Security
-- DB: `users` table has extra profile columns: `date_of_birth` (date), `timezone` (text, default `America/Chicago`), `preferred_currency` (text, default `USD`), `retirement_age` (integer)
+- DB: `users` table has extra profile columns: `date_of_birth` (date), `timezone` (text, default `America/Chicago`), `preferred_currency` (text, default `USD`), `retirement_age` (integer), `projection_end_age` (integer, default 100)
+- `projection_end_age` controls how far age-based charts extend (dashboard savings trajectory, StrategyConfigurator). Min 50, max 120.
 - DB: `households` table has `financial_goal_note` (text): moved from users to households
 - API routes:
   - `GET /api/users/me`: returns full user profile (excludes passwordHash, includes activeHouseholdId)
-  - `PATCH /api/users/me`: update name, email, dateOfBirth, timezone, preferredCurrency, retirementAge
+  - `PATCH /api/users/me`: update name, email, dateOfBirth, timezone, preferredCurrency, retirementAge, projectionEndAge
   - `POST /api/users/me/password`: change password; requires `{ currentPassword, newPassword }`. Also clears `mustResetPassword`.
 - Household section in settings: rename household, edit financial goal, manage members, invite new members, switch between households
 - Settings link is in the Sidebar footer (icon: `manage_accounts`)

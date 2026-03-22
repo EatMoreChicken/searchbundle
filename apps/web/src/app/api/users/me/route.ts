@@ -19,6 +19,7 @@ export async function GET() {
       timezone: users.timezone,
       preferredCurrency: users.preferredCurrency,
       retirementAge: users.retirementAge,
+      projectionEndAge: users.projectionEndAge,
       activeHouseholdId: users.activeHouseholdId,
     })
     .from(users)
@@ -42,13 +43,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
   }
 
-  const { name, email, dateOfBirth, timezone, preferredCurrency, retirementAge } = body as {
+  const { name, email, dateOfBirth, timezone, preferredCurrency, retirementAge, projectionEndAge } = body as {
     name?: string;
     email?: string;
     dateOfBirth?: string | null;
     timezone?: string;
     preferredCurrency?: string;
     retirementAge?: number | null;
+    projectionEndAge?: number;
   };
 
   if (email !== undefined) {
@@ -71,6 +73,7 @@ export async function PATCH(request: Request) {
   if (timezone !== undefined) updates.timezone = timezone;
   if (preferredCurrency !== undefined) updates.preferredCurrency = preferredCurrency;
   if (retirementAge !== undefined) updates.retirementAge = retirementAge ?? null;
+  if (projectionEndAge !== undefined) updates.projectionEndAge = projectionEndAge;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ message: "No fields to update" }, { status: 400 });
@@ -89,6 +92,7 @@ export async function PATCH(request: Request) {
       timezone: users.timezone,
       preferredCurrency: users.preferredCurrency,
       retirementAge: users.retirementAge,
+      projectionEndAge: users.projectionEndAge,
       activeHouseholdId: users.activeHouseholdId,
     });
 

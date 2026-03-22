@@ -344,10 +344,10 @@ export function getExtendedSchedule(
   overrideStartMonthly: number,
   currentAge: number,
   currentYear: number,
-  retirementAge: number
+  retirementAge: number,
+  maxAge: number = 100
 ): YearlyDataPoint[] {
   const contributionFn = getContributionFn(params, overrideStartMonthly);
-  const maxAge = 100;
   const totalYears = maxAge - currentAge;
   const r = params.annualReturn / 12;
   let balance = 0;

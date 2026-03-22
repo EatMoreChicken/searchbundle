@@ -495,6 +495,7 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
             withdrawalRate={wdRateDecimal}
             currentAge={currentAge}
             retirementAge={retirementAge}
+            projectionEndAge={user.projectionEndAge}
             onConfigChange={handleConfigChange}
             onRetirementAgeChange={handleRetirementAgeChange}
             onAnnualReturnChange={handleAnnualReturnChange}

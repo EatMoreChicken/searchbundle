@@ -40,6 +40,7 @@ export const users = pgTable("users", {
   timezone: text("timezone").notNull().default("America/Chicago"),
   preferredCurrency: text("preferred_currency").notNull().default("USD"),
   retirementAge: integer("retirement_age"),
+  projectionEndAge: integer("projection_end_age").notNull().default(100),
   activeHouseholdId: uuid("active_household_id"),
   mustResetPassword: boolean("must_reset_password").notNull().default(false),
 });

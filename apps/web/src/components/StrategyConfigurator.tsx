@@ -309,6 +309,7 @@ interface StrategyConfiguratorProps {
   withdrawalRate: number;
   currentAge: number;
   retirementAge: number;
+  projectionEndAge?: number;
   onConfigChange: (config: StrategyConfig) => void;
   onRetirementAgeChange: (age: number) => void;
   onAnnualReturnChange: (rate: number) => void;
@@ -327,6 +328,7 @@ export default function StrategyConfigurator({
   withdrawalRate,
   currentAge,
   retirementAge,
+  projectionEndAge = 100,
   onConfigChange,
   onRetirementAgeChange,
   onAnnualReturnChange,
@@ -397,10 +399,10 @@ export default function StrategyConfigurator({
     [strategy, targetAmount, years, localAnnualReturn, annualChangeRate, phase1Years, phase2Monthly]
   );
 
-  // Generate chart data with current phase1Monthly (extended to age 100)
+  // Generate chart data with current phase1Monthly (extended to projection end age)
   const scheduleData = useMemo(
-    () => getExtendedSchedule(strategyParams, phase1Monthly, currentAge, CURRENT_YEAR, retirementAge),
-    [strategyParams, phase1Monthly, currentAge, retirementAge]
+    () => getExtendedSchedule(strategyParams, phase1Monthly, currentAge, CURRENT_YEAR, retirementAge, projectionEndAge),
+    [strategyParams, phase1Monthly, currentAge, retirementAge, projectionEndAge]
   );
 
   // Calculate where the portfolio ends up with current settings

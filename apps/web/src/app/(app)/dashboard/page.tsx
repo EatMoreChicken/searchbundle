@@ -6,7 +6,7 @@ import { apiClient } from "@/lib/api-client";
 import type { User, RetirementTarget, TargetMode } from "@/types";
 import type { SavingsStrategy, StrategyParams, YearlyDataPoint } from "@/lib/retirement-strategies";
 import {
-  getScheduleWithOverride,
+  getExtendedSchedule,
   calculateStartingMonthly,
 } from "@/lib/retirement-strategies";
 import OnboardingWizard from "@/components/OnboardingWizard";
@@ -18,6 +18,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 
@@ -310,15 +311,18 @@ export default function DashboardPage() {
     };
 
     const startMonthly = target.strategyPhase1Monthly ?? calculateStartingMonthly(params);
-    const chartData = getScheduleWithOverride(
+    const projectionEndAge = user?.projectionEndAge ?? 100;
+    const chartData = getExtendedSchedule(
       params,
       startMonthly,
       currentAge,
       new Date().getFullYear(),
+      target.targetAge,
+      projectionEndAge,
     );
 
-    return { years, monthly, annual: monthly * 12, inflAdjTarget, chartData };
-  }, [target, currentAge]);
+    return { years, monthly, annual: monthly * 12, inflAdjTarget, chartData, retirementAge: target.targetAge };
+  }, [target, currentAge, user?.projectionEndAge]);
 
   const showConfigurator = editing;
   const firstName = user?.name?.split(" ")[0] ?? "there";
@@ -711,10 +715,17 @@ export default function DashboardPage() {
                         content={({ active, payload, label }) => {
                           if (!active || !payload || payload.length === 0) return null;
                           const data = payload[0]?.payload as YearlyDataPoint;
+                          const isPostRetirement = savedSummary.retirementAge && data.age > savedSummary.retirementAge;
                           return (
                             <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5">
                               <p className="font-semibold">
                                 Age {label} ({data.year})
+                                {data.age === savedSummary.retirementAge && (
+                                  <span className="ml-1 text-tertiary-fixed">Retirement</span>
+                                )}
+                                {isPostRetirement && (
+                                  <span className="ml-1 text-white/50">Post-retirement</span>
+                                )}
                               </p>
                               <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-primary" />
@@ -730,6 +741,20 @@ export default function DashboardPage() {
                               </div>
                             </div>
                           );
+                        }}
+                      />
+                      <ReferenceLine
+                        x={savedSummary.retirementAge}
+                        yAxisId="portfolio"
+                        stroke="#805200"
+                        strokeWidth={2}
+                        strokeDasharray="6 4"
+                        label={{
+                          value: `Retire ${savedSummary.retirementAge}`,
+                          position: "top",
+                          fill: "#805200",
+                          fontSize: 11,
+                          fontWeight: 700,
                         }}
                       />
                       <Area

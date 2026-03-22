@@ -10,6 +10,7 @@ export interface User {
   timezone: string;
   preferredCurrency: string;
   retirementAge: number | null;
+  projectionEndAge: number;
   activeHouseholdId: string | null;
   mustResetPassword: boolean;
 }
