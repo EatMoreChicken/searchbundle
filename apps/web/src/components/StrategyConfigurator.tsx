@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ComposedChart,
   Area,
@@ -9,6 +9,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
+  ReferenceLine,
   ResponsiveContainer,
   Legend,
 } from "recharts";
@@ -16,7 +17,7 @@ import {
   STRATEGY_LIST,
   calculateStartingMonthly,
   getStrategyDefaults,
-  getScheduleWithOverride,
+  getExtendedSchedule,
   getFinalValue,
   type SavingsStrategy,
   type StrategyParams,
@@ -305,9 +306,13 @@ interface StrategyConfiguratorProps {
   years: number;
   annualReturn: number;
   inflationRate: number;
+  withdrawalRate: number;
   currentAge: number;
   retirementAge: number;
   onConfigChange: (config: StrategyConfig) => void;
+  onRetirementAgeChange: (age: number) => void;
+  onAnnualReturnChange: (rate: number) => void;
+  onInflationRateChange: (rate: number) => void;
   onBack: () => void;
 }
 
@@ -319,9 +324,13 @@ export default function StrategyConfigurator({
   years,
   annualReturn,
   inflationRate,
+  withdrawalRate,
   currentAge,
   retirementAge,
   onConfigChange,
+  onRetirementAgeChange,
+  onAnnualReturnChange,
+  onInflationRateChange,
   onBack,
 }: StrategyConfiguratorProps) {
   const meta = STRATEGY_LIST.find((s) => s.id === strategy)!;
@@ -388,10 +397,10 @@ export default function StrategyConfigurator({
     [strategy, targetAmount, years, localAnnualReturn, annualChangeRate, phase1Years, phase2Monthly]
   );
 
-  // Generate chart data with current phase1Monthly
+  // Generate chart data with current phase1Monthly (extended to age 100)
   const scheduleData = useMemo(
-    () => getScheduleWithOverride(strategyParams, phase1Monthly, currentAge, CURRENT_YEAR),
-    [strategyParams, phase1Monthly, currentAge]
+    () => getExtendedSchedule(strategyParams, phase1Monthly, currentAge, CURRENT_YEAR, retirementAge),
+    [strategyParams, phase1Monthly, currentAge, retirementAge]
   );
 
   // Calculate where the portfolio ends up with current settings
@@ -413,6 +422,76 @@ export default function StrategyConfigurator({
       annualChangeRate: annualChangeRate / 100,
     });
   }, [strategy, phase1Monthly, phase1Years, phase2Monthly, annualChangeRate, onConfigChange]);
+
+  // Keep parent in sync whenever config values change
+  useEffect(() => {
+    emitConfig();
+  }, [emitConfig]);
+
+  // Propagate assumption changes back to the parent
+  useEffect(() => {
+    onAnnualReturnChange(localAnnualReturn);
+  }, [localAnnualReturn, onAnnualReturnChange]);
+
+  useEffect(() => {
+    onInflationRateChange(localInflationRate);
+  }, [localInflationRate, onInflationRateChange]);
+
+  // Purchasing power calculations
+  const yearsToRetirement = retirementAge - currentAge;
+  const inflationMultiplier = Math.pow(1 + localInflationRate, yearsToRetirement);
+  const todaysDollars = finalPortfolioValue / inflationMultiplier;
+  const annualWithdrawal = finalPortfolioValue * withdrawalRate;
+  const monthlyWithdrawal = annualWithdrawal / 12;
+  const annualWithdrawalToday = annualWithdrawal / inflationMultiplier;
+  const monthlyWithdrawalToday = monthlyWithdrawal / inflationMultiplier;
+  const [showPurchasingPower, setShowPurchasingPower] = useState(false);
+
+  // Draggable retirement age state
+  const chartRef = React.useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragAge, setDragAge] = useState<number | null>(null);
+
+  const handleChartMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!isDragging || !chartRef.current) return;
+      const rect = chartRef.current.getBoundingClientRect();
+      const chartLeft = 80;
+      const chartRight = 60;
+      const chartWidth = rect.width - chartLeft - chartRight;
+      const x = e.clientX - rect.left - chartLeft;
+      const ratio = Math.max(0, Math.min(1, x / chartWidth));
+      const minAge = currentAge;
+      const maxAge = 100;
+      const newAge = Math.round(minAge + ratio * (maxAge - minAge));
+      const clampedAge = Math.max(currentAge + 2, Math.min(99, newAge));
+      setDragAge(clampedAge);
+    },
+    [isDragging, currentAge]
+  );
+
+  const handleChartMouseUp = useCallback(() => {
+    if (isDragging && dragAge != null) {
+      onRetirementAgeChange(dragAge);
+    }
+    setIsDragging(false);
+    setDragAge(null);
+  }, [isDragging, dragAge, onRetirementAgeChange]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleUp = () => {
+      if (isDragging && dragAge != null) {
+        onRetirementAgeChange(dragAge);
+      }
+      setIsDragging(false);
+      setDragAge(null);
+    };
+    window.addEventListener("mouseup", handleUp);
+    return () => window.removeEventListener("mouseup", handleUp);
+  }, [isDragging, dragAge, onRetirementAgeChange]);
+
+  const displayRetirementAge = dragAge ?? retirementAge;
 
   // Reset to defaults
   const resetAll = useCallback(() => {
@@ -672,9 +751,19 @@ export default function StrategyConfigurator({
                 <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
                 Your projection
               </h3>
+              {isDragging && dragAge != null && (
+                <span className="text-xs font-semibold text-tertiary">
+                  Retire at {dragAge}
+                </span>
+              )}
             </div>
 
-            <div className="h-72">
+            <div
+              ref={chartRef}
+              className={`h-72 ${isDragging ? "cursor-ew-resize select-none" : ""}`}
+              onMouseMove={handleChartMouseMove}
+              onMouseUp={handleChartMouseUp}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={scheduleData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                   <defs>
@@ -712,9 +801,18 @@ export default function StrategyConfigurator({
                     content={({ active, payload, label }) => {
                       if (!active || !payload || payload.length === 0) return null;
                       const data = payload[0]?.payload as YearlyDataPoint;
+                      const isPostRetirement = data.age > displayRetirementAge;
                       return (
                         <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5">
-                          <p className="font-semibold">Age {label} ({data.year})</p>
+                          <p className="font-semibold">
+                            Age {label} ({data.year})
+                            {data.age === displayRetirementAge && (
+                              <span className="ml-1 text-tertiary-fixed">Retirement</span>
+                            )}
+                            {isPostRetirement && (
+                              <span className="ml-1 text-white/50">Post-retirement</span>
+                            )}
+                          </p>
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-primary" />
                             <span>Portfolio: {formatFullCurrency(data.portfolioValue)}</span>
@@ -738,6 +836,20 @@ export default function StrategyConfigurator({
                       <span className="text-xs text-on-surface-variant">{value}</span>
                     )}
                   />
+                  <ReferenceLine
+                    x={displayRetirementAge}
+                    yAxisId="portfolio"
+                    stroke="#805200"
+                    strokeWidth={isDragging ? 3 : 2}
+                    strokeDasharray={isDragging ? "" : "6 4"}
+                    label={{
+                      value: `Retire ${displayRetirementAge}`,
+                      position: "top",
+                      fill: "#805200",
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  />
                   <Area
                     yAxisId="portfolio"
                     type="monotone"
@@ -759,6 +871,22 @@ export default function StrategyConfigurator({
                   />
                 </ComposedChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* Drag handle hint */}
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                  setDragAge(retirementAge);
+                }}
+                className="text-[11px] text-on-surface-variant hover:text-tertiary transition-colors flex items-center gap-1 cursor-ew-resize px-2 py-1 rounded-full hover:bg-tertiary-fixed/30"
+              >
+                <span className="material-symbols-outlined text-[14px]">drag_indicator</span>
+                Drag the retirement line to adjust your target age
+              </button>
             </div>
 
             {/* Target comparison */}
@@ -831,6 +959,80 @@ export default function StrategyConfigurator({
                 <p className="text-xs text-on-surface-variant mt-0.5">{years} years</p>
               </div>
             </div>
+
+            {/* Purchasing power details (collapsible) */}
+            <button
+              type="button"
+              onClick={() => setShowPurchasingPower(!showPurchasingPower)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-surface-container transition-colors"
+            >
+              <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[16px]">payments</span>
+                See purchasing power details
+              </span>
+              <span className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform ${showPurchasingPower ? "rotate-180" : ""}`}>
+                expand_more
+              </span>
+            </button>
+
+            {showPurchasingPower && (
+              <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+                <p className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[14px] text-tertiary">trending_down</span>
+                  What {formatCurrency(finalPortfolioValue)} really buys at age {retirementAge}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-0.5">
+                    <p className="text-lg font-extrabold text-on-surface tracking-tight">{formatFullCurrency(todaysDollars)}</p>
+                    <p className="text-[11px] text-on-surface-variant">In today&apos;s dollars</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-lg font-extrabold text-on-surface tracking-tight">{formatFullCurrency(finalPortfolioValue)}</p>
+                    <p className="text-[11px] text-on-surface-variant">Nominal (future) value</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-surface-container-highest pt-3 space-y-1">
+                  <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                    Annual withdrawal at {(withdrawalRate * 100).toFixed(0)}% rate
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-base font-bold text-primary">{formatFullCurrency(annualWithdrawalToday)}<span className="text-xs font-medium text-on-surface-variant">/yr</span></p>
+                      <p className="text-[11px] text-on-surface-variant">In today&apos;s dollars</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-base font-bold text-on-surface">{formatFullCurrency(annualWithdrawal)}<span className="text-xs font-medium text-on-surface-variant">/yr</span></p>
+                      <p className="text-[11px] text-on-surface-variant">Nominal</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-surface-container-highest pt-3 space-y-1">
+                  <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                    Monthly spending
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-base font-bold text-primary">{formatFullCurrency(monthlyWithdrawalToday)}<span className="text-xs font-medium text-on-surface-variant">/mo</span></p>
+                      <p className="text-[11px] text-on-surface-variant">In today&apos;s dollars</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-base font-bold text-on-surface">{formatFullCurrency(monthlyWithdrawal)}<span className="text-xs font-medium text-on-surface-variant">/mo</span></p>
+                      <p className="text-[11px] text-on-surface-variant">Nominal</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                  <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">info</span>
+                  &quot;Today&apos;s dollars&quot; adjusts for {(localInflationRate * 100).toFixed(1)}% annual inflation over {yearsToRetirement} years.
+                  The {(withdrawalRate * 100).toFixed(0)}% withdrawal rate is applied to your projected portfolio.
+                </p>
+              </div>
+            )}
+
             <p className="text-xs text-on-surface-variant leading-relaxed">
               <span className="material-symbols-outlined text-[12px] align-middle mr-0.5">info</span>
               Based on {(localAnnualReturn * 100).toFixed(1)}% annual return and {(localInflationRate * 100).toFixed(1)}% inflation.

@@ -202,9 +202,9 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 
 #### Planned enhancements (future phases)
 
-- Allow the user to arrow-key or click a different reference cell after typing an operator.
-- Support chained operations (e.g. `+100 +50`).
-- Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).
-- Cross-row references (e.g. reference a value in a different category).
-- Optionally display the original expression as a sub-label inside the saved cell.
-- Dark mode.
+- [ ] Allow the user to arrow-key or click a different reference cell after typing an operator.
+- [ ] Support chained operations (e.g. `+100 +50`).
+- [ ] Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).
+- [ ] Cross-row references (e.g. reference a value in a different category).
+- [ ] Optionally display the original expression as a sub-label inside the saved cell.
+- [ ] Dark mode.

@@ -335,6 +335,59 @@ export function getScheduleWithOverride(
 }
 
 /**
+ * Extended schedule: generates data from currentAge to age 100.
+ * Pre-retirement uses the strategy contribution function.
+ * Post-retirement uses $0 contributions with compound growth only.
+ */
+export function getExtendedSchedule(
+  params: StrategyParams,
+  overrideStartMonthly: number,
+  currentAge: number,
+  currentYear: number,
+  retirementAge: number
+): YearlyDataPoint[] {
+  const contributionFn = getContributionFn(params, overrideStartMonthly);
+  const maxAge = 100;
+  const totalYears = maxAge - currentAge;
+  const r = params.annualReturn / 12;
+  let balance = 0;
+  let totalContributions = 0;
+  const data: YearlyDataPoint[] = [];
+
+  data.push({
+    year: currentYear,
+    age: currentAge,
+    portfolioValue: 0,
+    monthlyContribution: contributionFn(0, 0),
+    cumulativeContributions: 0,
+    cumulativeGrowth: 0,
+  });
+
+  for (let y = 0; y < totalYears; y++) {
+    const age = currentAge + y + 1;
+    const isPreRetirement = y < params.years;
+    const monthlyForYear = isPreRetirement ? contributionFn(y, 0) : 0;
+
+    for (let m = 0; m < 12; m++) {
+      const contribution = isPreRetirement ? contributionFn(y, m) : 0;
+      balance = balance * (1 + r) + contribution;
+      totalContributions += contribution;
+    }
+
+    data.push({
+      year: currentYear + y + 1,
+      age,
+      portfolioValue: Math.round(balance),
+      monthlyContribution: Math.round(monthlyForYear),
+      cumulativeContributions: Math.round(totalContributions),
+      cumulativeGrowth: Math.round(balance - totalContributions),
+    });
+  }
+
+  return data;
+}
+
+/**
  * Get the final portfolio value for a schedule with a given starting monthly.
  */
 export function getFinalValue(params: StrategyParams, startMonthly: number): number {

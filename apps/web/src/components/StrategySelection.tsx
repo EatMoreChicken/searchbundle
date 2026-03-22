@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import {
+  ComposedChart,
   AreaChart,
   Area,
-  LineChart,
   Line,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -69,49 +70,59 @@ function MiniChart({ strategy, years }: MiniChartProps) {
 
 // recharts LineChart needs Line imported but we're using it inside AreaChart.
 // Actually AreaChart can only have Area children. Let's use a ComposedChart.
-// Fixing: use two overlapping charts.
+// Fixing: use ComposedChart to support both Area and Line with shared tooltip.
 function MiniChartDual({ strategy, years }: MiniChartProps) {
   const data = useMemo(() => getMiniChartData(strategy, years), [strategy, years]);
 
   return (
-    <div className="relative h-16 w-full">
-      {/* Portfolio area */}
-      <div className="absolute inset-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-            <defs>
-              <linearGradient id={`miniGrad-${strategy}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#006761" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <Area
-              type="monotone"
-              dataKey="portfolio"
-              stroke="#006761"
-              strokeWidth={1.5}
-              fill={`url(#miniGrad-${strategy})`}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-      {/* Contribution line */}
-      <div className="absolute inset-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-            <Line
-              type="stepAfter"
-              dataKey="contribution"
-              stroke="#805200"
-              strokeWidth={1.5}
-              dot={false}
-              strokeDasharray="4 2"
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="h-16 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+          <defs>
+            <linearGradient id={`miniGrad-${strategy}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#006761" stopOpacity={0.25} />
+              <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <RechartsTooltip
+            content={({ active, payload }) => {
+              if (!active || !payload || payload.length === 0) return null;
+              const d = payload[0]?.payload as { t: number; portfolio: number; contribution: number };
+              const pct = Math.round(d.t * 100);
+              return (
+                <div className="bg-on-surface rounded-lg px-2.5 py-1.5 shadow-lg text-white text-[10px] space-y-0.5 pointer-events-none">
+                  <p className="font-semibold">{pct}% through</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span>Portfolio: {Math.round(d.portfolio * 100)}%</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-tertiary" />
+                    <span>Contrib: {Math.round(d.contribution * 100)}%</span>
+                  </div>
+                </div>
+              );
+            }}
+          />
+          <Area
+            type="monotone"
+            dataKey="portfolio"
+            stroke="#006761"
+            strokeWidth={1.5}
+            fill={`url(#miniGrad-${strategy})`}
+            isAnimationActive={false}
+          />
+          <Line
+            type="stepAfter"
+            dataKey="contribution"
+            stroke="#805200"
+            strokeWidth={1.5}
+            dot={false}
+            strokeDasharray="4 2"
+            isAnimationActive={false}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

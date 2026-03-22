@@ -342,6 +342,18 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
     setStrategyConfig(config);
   }, []);
 
+  const handleRetirementAgeChange = useCallback((age: number) => {
+    setRetirementAge(age);
+  }, []);
+
+  const handleAnnualReturnChange = useCallback((rate: number) => {
+    setExpectedReturn(String(Math.round(rate * 1000) / 10));
+  }, []);
+
+  const handleInflationRateChange = useCallback((rate: number) => {
+    setInflationRate(String(Math.round(rate * 1000) / 10));
+  }, []);
+
   function goNext() {
     if (step < 3) setStep(step + 1);
   }
@@ -480,9 +492,13 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
             years={yearsRemaining}
             annualReturn={retDecimal}
             inflationRate={inflRateDecimal}
+            withdrawalRate={wdRateDecimal}
             currentAge={currentAge}
             retirementAge={retirementAge}
             onConfigChange={handleConfigChange}
+            onRetirementAgeChange={handleRetirementAgeChange}
+            onAnnualReturnChange={handleAnnualReturnChange}
+            onInflationRateChange={handleInflationRateChange}
             onBack={() => setStep(2)}
           />
           {error && (
@@ -495,7 +511,7 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
 
       {/* Navigation */}
       <div className="flex items-center gap-3 pt-2">
-        {step > 0 && step < 3 && (
+        {step > 0 && (
           <button
             type="button"
             onClick={goBack}
