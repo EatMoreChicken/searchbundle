@@ -4,8 +4,22 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
 import type { User, RetirementTarget, TargetMode } from "@/types";
-import { STRATEGY_LIST } from "@/lib/retirement-strategies";
+import type { SavingsStrategy, StrategyParams, YearlyDataPoint } from "@/lib/retirement-strategies";
+import {
+  getScheduleWithOverride,
+  calculateStartingMonthly,
+} from "@/lib/retirement-strategies";
 import OnboardingWizard from "@/components/OnboardingWizard";
+import {
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) {
@@ -283,7 +297,27 @@ export default function DashboardPage() {
       target.expectedReturn ?? 0.07,
       years,
     );
-    return { years, monthly, annual: monthly * 12, inflAdjTarget };
+
+    const strategy = (target.savingsStrategy ?? "traditional") as SavingsStrategy;
+    const params: StrategyParams = {
+      strategy,
+      targetAmount: inflAdjTarget,
+      years,
+      annualReturn: target.expectedReturn ?? 0.07,
+      annualChangeRate: target.strategyAnnualChangeRate ?? undefined,
+      phase1Years: target.strategyPhase1Years ?? undefined,
+      phase2Monthly: target.strategyPhase2Monthly ?? undefined,
+    };
+
+    const startMonthly = target.strategyPhase1Monthly ?? calculateStartingMonthly(params);
+    const chartData = getScheduleWithOverride(
+      params,
+      startMonthly,
+      currentAge,
+      new Date().getFullYear(),
+    );
+
+    return { years, monthly, annual: monthly * 12, inflAdjTarget, chartData };
   }, [target, currentAge]);
 
   const showConfigurator = editing;
@@ -606,33 +640,125 @@ export default function DashboardPage() {
 
         {/* Static summary card */}
         {target && !editing && savedSummary && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-surface-container-low rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                {formatCurrency(target.targetAmount)} in today&apos;s dollars
-              </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-surface-container-low rounded-2xl p-5">
+                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
+                <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  {formatCurrency(target.targetAmount)} in today&apos;s dollars
+                </p>
+              </div>
+              <div className="bg-surface-container-low rounded-2xl p-5">
+                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
+                <p className="text-xl font-extrabold text-on-surface tracking-tight">{target.targetAge}</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
+              </div>
+              <div className="bg-surface-container-low rounded-2xl p-5">
+                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
+                <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+              </div>
+              <div className="bg-surface-container-low rounded-2xl p-5">
+                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
+                <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+              </div>
             </div>
-            <div className="bg-surface-container-low rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{target.targetAge}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
-            </div>
-            <div className="bg-surface-container-low rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
-            </div>
-            <div className="bg-surface-container-low rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Strategy</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">
-                {STRATEGY_LIST.find((s) => s.id === target.savingsStrategy)?.name ?? "Traditional"}
-              </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                {STRATEGY_LIST.find((s) => s.id === target.savingsStrategy)?.subtitle ?? "Steady and predictable"}
-              </p>
-            </div>
+
+            {/* Savings plan trajectory chart */}
+            {savedSummary.chartData && savedSummary.chartData.length > 1 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
+                  Your savings plan
+                </h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={savedSummary.chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="dashGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#006761" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#006761" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#bdc9c7" strokeOpacity={0.3} />
+                      <XAxis
+                        dataKey="age"
+                        tick={{ fill: "#3e4947", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        label={{ value: "Age", position: "insideBottom", offset: -2, fill: "#3e4947", fontSize: 11 }}
+                      />
+                      <YAxis
+                        yAxisId="portfolio"
+                        tickFormatter={(v: number) => formatCurrency(v)}
+                        tick={{ fill: "#3e4947", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={70}
+                      />
+                      <YAxis
+                        yAxisId="contribution"
+                        orientation="right"
+                        tickFormatter={(v: number) => formatCurrency(v)}
+                        tick={{ fill: "#805200", fontSize: 10 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={60}
+                      />
+                      <RechartsTooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const data = payload[0]?.payload as YearlyDataPoint;
+                          return (
+                            <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5">
+                              <p className="font-semibold">
+                                Age {label} ({data.year})
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                <span>Portfolio: {formatFullCurrency(data.portfolioValue)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-tertiary" />
+                                <span>Monthly contribution: {formatFullCurrency(data.monthlyContribution)}</span>
+                              </div>
+                              <div className="border-t border-white/20 pt-1 mt-1 space-y-0.5">
+                                <p className="text-white/70">Total contributed: {formatFullCurrency(data.cumulativeContributions)}</p>
+                                <p className="text-white/70">Growth earned: {formatFullCurrency(data.cumulativeGrowth)}</p>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Area
+                        yAxisId="portfolio"
+                        type="monotone"
+                        dataKey="portfolioValue"
+                        name="Portfolio value"
+                        stroke="#006761"
+                        strokeWidth={2}
+                        fill="url(#dashGradient)"
+                      />
+                      <Line
+                        yAxisId="contribution"
+                        type="stepAfter"
+                        dataKey="monthlyContribution"
+                        name="Monthly contribution"
+                        stroke="#805200"
+                        strokeWidth={2}
+                        strokeDasharray="6 3"
+                        dot={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-xs text-on-surface-variant">
+                  Based on a {((target.expectedReturn ?? 0.07) * 100).toFixed(1)}% annual return over {savedSummary.years} years. Projections only.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </section>

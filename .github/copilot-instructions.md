@@ -155,7 +155,7 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - On sign-up, a default household ("My Household") is auto-created with the user as owner
 - `users` table has `active_household_id` (nullable uuid) tracking which household the user is currently working in
 - `users` table has `must_reset_password` (boolean) for invited users who need to set their own password
-- Helper function `getHouseholdSession()` at `apps/web/src/lib/auth-helpers.ts`: validates session has userId AND activeHouseholdId, used by all data API routes
+- Helper function `getHouseholdSession()` at `apps/web/src/lib/auth-helpers.ts`: validates session has userId AND activeHouseholdId, used by all data API routes. Verifies the household exists in the DB; if the JWT carries a stale household ID (e.g. after DB reset), it falls back to the user's first valid household membership and updates `activeHouseholdId`.
 - **All API routes use `householdId` for data scoping**: NOT `userId`. The pattern: `getHouseholdSession()` → use `session.householdId` in WHERE clauses and inserts
 - Household API routes:
   - `GET /api/households`: list user's households
@@ -227,7 +227,7 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
   - **Traditional**: Flat monthly amount for the entire period. Uses standard PMT formula.
   - **Back-Loaded**: Starts low, increases contributions by a configurable annual percentage (e.g. 5%/year).
 - **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getExtendedSchedule()` (generates data from current age to 100, with $0 contributions post-retirement), `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
-- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (including selected strategy name) and Edit button.
+- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (Target, Target Age, Monthly Savings, Annual Savings) and a savings trajectory chart showing portfolio value and monthly contribution over time. Edit button opens the inline configurator.
 - **Edit mode**: Inline form configurator (same as before) with mode selector, inputs, live summary, and save/cancel buttons. Separate from the wizard.
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age
