@@ -201,13 +201,16 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - Balance updates are tracked in the `balance_updates` table: `id`, `account_id` (FK CASCADE), `previous_balance`, `new_balance`, `change_amount`, `note`, `created_at`.
 - Asset detail page features:
   - Large clickable balance display with inline math expression editor (see "Inline Value Editor" pattern below)
-  - Balance history chart (recharts AreaChart)
-  - Update history table showing all balance changes with timestamps
+  - Balance history chart (recharts AreaChart) with note markers (amber ReferenceDots that scroll to the note in the timeline on click)
+  - Unified activity timeline merging balance updates and standalone notes, sorted by date
+  - Quick-add note input in the Activity section for fast annotation
   - Edit modal for name/notes (balance changes go through the inline editor to maintain history)
+- `account_notes` table: `id`, `account_id` (FK CASCADE), `household_id` (FK CASCADE), `content`, `created_at`. Standalone notes attached to an asset.
 - API routes:
   - Standard CRUD: `GET/POST /api/assets`, `GET/PUT/DELETE /api/assets/[id]`
   - Balance history: `GET /api/assets/[id]/history` (list updates), `POST /api/assets/[id]/history` (create update + change balance)
-- Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) with balance update history
+  - Notes: `GET/POST /api/assets/[id]/notes` (list/create), `DELETE /api/assets/[id]/notes/[noteId]` (delete)
+- Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) with balance update history and sample notes
 
 ### Inline Value Editor Pattern
 Used on the asset detail page for the balance field. Reuse this pattern anywhere a user edits a single numeric value and benefits from quick math.

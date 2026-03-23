@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
-import type { Asset, BalanceUpdate } from "@/types";
+import type { Asset, BalanceUpdate, AccountNote } from "@/types";
 import {
   AreaChart,
   Area,
@@ -12,6 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  ReferenceLine,
 } from "recharts";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -97,7 +98,25 @@ function applyExpression(input: string): number | null {
   }
 }
 
+function parseBalanceValue(input: string): { value: number } | { error: string } | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  if (isExpression(trimmed)) {
+    const result = applyExpression(trimmed);
+    if (result === null) return { error: "Invalid expression. Try something like 8500+200." };
+    return { value: Math.round(result * 100) / 100 };
+  }
+
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return { value: Math.round(parseFloat(trimmed) * 100) / 100 };
+  }
+
+  return { error: "Enter a valid number or math expression (e.g., 8500+200)" };
+}
+
 interface ChartDataPoint {
+  idx: number;
   date: string;
   value: number;
   label: string;
@@ -108,11 +127,16 @@ interface EditFormState {
   notes: string;
 }
 
+type TimelineEntry =
+  | { type: "update"; data: BalanceUpdate; createdAt: string }
+  | { type: "note"; data: AccountNote; createdAt: string };
+
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [asset, setAsset] = useState<Asset | null>(null);
   const [history, setHistory] = useState<BalanceUpdate[]>([]);
+  const [notes, setNotes] = useState<AccountNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
@@ -123,7 +147,15 @@ export default function AssetDetailPage() {
   const [balanceEditing, setBalanceEditing] = useState(false);
   const [balanceInput, setBalanceInput] = useState("");
   const [balanceSaving, setBalanceSaving] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
   const balanceInputRef = useRef<HTMLInputElement>(null);
+
+  // Activity input (combined balance + note)
+  const [activityBalance, setActivityBalance] = useState("");
+  const [activityNote, setActivityNote] = useState("");
+  const [activitySaving, setActivitySaving] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
 
   const fetchAsset = useCallback(async () => {
     setLoading(true);
@@ -144,15 +176,26 @@ export default function AssetDetailPage() {
     }
   }, [id]);
 
+  const fetchNotes = useCallback(async () => {
+    try {
+      const data = await apiClient.get<AccountNote[]>(`/api/assets/${id}/notes`);
+      setNotes(data);
+    } catch {
+      /* ignore */
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchAsset();
     fetchHistory();
-  }, [fetchAsset, fetchHistory]);
+    fetchNotes();
+  }, [fetchAsset, fetchHistory, fetchNotes]);
 
   function openBalanceEditor() {
     if (!asset) return;
     setBalanceInput(String(asset.balance));
     setBalanceEditing(true);
+    setBalanceError(null);
     setTimeout(() => {
       const el = balanceInputRef.current;
       if (!el) return;
@@ -167,30 +210,25 @@ export default function AssetDetailPage() {
     const trimmed = balanceInput.trim();
     if (!trimmed) {
       setBalanceEditing(false);
+      setBalanceError(null);
       return;
     }
 
-    let newBalance: number;
-
-    if (isExpression(trimmed)) {
-      const result = applyExpression(trimmed);
-      if (result === null) {
-        setBalanceEditing(false);
-        return;
-      }
-      newBalance = Math.round(result * 100) / 100;
-    } else {
-      const parsed = parseFloat(trimmed);
-      if (isNaN(parsed)) {
-        setBalanceEditing(false);
-        return;
-      }
-      newBalance = Math.round(parsed * 100) / 100;
+    const parsed = parseBalanceValue(trimmed);
+    if (parsed === null) {
+      setBalanceEditing(false);
+      setBalanceError(null);
+      return;
+    }
+    if ("error" in parsed) {
+      setBalanceError(parsed.error);
+      return;
     }
 
     setBalanceSaving(true);
+    setBalanceError(null);
     try {
-      await apiClient.post(`/api/assets/${id}/history`, { newBalance });
+      await apiClient.post(`/api/assets/${id}/history`, { newBalance: parsed.value });
       await Promise.all([fetchAsset(), fetchHistory()]);
       setBalanceEditing(false);
     } finally {
@@ -204,6 +242,7 @@ export default function AssetDetailPage() {
       submitBalanceUpdate();
     } else if (e.key === "Escape") {
       setBalanceEditing(false);
+      setBalanceError(null);
     }
   }
 
@@ -238,6 +277,52 @@ export default function AssetDetailPage() {
     router.push("/assets");
   }
 
+  async function submitActivity() {
+    if (!asset || activitySaving) return;
+
+    const balanceParsed = parseBalanceValue(activityBalance);
+    if (balanceParsed && "error" in balanceParsed) {
+      setActivityError(balanceParsed.error);
+      return;
+    }
+
+    const hasBalance = balanceParsed !== null;
+    const hasNote = activityNote.trim().length > 0;
+    if (!hasBalance && !hasNote) return;
+
+    setActivitySaving(true);
+    setActivityError(null);
+    try {
+      if (hasBalance) {
+        await apiClient.post(`/api/assets/${id}/history`, {
+          newBalance: balanceParsed.value,
+          note: hasNote ? activityNote.trim() : undefined,
+        });
+      } else {
+        await apiClient.post(`/api/assets/${id}/notes`, { content: activityNote.trim() });
+      }
+      setActivityBalance("");
+      setActivityNote("");
+      await Promise.all([fetchAsset(), fetchHistory(), fetchNotes()]);
+    } finally {
+      setActivitySaving(false);
+    }
+  }
+
+  async function deleteNote(noteId: string) {
+    await apiClient.delete(`/api/assets/${id}/notes/${noteId}`);
+    await fetchNotes();
+  }
+
+  function scrollToEntry(elementId: string) {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-tertiary");
+      setTimeout(() => el.classList.remove("ring-2", "ring-tertiary"), 2000);
+    }
+  }
+
   // Build chart data from history (reversed so oldest is first) + current balance
   const chartData: ChartDataPoint[] = (() => {
     if (!asset) return [];
@@ -249,6 +334,7 @@ export default function AssetDetailPage() {
       // Just the current value
       return [
         {
+          idx: 0,
           date: new Date().toISOString(),
           value: asset.balance,
           label: formatDate(new Date()),
@@ -261,6 +347,7 @@ export default function AssetDetailPage() {
     // First point: initial balance (before any recorded updates)
     const firstUpdate = chronological[0];
     points.push({
+      idx: 0,
       date: firstUpdate.createdAt,
       value: firstUpdate.previousBalance,
       label: formatDate(firstUpdate.createdAt),
@@ -269,6 +356,7 @@ export default function AssetDetailPage() {
     // Each update's new balance
     for (const update of chronological) {
       points.push({
+        idx: points.length,
         date: update.createdAt,
         value: update.newBalance,
         label: formatDate(update.createdAt),
@@ -276,6 +364,53 @@ export default function AssetDetailPage() {
     }
 
     return points;
+  })();
+
+  // Chart note markers: collect from standalone notes AND balance updates with notes
+  const allNoteMarkers = (() => {
+    if (chartData.length <= 1) return [];
+
+    function findClosestIdx(createdAt: string) {
+      const time = new Date(createdAt).getTime();
+      let closest = 0;
+      for (let i = 0; i < chartData.length; i++) {
+        if (new Date(chartData[i].date).getTime() <= time) closest = i;
+      }
+      return chartData[closest].idx;
+    }
+
+    const markers: { id: string; content: string; x: number; scrollTarget: string }[] = [];
+
+    for (const note of notes) {
+      markers.push({
+        id: `n-${note.id}`,
+        content: note.content,
+        x: findClosestIdx(note.createdAt),
+        scrollTarget: `note-${note.id}`,
+      });
+    }
+
+    for (const update of history) {
+      if (!update.note) continue;
+      markers.push({
+        id: `u-${update.id}`,
+        content: update.note,
+        x: findClosestIdx(update.createdAt),
+        scrollTarget: `update-${update.id}`,
+      });
+    }
+
+    return markers;
+  })();
+
+  // Build unified timeline
+  const timeline: TimelineEntry[] = (() => {
+    const entries: TimelineEntry[] = [
+      ...history.map((u) => ({ type: "update" as const, data: u, createdAt: u.createdAt })),
+      ...notes.map((n) => ({ type: "note" as const, data: n, createdAt: n.createdAt })),
+    ];
+    entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return entries;
   })();
 
   // Compute net change stats
@@ -351,12 +486,15 @@ export default function AssetDetailPage() {
               ref={balanceInputRef}
               type="text"
               value={balanceInput}
-              onChange={(e) => setBalanceInput(e.target.value)}
+              onChange={(e) => { setBalanceInput(e.target.value); setBalanceError(null); }}
               onKeyDown={handleBalanceKeyDown}
               onBlur={() => submitBalanceUpdate()}
               disabled={balanceSaving}
               autoFocus
-              className="w-full max-w-md rounded-xl bg-surface-container-high px-4 py-3 text-4xl font-bold tracking-tight text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+              className={[
+                "w-full max-w-md rounded-xl bg-surface-container-high px-4 py-3 text-4xl font-bold tracking-tight text-on-surface focus:outline-none focus:ring-2",
+                balanceError ? "focus:ring-error" : "focus:ring-primary",
+              ].join(" ")}
             />
             {(() => {
               const trimmed = balanceInput.trim();
@@ -373,8 +511,14 @@ export default function AssetDetailPage() {
                 </div>
               );
             })()}
+            {balanceError && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[14px] text-error">error</span>
+                <span className="text-[12px] text-error">{balanceError}</span>
+              </div>
+            )}
             <p className="mt-1.5 text-[11px] text-on-surface-variant">
-              Type a new value to set the balance, or append an operator to calculate: 8500+200, 8500-100, -100+50. Press Enter to save, Escape to cancel.
+              Enter a value or use math: 8500+200, 8500-100. Press Enter to save, Escape to cancel.
             </p>
           </div>
         ) : (
@@ -443,7 +587,7 @@ export default function AssetDetailPage() {
         ) : (
           <div className="mt-6 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+              <AreaChart data={chartData} margin={{ top: 28, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
@@ -457,8 +601,14 @@ export default function AssetDetailPage() {
                   vertical={false}
                 />
                 <XAxis
-                  dataKey="label"
+                  dataKey="idx"
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
                   tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  tickFormatter={(idx: number) => {
+                    const pt = chartData.find((d) => d.idx === idx);
+                    return pt ? pt.label : "";
+                  }}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -491,99 +641,277 @@ export default function AssetDetailPage() {
                   dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: "var(--color-primary)", strokeWidth: 2, stroke: "white" }}
                 />
+                {allNoteMarkers.map((marker) => (
+                  <ReferenceLine
+                    key={marker.id}
+                    x={marker.x}
+                    stroke="var(--color-tertiary)"
+                    strokeDasharray="4 4"
+                    strokeWidth={1}
+                    strokeOpacity={0.35}
+                    label={({ viewBox }: { viewBox?: { x?: number } }) => {
+                      const cx = viewBox?.x ?? 0;
+                      const isHovered = hoveredMarker === marker.id;
+                      return (
+                        <g>
+                          <circle
+                            cx={cx}
+                            cy={9}
+                            r={7}
+                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            style={{ cursor: "pointer", transition: "fill 0.15s" }}
+                            onClick={() => scrollToEntry(marker.scrollTarget)}
+                            onMouseEnter={() => setHoveredMarker(marker.id)}
+                            onMouseLeave={() => setHoveredMarker(null)}
+                          />
+                          <path
+                            d={`M${cx - 4},14 Q${cx},22 ${cx + 4},14`}
+                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            style={{ cursor: "pointer", transition: "fill 0.15s" }}
+                          />
+                          <text
+                            x={cx}
+                            y={12}
+                            textAnchor="middle"
+                            fill="white"
+                            fontSize={9}
+                            fontWeight={700}
+                            style={{ pointerEvents: "none" }}
+                          >
+                            ✦
+                          </text>
+                          <rect
+                            x={cx - 14}
+                            y={0}
+                            width={28}
+                            height={24}
+                            fill="transparent"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => scrollToEntry(marker.scrollTarget)}
+                            onMouseEnter={() => setHoveredMarker(marker.id)}
+                            onMouseLeave={() => setHoveredMarker(null)}
+                          />
+                          {isHovered && (
+                            <foreignObject
+                              x={cx - 110}
+                              y={24}
+                              width={220}
+                              height={60}
+                              style={{ pointerEvents: "none", overflow: "visible" }}
+                            >
+                              <div
+                                style={{
+                                  background: "var(--color-on-surface)",
+                                  color: "white",
+                                  borderRadius: 8,
+                                  padding: "6px 10px",
+                                  fontSize: 11,
+                                  lineHeight: "1.4",
+                                  maxWidth: 200,
+                                  margin: "0 auto",
+                                  overflow: "hidden",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical" as const,
+                                  textOverflow: "ellipsis",
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {marker.content}
+                              </div>
+                            </foreignObject>
+                          )}
+                        </g>
+                      );
+                    }}
+                  />
+                ))}
               </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
       </div>
 
-      {/* Update History Table */}
+      {/* Activity Timeline */}
       <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[2px] text-primary">Activity</p>
-            <h2 className="mt-1 text-xl font-bold text-on-surface">Update History</h2>
-          </div>
-          <button
-            onClick={openBalanceEditor}
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-4 py-2.5 text-[13px] font-semibold text-on-primary transition-transform active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[14px]">edit</span>
-            Update Balance
-          </button>
+        <div>
+          <p className="text-[11px] uppercase tracking-[2px] text-primary">Activity</p>
+          <h2 className="mt-1 text-xl font-bold text-on-surface">Timeline</h2>
         </div>
 
-        {history.length === 0 ? (
+        {/* Unified activity input: balance + note */}
+        <div className="mt-5 rounded-xl bg-surface-container p-5">
+          <p className="text-[12px] font-medium text-on-surface-variant mb-3">
+            Update your balance, add a note, or both
+          </p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 rounded-xl bg-surface-container-high px-4 py-3">
+                <span className="material-symbols-outlined text-[16px] text-on-surface-variant/50">payments</span>
+                <input
+                  type="text"
+                  placeholder="New balance or expression"
+                  value={activityBalance}
+                  onChange={(e) => { setActivityBalance(e.target.value); setActivityError(null); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitActivity(); } }}
+                  disabled={activitySaving}
+                  className="flex-1 bg-transparent text-[13px] text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 rounded-xl bg-surface-container-high px-4 py-3">
+                <span className="material-symbols-outlined text-[16px] text-on-surface-variant/50">sticky_note_2</span>
+                <input
+                  type="text"
+                  placeholder="Add a note (optional)"
+                  value={activityNote}
+                  onChange={(e) => setActivityNote(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitActivity(); } }}
+                  disabled={activitySaving}
+                  className="flex-1 bg-transparent text-[13px] text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
+                />
+              </div>
+            </div>
+            <button
+              onClick={submitActivity}
+              disabled={activitySaving || (!activityBalance.trim() && !activityNote.trim())}
+              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-5 py-2.5 text-[13px] font-semibold text-on-primary disabled:opacity-40 transition-transform active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[14px]">add_circle</span>
+              Add
+            </button>
+          </div>
+          {(() => {
+            const trimmed = activityBalance.trim();
+            if (!trimmed || !isExpression(trimmed)) return null;
+            const result = applyExpression(trimmed);
+            if (result === null) return null;
+            return (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[14px] text-primary">arrow_forward</span>
+                <span className="text-[13px] font-semibold text-primary">
+                  {formatCurrency(Math.round(result * 100) / 100, asset.currency)}
+                </span>
+              </div>
+            );
+          })()}
+          {activityError && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[14px] text-error">error</span>
+              <span className="text-[12px] text-error">{activityError}</span>
+            </div>
+          )}
+        </div>
+
+        {timeline.length === 0 ? (
           <div className="mt-6 flex flex-col items-center py-10 text-center">
             <span className="material-symbols-outlined text-[28px] text-on-surface-variant/40">history</span>
             <p className="mt-3 text-[13px] text-on-surface-variant">
-              No updates yet. Click the balance above or the &quot;Update Balance&quot; button to record a change.
+              No activity yet. Update the balance or add a note to start building your timeline.
             </p>
           </div>
         ) : (
           <div className="mt-6 space-y-2">
-            {history.map((update) => (
-              <div
-                key={update.id}
-                className="flex items-center justify-between rounded-xl bg-surface-container-low px-5 py-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={[
-                    "flex h-8 w-8 items-center justify-center rounded-full",
-                    update.changeAmount > 0
-                      ? "bg-secondary-fixed/40"
-                      : update.changeAmount < 0
-                        ? "bg-error-container"
-                        : "bg-surface-container-high",
-                  ].join(" ")}>
+            {timeline.map((entry) => {
+              if (entry.type === "update") {
+                const update = entry.data;
+                return (
+                  <div
+                    key={`u-${update.id}`}
+                    id={`update-${update.id}`}
+                    className="flex items-center justify-between rounded-xl bg-surface-container-low px-5 py-4 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={[
+                        "flex h-8 w-8 items-center justify-center rounded-full",
+                        update.changeAmount > 0
+                          ? "bg-secondary-fixed/40"
+                          : update.changeAmount < 0
+                            ? "bg-error-container"
+                            : "bg-surface-container-high",
+                      ].join(" ")}>
+                        <span className={[
+                          "material-symbols-outlined text-[14px]",
+                          update.changeAmount > 0
+                            ? "text-secondary"
+                            : update.changeAmount < 0
+                              ? "text-error"
+                              : "text-on-surface-variant",
+                        ].join(" ")}>
+                          {update.changeAmount > 0 ? "arrow_upward" : update.changeAmount < 0 ? "arrow_downward" : "remove"}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-medium text-on-surface-variant">
+                            {formatCurrencyFull(update.previousBalance)}
+                          </span>
+                          <span className="material-symbols-outlined text-[12px] text-on-surface-variant">arrow_forward</span>
+                          <span className="text-[13px] font-semibold text-on-surface">
+                            {formatCurrencyFull(update.newBalance)}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] text-on-surface-variant">
+                          {formatDateTime(update.createdAt)}
+                        </p>
+                        {update.note && (
+                          <p className="mt-1 flex items-center gap-1.5 text-[12px] text-on-surface-variant">
+                            <span className="material-symbols-outlined text-[12px] text-tertiary">sticky_note_2</span>
+                            {update.note}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                     <span className={[
-                      "material-symbols-outlined text-[14px]",
+                      "text-[13px] font-semibold",
                       update.changeAmount > 0
                         ? "text-secondary"
                         : update.changeAmount < 0
                           ? "text-error"
                           : "text-on-surface-variant",
                     ].join(" ")}>
-                      {update.changeAmount > 0 ? "arrow_upward" : update.changeAmount < 0 ? "arrow_downward" : "remove"}
+                      {update.changeAmount > 0 ? "+" : ""}
+                      {formatCurrencyFull(update.changeAmount)}
                     </span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-on-surface-variant">
-                        {formatCurrencyFull(update.previousBalance)}
-                      </span>
-                      <span className="material-symbols-outlined text-[12px] text-on-surface-variant">arrow_forward</span>
-                      <span className="text-[13px] font-semibold text-on-surface">
-                        {formatCurrencyFull(update.newBalance)}
-                      </span>
+                );
+              }
+
+              // Note entry
+              const note = entry.data;
+              return (
+                <div
+                  key={`n-${note.id}`}
+                  id={`note-${note.id}`}
+                  className="flex items-center justify-between rounded-xl bg-tertiary-fixed/20 px-5 py-4 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary-fixed">
+                      <span className="material-symbols-outlined text-[14px] text-on-tertiary-fixed-variant">sticky_note_2</span>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-on-surface-variant">
-                      {formatDateTime(update.createdAt)}
-                      {update.note && <span className="ml-2">{update.note}</span>}
-                    </p>
+                    <div>
+                      <p className="text-[13px] font-medium text-on-surface">{note.content}</p>
+                      <p className="mt-0.5 text-[11px] text-on-surface-variant">{formatDateTime(note.createdAt)}</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => deleteNote(note.id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant/40 hover:text-error hover:bg-error-container transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
                 </div>
-                <span className={[
-                  "text-[13px] font-semibold",
-                  update.changeAmount > 0
-                    ? "text-secondary"
-                    : update.changeAmount < 0
-                      ? "text-error"
-                      : "text-on-surface-variant",
-                ].join(" ")}>
-                  {update.changeAmount > 0 ? "+" : ""}
-                  {formatCurrencyFull(update.changeAmount)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Notes */}
+      {/* Asset description notes */}
       {asset.notes && (
         <div className="mt-6 rounded-xl bg-surface-container-lowest p-6">
-          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Notes</p>
+          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Description</p>
           <p className="mt-2 text-[14px] text-on-surface-variant">{asset.notes}</p>
         </div>
       )}

@@ -97,6 +97,14 @@ export interface BalanceUpdate {
   createdAt: string;
 }
 
+export interface AccountNote {
+  id: string;
+  accountId: string;
+  householdId: string;
+  content: string;
+  createdAt: string;
+}
+
 export type CategoryType = "asset" | "liability";
 
 export interface NetWorthCategory {

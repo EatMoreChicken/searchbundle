@@ -21,6 +21,7 @@ import {
   householdMembers,
   accounts,
   balanceUpdates,
+  accountNotes,
   netWorthCategories,
   netWorthEntries,
 } from "./schema";
@@ -58,15 +59,18 @@ const MONTHLY: Record<string, Record<number, Record<number, number>>> = {
 };
 
 // Balance update history for demo accounts (simulates periodic balance checks)
+// notesMap keys are "YYYY-M" mapping to a note string for that month's update
 function generateBalanceHistory(
   accountId: string,
   monthlyValues: Record<number, Record<number, number>>,
+  notesMap: Record<string, string> = {},
 ) {
   const updates: {
     accountId: string;
     previousBalance: string;
     newBalance: string;
     changeAmount: string;
+    note: string | null;
     createdAt: Date;
   }[] = [];
 
@@ -85,6 +89,7 @@ function generateBalanceHistory(
           previousBalance: String(prev),
           newBalance: String(value),
           changeAmount: String(value - prev),
+          note: notesMap[`${year}-${month}`] ?? null,
           createdAt: new Date(year, month - 1, 15, 10, 0, 0),
         });
       }
@@ -210,15 +215,68 @@ async function seed() {
   }
 
   const allUpdates = [
-    ...generateBalanceHistory(ACCOUNT_CHECKING, MONTHLY[CAT_CHECKING]),
-    ...generateBalanceHistory(ACCOUNT_EMERGENCY, MONTHLY[CAT_EMERGENCY]),
-    ...generateBalanceHistory(ACCOUNT_CASH, MONTHLY[CAT_CASH]),
+    ...generateBalanceHistory(ACCOUNT_CHECKING, MONTHLY[CAT_CHECKING], {
+      "2025-5":  "Tax refund arrived, deposited straight in.",
+      "2025-6":  "Annual HOA payment + vacation week spending.",
+      "2025-11": "Q4 performance bonus deposited.",
+      "2026-1":  "Paid off credit card balance in full.",
+    }),
+    ...generateBalanceHistory(ACCOUNT_EMERGENCY, MONTHLY[CAT_EMERGENCY], {
+      "2025-5":  "Hit $20K milestone - halfway to 6-month goal!",
+      "2026-1":  "Officially reached the 6-month emergency fund goal.",
+      "2026-3":  "Pulled $500 to cover unexpected car repair.",
+    }),
+    ...generateBalanceHistory(ACCOUNT_CASH, MONTHLY[CAT_CASH], {
+      "2025-6":  "Sold old electronics + received birthday cash.",
+    }),
   ];
 
   if (allUpdates.length > 0) {
     await db.insert(balanceUpdates).values(allUpdates);
   }
   console.log(`✓ Balance updates inserted (${allUpdates.length} rows)`);
+
+  // ── 4b. Seed account notes ─────────────────────────────────────────────
+
+  for (const acct of assetRows) {
+    await db.delete(accountNotes).where(eq(accountNotes.accountId, acct.id));
+  }
+
+  const noteRows = [
+    {
+      accountId: ACCOUNT_CHECKING,
+      householdId: HOUSEHOLD_ID,
+      content: "Received $500 insurance rebate - deposited 8/20.",
+      createdAt: new Date(2025, 7, 20, 14, 30, 0),
+    },
+    {
+      accountId: ACCOUNT_CHECKING,
+      householdId: HOUSEHOLD_ID,
+      content: "Reminder: move excess above $8K to high-yield savings.",
+      createdAt: new Date(2025, 10, 20, 9, 0, 0),
+    },
+    {
+      accountId: ACCOUNT_CHECKING,
+      householdId: HOUSEHOLD_ID,
+      content: "Switched direct deposit to this account starting February.",
+      createdAt: new Date(2026, 1, 1, 8, 0, 0),
+    },
+    {
+      accountId: ACCOUNT_EMERGENCY,
+      householdId: HOUSEHOLD_ID,
+      content: "Target range: keep between $22K and $26K. Replenish after any draw.",
+      createdAt: new Date(2025, 8, 10, 12, 0, 0),
+    },
+    {
+      accountId: ACCOUNT_CASH,
+      householdId: HOUSEHOLD_ID,
+      content: "Includes ~$200 in gift cards. Cash in wallet: $120.",
+      createdAt: new Date(2025, 11, 28, 18, 0, 0),
+    },
+  ];
+
+  await db.insert(accountNotes).values(noteRows);
+  console.log(`✓ Account notes inserted (${noteRows.length} rows)`);
 
   // ── 5. Upsert net worth categories ────────────────────────────────────
 

@@ -142,6 +142,16 @@ export const balanceUpdates = pgTable("balance_updates", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// --- Account Notes (standalone timeline annotations) ---
+
+export const accountNotes = pgTable("account_notes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // --- Net Worth Tracker ---
 
 export const categoryTypeEnum = pgEnum("category_type", ["asset", "liability"]);
