@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import type { User, RetirementTarget, TargetMode } from "@/types";
 import type { SavingsStrategy, StrategyParams, YearlyDataPoint } from "@/lib/retirement-strategies";
@@ -9,7 +10,6 @@ import {
   getExtendedSchedule,
   calculateStartingMonthly,
 } from "@/lib/retirement-strategies";
-import OnboardingWizard from "@/components/OnboardingWizard";
 import {
   ComposedChart,
   Area,
@@ -142,6 +142,7 @@ function NumericInput({
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
   const [target, setTarget] = useState<RetirementTarget | null>(null);
@@ -165,6 +166,12 @@ export default function DashboardPage() {
         apiClient.get<User>("/api/users/me"),
         apiClient.get<RetirementTarget | null>("/api/retirement-target"),
       ]);
+
+      if ((!u.dateOfBirth || u.retirementAge == null) && !t) {
+        router.replace("/getting-started");
+        return;
+      }
+
       setUser(u);
       setTarget(t);
 
@@ -181,25 +188,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (session?.user) loadData();
   }, [session, loadData]);
-
-  // Show the wizard when the user hasn't completed onboarding (no DOB or retirement age) AND has no target
-  const needsOnboarding = user && (!user.dateOfBirth || user.retirementAge == null) && !target;
-
-  function handleWizardComplete(updatedUser: User, savedTarget: RetirementTarget) {
-    setUser(updatedUser);
-    setTarget(savedTarget);
-    setTargetAge(String(savedTarget.targetAge));
-    setMode(savedTarget.mode);
-    setFixedAmount(savedTarget.mode === "fixed" ? String(savedTarget.targetAmount) : "");
-    setAnnualIncome(savedTarget.annualIncome != null ? String(savedTarget.annualIncome) : "");
-    setWithdrawalRate(String((savedTarget.withdrawalRate ?? 0.04) * 100));
-    setExpectedReturn(String((savedTarget.expectedReturn ?? 0.07) * 100));
-  }
 
   // Live calculations (for edit mode)
   const currentAge = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
@@ -333,11 +326,6 @@ export default function DashboardPage() {
         <span className="material-symbols-outlined text-primary animate-spin text-[32px]">progress_activity</span>
       </div>
     );
-  }
-
-  // Show the onboarding wizard for new users
-  if (needsOnboarding) {
-    return <OnboardingWizard user={user} onComplete={handleWizardComplete} />;
   }
 
   return (

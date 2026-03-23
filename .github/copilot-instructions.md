@@ -212,9 +212,13 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - **Cell math expressions**: Typing `+100`, `-50`, `*2`, or `/4` into a cell resolves the operation against the nearest cell to the left in the same row that has a value. Only the calculated result is saved (no formula persistence). The reference cell is highlighted in amber while typing. An inline tooltip explains the feature on cell open. Logic lives in `NetWorthTracker.tsx` via `EXPR_PATTERN`, `isExpression`, `applyExpression`, and `findLeftValueMonth`.
 - The net worth categories are **standalone**: not yet linked to the existing `accounts`/`debts` tables. This will be connected in a future iteration.
 
-### Dashboard (Financial Independence Target)
-- The dashboard (`/dashboard`) is the primary landing page after sign-in: greeting, onboarding, and financial goal setup
-- **Onboarding Wizard**: Four-step "Getting Started" wizard shown when user needs onboarding (no `dateOfBirth` or `retirementAge`) AND has no retirement target. Component: `OnboardingWizard` in `apps/web/src/components/OnboardingWizard.tsx`. Steps:
+### Getting Started Wizard
+- Standalone full-screen onboarding flow at `/getting-started` with no sidebar (uses `(onboarding)` route group)
+- Layout: `apps/web/src/app/(onboarding)/layout.tsx` (full-screen, no sidebar)
+- Page: `apps/web/src/app/(onboarding)/getting-started/page.tsx` (loads user data, renders wizard, redirects to `/dashboard` on completion)
+- If user has already completed onboarding (has `dateOfBirth`, `retirementAge`, and a retirement target), visiting `/getting-started` redirects to `/dashboard`
+- If user visits `/dashboard` without completing onboarding, they are redirected to `/getting-started`
+- **Onboarding Wizard**: Four-step wizard. Component: `OnboardingWizard` in `apps/web/src/components/OnboardingWizard.tsx`. Props: `user: User`, `onComplete: () => void`. Steps:
   - **Step 1: Age**: Year/month/day dropdown selectors (pre-filled ~30 years ago), retirement age slider (default 65) + number input. Live sidebar shows current age, years remaining, life timeline progress bar.
   - **Step 2: Income Target**: Two modes via card selector: "Help me figure it out" (default, annual income in today's dollars with optional expandable monthly expense calculator) and "I already have a number" (direct target amount). Expandable expense categories (Housing, Transportation, Healthcare, etc.) auto-sum to monthly/yearly with inflation adjustment. Assumptions section: inflation (3%), withdrawal rate (4%), expected return (7%) with InfoTooltips. Live sidebar shows portfolio target, monthly/annual savings, years to go.
   - **Step 3: Strategy Selection**: Five savings strategy cards ordered best-to-worst. Each card shows icon, title, subtitle, "Best for" tag, mini ComposedChart (portfolio area + contribution line) with hover tooltips, and year 1/final monthly preview. Component: `StrategySelection` in `apps/web/src/components/StrategySelection.tsx`.
@@ -228,6 +232,10 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
   - **Back-Loaded**: Starts low, increases contributions by a configurable annual percentage (e.g. 5%/year).
 - **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getExtendedSchedule()` (generates data from current age to `maxAge`, with $0 contributions post-retirement; accepts optional `maxAge` parameter, default 100), `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
 - **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (Target, Target Age, Monthly Savings, Annual Savings) and a savings trajectory chart showing portfolio value and monthly contribution over time. Chart extends to the user's `projectionEndAge` (default 100) with a vertical ReferenceLine marking retirement age. Edit button opens the inline configurator.
+
+### Dashboard
+- The dashboard (`/dashboard`) is the primary landing page after sign-in
+- If the user hasn't completed onboarding, the dashboard redirects to `/getting-started`
 - **Edit mode**: Inline form configurator (same as before) with mode selector, inputs, live summary, and save/cancel buttons. Separate from the wizard.
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age

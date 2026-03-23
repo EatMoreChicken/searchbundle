@@ -208,3 +208,10 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 - [ ] Cross-row references (e.g. reference a value in a different category).
 - [ ] Optionally display the original expression as a sub-label inside the saved cell.
 - [ ] Dark mode.
+- [ ] Some people will want o invest less now and more into the futuer after they get a raise or something, we need to accoun for that level of customization.
+- [ ] Mobile friendly
+- [ ] Set goals and check back in on it
+
+#### Nice to Haves
+
+- [ ] Use uploads a bank statement and Cooper helps to identify where to cut spending.

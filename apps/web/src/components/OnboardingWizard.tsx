@@ -165,7 +165,7 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
 
 interface OnboardingWizardProps {
   user: User;
-  onComplete: (user: User, target: RetirementTarget) => void;
+  onComplete: () => void;
 }
 
 export default function OnboardingWizard({ user, onComplete }: OnboardingWizardProps) {
@@ -367,13 +367,13 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
     setSaving(true);
     setError("");
     try {
-      const updatedUser = await apiClient.patch<User>("/api/users/me", {
+      await apiClient.patch<User>("/api/users/me", {
         dateOfBirth,
         retirementAge,
       });
 
       const targetAmount = incomeMode === "fixed" ? Number(fixedAmount) : portfolioTodayDollars;
-      const savedTarget = await apiClient.put<RetirementTarget>("/api/retirement-target", {
+      await apiClient.put<RetirementTarget>("/api/retirement-target", {
         mode: incomeMode === "fixed" ? "fixed" : "income_replacement",
         targetAmount,
         targetAge: retirementAge,
@@ -389,7 +389,7 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
         strategyAnnualChangeRate: strategyConfig?.annualChangeRate ?? null,
       });
 
-      onComplete(updatedUser, savedTarget);
+      onComplete();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(msg);
@@ -401,7 +401,7 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className={`p-6 ${step === 3 ? "max-w-5xl" : "max-w-4xl"} space-y-6`}>
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
