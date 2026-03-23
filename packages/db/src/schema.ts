@@ -8,6 +8,7 @@ export const accountTypeEnum = pgEnum("account_type", [
   "hsa",
   "property",
   "other",
+  "simple",
 ]);
 
 export const contributionFrequencyEnum = pgEnum("contribution_frequency", [
@@ -127,6 +128,18 @@ export const balanceHistory = pgTable("balance_history", {
   checkInId: uuid("check_in_id").notNull().references(() => checkIns.id, { onDelete: "cascade" }),
   balance: numeric("balance", { precision: 14, scale: 2 }).notNull(),
   recordedAt: timestamp("recorded_at").defaultNow().notNull(),
+});
+
+// --- Balance Updates (manual value change log) ---
+
+export const balanceUpdates = pgTable("balance_updates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+  previousBalance: numeric("previous_balance", { precision: 14, scale: 2 }).notNull(),
+  newBalance: numeric("new_balance", { precision: 14, scale: 2 }).notNull(),
+  changeAmount: numeric("change_amount", { precision: 14, scale: 2 }).notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // --- Net Worth Tracker ---

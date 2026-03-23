@@ -76,7 +76,7 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 ## Key Features
 
 - **Dashboard ("Net Worth Tracker")**: Spreadsheet-style monthly grid showing assets, liabilities, totals, and net worth. Users add categories and manually enter monthly balances. Current month highlighted, year selector, inline cell editing.
-- **Assets**: Balance cards with history, contribution plans, growth assumptions, projection charts, on-track status, and notes. Types: investment, savings, HSA, property, other.
+- **Assets**: Balance cards with manual value tracking, balance update history, and chart. Currently only supports "Simple Account" type (no interest, no growth). More asset types will be added incrementally.
 - **Liabilities**: Balance cards with loan terms, payoff projections, amortization view, and interest saved calculators.
 - **Check-In Flow**: Step-by-step guided update (one account at a time), change detection, goal review, summary, and AI debrief.
 - **Plans & Projections**: Contribution schedules, growth rate assumptions, target amounts/dates, "what if" sliders, compound interest calculator.
@@ -191,9 +191,91 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 ### Domain / Route Names
 - **Assets** (not "accounts"): page `/assets`, API `/api/assets`, TypeScript type `Asset`. DB table stays `accounts` internally.
 - **Liabilities** (not "debts"): page `/liabilities`. DB table stays `debts` internally.
-- Asset types: `investment`, `savings`, `hsa`, `property`, `other`
-- Investment assets have extra projection fields: `contributionAmount`, `contributionFrequency`, `returnRate`, `returnRateVariance`, `includeInflation`
-- `recharts` is installed in `apps/web` for investment projection charts (`InvestmentProjectionChart` component)
+- Asset types (DB enum): `investment`, `savings`, `hsa`, `property`, `other`, `simple`
+- Currently only "Simple Account" (`simple`) is exposed in the UI. Other types exist in the DB enum for future use.
+- `recharts` is installed in `apps/web` for charts (balance history, investment projections)
+
+### Asset Type System
+- **Simple Account** (`simple`): A basic balance-only account with no interest or growth. Used for checking accounts, cash reserves, petty cash, gift cards, etc.
+- The Add Asset modal uses a **card-based type picker** (not a dropdown) with icon, title, and description for each type.
+- Balance updates are tracked in the `balance_updates` table: `id`, `account_id` (FK CASCADE), `previous_balance`, `new_balance`, `change_amount`, `note`, `created_at`.
+- Asset detail page features:
+  - Large clickable balance display with inline math expression editor (see "Inline Value Editor" pattern below)
+  - Balance history chart (recharts AreaChart)
+  - Update history table showing all balance changes with timestamps
+  - Edit modal for name/notes (balance changes go through the inline editor to maintain history)
+- API routes:
+  - Standard CRUD: `GET/POST /api/assets`, `GET/PUT/DELETE /api/assets/[id]`
+  - Balance history: `GET /api/assets/[id]/history` (list updates), `POST /api/assets/[id]/history` (create update + change balance)
+- Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) with balance update history
+
+### Inline Value Editor Pattern
+Used on the asset detail page for the balance field. Reuse this pattern anywhere a user edits a single numeric value and benefits from quick math.
+
+**Behavior:**
+- Clicking the displayed value opens an inline `<input type="text">` pre-filled with the current value.
+- The cursor is placed at the **end** of the value (not selected/highlighted), so the user can immediately append an operator.
+- On **blur** or **Enter**: the input is parsed and saved. On **Escape**: editing is cancelled without saving.
+- A **live preview** (`→ $8,400.00`) appears below the input while the user is typing a valid expression, updated on every keystroke.
+- The preview is only shown when the input resolves to a valid expression (not for plain number entry).
+
+**Supported input modes:**
+1. **Plain number**: `8500` or `-100` — directly sets the new value.
+2. **Full expression**: `8500-100`, `8500+200`, `8500*2`, `8500/4`, or with a negative left operand like `-100+50` — both sides are explicit numbers with an operator between them.
+3. **Prefix-operator expressions (NOT supported in this pattern)**: `+200` or `-100` as a standalone shorthand is intentionally excluded. These are ambiguous (does `-100` mean "subtract 100" or "set to -100"?) and cause bugs when a user opens a negative balance, blurs without editing, and watches the value double.
+
+**Expression parsing rules:**
+```typescript
+// Only full two-operand expressions are treated as math. A leading minus alone is a negative number.
+const FULL_EXPR_PATTERN = /^(-?\d+\.?\d*)\s*([+\-*/])\s*(-?\d+\.?\d*)$/;
+
+function isExpression(value: string): boolean {
+  const m = value.trim().match(FULL_EXPR_PATTERN);
+  if (!m) return false;
+  // Operator must appear after position 0, so "-100" (negative number) is never treated as an expression
+  return value.trim().indexOf(m[2], 1) > 0;
+}
+
+function applyExpression(input: string): number | null {
+  const m = input.trim().match(FULL_EXPR_PATTERN);
+  if (!m) return null;
+  const left = parseFloat(m[1]), right = parseFloat(m[3]);
+  if (isNaN(left) || isNaN(right)) return null;
+  switch (m[2]) {
+    case "+": return left + right;
+    case "-": return left - right;
+    case "*": return left * right;
+    case "/": return right === 0 ? null : left / right;
+  }
+  return null;
+}
+```
+
+**Cursor placement on open:**
+```typescript
+setTimeout(() => {
+  const el = inputRef.current;
+  if (!el) return;
+  const len = el.value.length;
+  el.setSelectionRange(len, len);
+}, 50);
+```
+
+**Live preview (render-time, no extra state):**
+```tsx
+{(() => {
+  const trimmed = inputValue.trim();
+  if (!trimmed || !isExpression(trimmed)) return null;
+  const result = applyExpression(trimmed);
+  if (result === null) return null;
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <span className="material-symbols-outlined text-[14px] text-primary">arrow_forward</span>
+      <span className="text-[13px] font-semibold text-primary">{formatCurrency(result)}</span>
+    </div>
+  );
+})()}
+```
 
 ### Net Worth Tracker
 - The Net Worth Tracker (`/tracker`) is a spreadsheet-style monthly grid showing assets and liabilities with calculated totals

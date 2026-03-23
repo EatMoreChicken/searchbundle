@@ -34,7 +34,7 @@ export interface HouseholdMember {
   user?: { id: string; name: string | null; email: string };
 }
 
-export type AssetType = "investment" | "savings" | "hsa" | "property" | "other";
+export type AssetType = "investment" | "savings" | "hsa" | "property" | "other" | "simple";
 export type ContributionFrequency = "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly";
 
 export interface Asset {
@@ -85,6 +85,16 @@ export interface Scenario {
   lumpSumPayment: number;
   lumpSumMonth: number;
   createdAt: Date;
+}
+
+export interface BalanceUpdate {
+  id: string;
+  accountId: string;
+  previousBalance: number;
+  newBalance: number;
+  changeAmount: number;
+  note: string | null;
+  createdAt: string;
 }
 
 export type CategoryType = "asset" | "liability";

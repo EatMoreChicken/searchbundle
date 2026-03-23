@@ -116,7 +116,7 @@ async function seed() {
     ])
     .onConflictDoNothing();
 
-  // Single example asset — Joint Savings
+  // Single example asset: Joint Savings (simple account)
   await db
     .insert(accounts)
     .values({
@@ -124,7 +124,7 @@ async function seed() {
       householdId: HOUSEHOLD_ID,
       ownerId: null,
       name: "Joint Savings",
-      type: "savings" as const,
+      type: "simple" as const,
       balance: "25000.00",
       currency: "USD",
     })
