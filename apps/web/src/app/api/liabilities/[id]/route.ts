@@ -9,11 +9,17 @@ function parseDebt(row: DebtRow) {
   return {
     ...row,
     balance: parseFloat(row.balance),
-    originalBalance: parseFloat(row.originalBalance),
-    interestRate: parseFloat(row.interestRate),
-    minimumPayment: parseFloat(row.minimumPayment),
+    originalBalance: row.originalBalance != null ? parseFloat(row.originalBalance) : null,
+    interestRate: row.interestRate != null ? parseFloat(row.interestRate) : null,
+    minimumPayment: row.minimumPayment != null ? parseFloat(row.minimumPayment) : null,
     escrowAmount: row.escrowAmount != null ? parseFloat(row.escrowAmount) : null,
     remainingMonths: row.remainingMonths != null ? parseInt(row.remainingMonths, 10) : null,
+    homeValue: row.homeValue != null ? parseFloat(row.homeValue) : null,
+    pmiMonthly: row.pmiMonthly != null ? parseFloat(row.pmiMonthly) : null,
+    propertyTaxYearly: row.propertyTaxYearly != null ? parseFloat(row.propertyTaxYearly) : null,
+    homeInsuranceYearly: row.homeInsuranceYearly != null ? parseFloat(row.homeInsuranceYearly) : null,
+    loanTermMonths: row.loanTermMonths != null ? row.loanTermMonths : null,
+    vehicleValue: row.vehicleValue != null ? parseFloat(row.vehicleValue) : null,
   };
 }
 
@@ -52,31 +58,30 @@ export async function PUT(
 
   const {
     name, type, balance, originalBalance, interestRate, minimumPayment,
-    escrowAmount, remainingMonths, notes, ownerId,
-  } = body as {
-    name?: string;
-    type?: string;
-    balance?: unknown;
-    originalBalance?: unknown;
-    interestRate?: unknown;
-    minimumPayment?: unknown;
-    escrowAmount?: unknown;
-    remainingMonths?: unknown;
-    notes?: string;
-    ownerId?: string | null;
-  };
+    escrowAmount, remainingMonths, notes, ownerId, interestAccrualMethod,
+    homeValue, pmiMonthly, propertyTaxYearly, homeInsuranceYearly,
+    loanStartDate, loanTermMonths, vehicleValue,
+  } = body as Record<string, unknown>;
 
   const updates: Partial<typeof debts.$inferInsert> = { updatedAt: new Date() };
-  if (name !== undefined) updates.name = name;
+  if (name !== undefined) updates.name = name as string;
   if (type !== undefined) updates.type = type as typeof debts.$inferInsert["type"];
   if (balance !== undefined) updates.balance = String(balance);
-  if (originalBalance !== undefined) updates.originalBalance = String(originalBalance);
-  if (interestRate !== undefined) updates.interestRate = String(interestRate);
-  if (minimumPayment !== undefined) updates.minimumPayment = String(minimumPayment);
+  if (originalBalance !== undefined) updates.originalBalance = originalBalance != null ? String(originalBalance) : null;
+  if (interestRate !== undefined) updates.interestRate = interestRate != null ? String(interestRate) : null;
+  if (minimumPayment !== undefined) updates.minimumPayment = minimumPayment != null ? String(minimumPayment) : null;
   if (escrowAmount !== undefined) updates.escrowAmount = escrowAmount != null ? String(escrowAmount) : null;
   if (remainingMonths !== undefined) updates.remainingMonths = remainingMonths != null ? String(remainingMonths) : null;
-  if (notes !== undefined) updates.notes = notes;
-  if (ownerId !== undefined) updates.ownerId = ownerId;
+  if (notes !== undefined) updates.notes = notes as string;
+  if (ownerId !== undefined) updates.ownerId = ownerId as string;
+  if (interestAccrualMethod !== undefined) updates.interestAccrualMethod = (interestAccrualMethod as typeof debts.$inferInsert["interestAccrualMethod"]) ?? null;
+  if (homeValue !== undefined) updates.homeValue = homeValue != null ? String(homeValue) : null;
+  if (pmiMonthly !== undefined) updates.pmiMonthly = pmiMonthly != null ? String(pmiMonthly) : null;
+  if (propertyTaxYearly !== undefined) updates.propertyTaxYearly = propertyTaxYearly != null ? String(propertyTaxYearly) : null;
+  if (homeInsuranceYearly !== undefined) updates.homeInsuranceYearly = homeInsuranceYearly != null ? String(homeInsuranceYearly) : null;
+  if (loanStartDate !== undefined) updates.loanStartDate = (loanStartDate as string) ?? null;
+  if (loanTermMonths !== undefined) updates.loanTermMonths = loanTermMonths != null ? Number(loanTermMonths) : null;
+  if (vehicleValue !== undefined) updates.vehicleValue = vehicleValue != null ? String(vehicleValue) : null;
 
   const [row] = await getDb()
     .update(debts)

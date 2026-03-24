@@ -23,6 +23,9 @@ import {
   balanceUpdates,
   accountNotes,
   accountContributions,
+  debts,
+  debtBalanceUpdates,
+  debtNotes,
   netWorthCategories,
   netWorthEntries,
 } from "./schema";
@@ -37,6 +40,11 @@ const ACCOUNT_CHECKING = "00000000-0000-0000-0002-000000000001";
 const ACCOUNT_EMERGENCY = "00000000-0000-0000-0002-000000000002";
 const ACCOUNT_CASH     = "00000000-0000-0000-0002-000000000003";
 const ACCOUNT_401K     = "00000000-0000-0000-0002-000000000004";
+
+const DEBT_SIMPLE      = "00000000-0000-0000-0003-000000000001";
+const DEBT_MORTGAGE    = "00000000-0000-0000-0003-000000000002";
+const DEBT_AUTO        = "00000000-0000-0000-0003-000000000003";
+const DEBT_PERSONAL    = "00000000-0000-0000-0003-000000000004";
 
 const CAT_CHECKING    = "00000000-0000-0000-0004-000000000001";
 const CAT_EMERGENCY   = "00000000-0000-0000-0004-000000000002";
@@ -343,7 +351,112 @@ async function seed() {
   await db.insert(accountContributions).values(contributionRows);
   console.log(`✓ Planned contributions inserted (${contributionRows.length} rows)`);
 
-  // ── 5. Upsert net worth categories ────────────────────────────────────
+  // ── 5. Upsert liabilities (debts) ────────────────────────────────────
+
+  const debtRows = [
+    {
+      id: DEBT_SIMPLE,
+      householdId: HOUSEHOLD_ID,
+      name: "Money owed to Alex",
+      type: "simple" as const,
+      balance: "350.00",
+      notes: "Borrowed $500 for concert tickets, paid back $150 so far.",
+    },
+    {
+      id: DEBT_MORTGAGE,
+      householdId: HOUSEHOLD_ID,
+      name: "Home Mortgage",
+      type: "mortgage" as const,
+      balance: "287500.00",
+      originalBalance: "320000.00",
+      interestRate: "6.7500",
+      minimumPayment: "2076.00",
+      escrowAmount: "425.00",
+      remainingMonths: "324",
+      interestAccrualMethod: "daily" as const,
+      homeValue: "385000.00",
+      propertyTaxYearly: "3200.00",
+      homeInsuranceYearly: "1900.00",
+      pmiMonthly: "145.00",
+      loanStartDate: "2022-03-15",
+      loanTermMonths: 360,
+      notes: "30-year fixed. Refinance if rates drop below 5.5%.",
+    },
+    {
+      id: DEBT_AUTO,
+      householdId: HOUSEHOLD_ID,
+      name: "Toyota RAV4 Loan",
+      type: "auto" as const,
+      balance: "18200.00",
+      originalBalance: "28000.00",
+      interestRate: "4.9000",
+      minimumPayment: "540.00",
+      remainingMonths: "36",
+      interestAccrualMethod: "precomputed" as const,
+      vehicleValue: "22500.00",
+      loanStartDate: "2023-01-10",
+      loanTermMonths: 60,
+      notes: "Pre-computed interest from dealership.",
+    },
+    {
+      id: DEBT_PERSONAL,
+      householdId: HOUSEHOLD_ID,
+      name: "Personal Loan",
+      type: "loan" as const,
+      balance: "9800.00",
+      originalBalance: "15000.00",
+      interestRate: "8.5000",
+      minimumPayment: "310.00",
+      remainingMonths: "38",
+      interestAccrualMethod: "monthly" as const,
+      loanStartDate: "2023-06-01",
+      loanTermMonths: 60,
+      notes: "Used for home renovation. Trying to pay off early.",
+    },
+  ];
+
+  for (const row of debtRows) {
+    await db.insert(debts).values(row).onConflictDoUpdate({
+      target: debts.id,
+      set: { name: row.name, balance: row.balance, notes: row.notes ?? null },
+    });
+  }
+  console.log(`✓ Liabilities upserted (${debtRows.length} debts)`);
+
+  // ── 5b. Debt balance history ──────────────────────────────────────────
+
+  await db.delete(debtBalanceUpdates).where(eq(debtBalanceUpdates.debtId, DEBT_MORTGAGE));
+  await db.delete(debtBalanceUpdates).where(eq(debtBalanceUpdates.debtId, DEBT_AUTO));
+  await db.delete(debtBalanceUpdates).where(eq(debtBalanceUpdates.debtId, DEBT_SIMPLE));
+
+  const debtHistoryRows = [
+    { debtId: DEBT_MORTGAGE, previousBalance: "290000.00", newBalance: "289200.00", changeAmount: "-800.00", note: "Regular payment", createdAt: new Date("2024-11-01") },
+    { debtId: DEBT_MORTGAGE, previousBalance: "289200.00", newBalance: "288400.00", changeAmount: "-800.00", note: "Regular payment", createdAt: new Date("2024-12-01") },
+    { debtId: DEBT_MORTGAGE, previousBalance: "288400.00", newBalance: "287500.00", changeAmount: "-900.00", note: "Payment + small extra", createdAt: new Date("2025-01-01") },
+    { debtId: DEBT_AUTO, previousBalance: "19600.00", newBalance: "19100.00", changeAmount: "-500.00", createdAt: new Date("2024-11-01") },
+    { debtId: DEBT_AUTO, previousBalance: "19100.00", newBalance: "18650.00", changeAmount: "-450.00", createdAt: new Date("2024-12-01") },
+    { debtId: DEBT_AUTO, previousBalance: "18650.00", newBalance: "18200.00", changeAmount: "-450.00", createdAt: new Date("2025-01-01") },
+    { debtId: DEBT_SIMPLE, previousBalance: "500.00", newBalance: "350.00", changeAmount: "-150.00", note: "Paid Alex back $150", createdAt: new Date("2024-12-15") },
+  ];
+
+  await db.insert(debtBalanceUpdates).values(debtHistoryRows);
+  console.log(`✓ Debt balance history inserted (${debtHistoryRows.length} rows)`);
+
+  // ── 5c. Debt notes ────────────────────────────────────────────────────
+
+  await db.delete(debtNotes).where(eq(debtNotes.debtId, DEBT_MORTGAGE));
+  await db.delete(debtNotes).where(eq(debtNotes.debtId, DEBT_PERSONAL));
+
+  const debtNoteRows = [
+    { debtId: DEBT_MORTGAGE, householdId: HOUSEHOLD_ID, content: "Called lender about removing PMI. Need 20% equity or 80% LTV.", createdAt: new Date("2024-10-20") },
+    { debtId: DEBT_MORTGAGE, householdId: HOUSEHOLD_ID, content: "Property tax reassessment notice received. Escrow may change.", createdAt: new Date("2025-01-05") },
+    { debtId: DEBT_PERSONAL, householdId: HOUSEHOLD_ID, content: "Planning to throw tax refund (~$2k) at this as a lump sum.", createdAt: new Date("2025-01-10") },
+  ];
+
+  await db.insert(debtNotes).values(debtNoteRows);
+  console.log(`✓ Debt notes inserted (${debtNoteRows.length} rows)`);
+
+  // ── 6. Upsert net worth categories ────────────────────────────────────
 
   const categoryRows = [
     { id: CAT_CHECKING, householdId: HOUSEHOLD_ID, name: "Checking Account", type: "asset" as const, sortOrder: 0 },
@@ -360,7 +473,7 @@ async function seed() {
   }
   console.log("✓ Net worth categories upserted");
 
-  // ── 6. Upsert net worth entries ───────────────────────────────────────
+  // ── 7. Upsert net worth entries ───────────────────────────────────────
 
   const categoryIds = categoryRows.map((c) => c.id);
   for (const catId of categoryIds) {

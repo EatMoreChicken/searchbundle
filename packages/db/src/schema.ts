@@ -25,6 +25,14 @@ export const debtTypeEnum = pgEnum("debt_type", [
   "auto",
   "credit_card",
   "other",
+  "simple",
+  "loan",
+]);
+
+export const interestAccrualMethodEnum = pgEnum("interest_accrual_method", [
+  "monthly",
+  "daily",
+  "precomputed",
 ]);
 
 export const householdRoleEnum = pgEnum("household_role", ["owner", "admin", "member"]);
@@ -89,12 +97,20 @@ export const debts = pgTable("debts", {
   name: text("name").notNull(),
   type: debtTypeEnum("type").notNull(),
   balance: numeric("balance", { precision: 14, scale: 2 }).notNull().default("0"),
-  originalBalance: numeric("original_balance", { precision: 14, scale: 2 }).notNull(),
-  interestRate: numeric("interest_rate", { precision: 6, scale: 4 }).notNull(),
-  minimumPayment: numeric("minimum_payment", { precision: 10, scale: 2 }).notNull(),
+  originalBalance: numeric("original_balance", { precision: 14, scale: 2 }),
+  interestRate: numeric("interest_rate", { precision: 6, scale: 4 }),
+  minimumPayment: numeric("minimum_payment", { precision: 10, scale: 2 }),
   escrowAmount: numeric("escrow_amount", { precision: 10, scale: 2 }),
   remainingMonths: numeric("remaining_months", { precision: 5, scale: 0 }),
   notes: text("notes"),
+  interestAccrualMethod: interestAccrualMethodEnum("interest_accrual_method"),
+  homeValue: numeric("home_value", { precision: 14, scale: 2 }),
+  pmiMonthly: numeric("pmi_monthly", { precision: 10, scale: 2 }),
+  propertyTaxYearly: numeric("property_tax_yearly", { precision: 10, scale: 2 }),
+  homeInsuranceYearly: numeric("home_insurance_yearly", { precision: 10, scale: 2 }),
+  loanStartDate: date("loan_start_date"),
+  loanTermMonths: integer("loan_term_months"),
+  vehicleValue: numeric("vehicle_value", { precision: 14, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -160,6 +176,28 @@ export const accountContributions = pgTable("account_contributions", {
   label: text("label").notNull(),
   amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
   frequency: contributionFrequencyEnum("frequency").notNull().default("monthly"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// --- Debt Balance Updates (manual value change log for liabilities) ---
+
+export const debtBalanceUpdates = pgTable("debt_balance_updates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  debtId: uuid("debt_id").notNull().references(() => debts.id, { onDelete: "cascade" }),
+  previousBalance: numeric("previous_balance", { precision: 14, scale: 2 }).notNull(),
+  newBalance: numeric("new_balance", { precision: 14, scale: 2 }).notNull(),
+  changeAmount: numeric("change_amount", { precision: 14, scale: 2 }).notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// --- Debt Notes (standalone timeline annotations for liabilities) ---
+
+export const debtNotes = pgTable("debt_notes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  debtId: uuid("debt_id").notNull().references(() => debts.id, { onDelete: "cascade" }),
+  householdId: uuid("household_id").notNull().references(() => households.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

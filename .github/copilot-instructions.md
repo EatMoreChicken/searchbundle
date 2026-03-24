@@ -77,7 +77,7 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 
 - **Dashboard ("Net Worth Tracker")**: Spreadsheet-style monthly grid showing assets, liabilities, totals, and net worth. Users add categories and manually enter monthly balances. Current month highlighted, year selector, inline cell editing.
 - **Assets**: Balance cards with manual value tracking, balance update history, and chart. Currently only supports "Simple Account" type (no interest, no growth). More asset types will be added incrementally.
-- **Liabilities**: Balance cards with loan terms, payoff projections, amortization view, and interest saved calculators.
+- **Liabilities**: Four account types (Simple Debt, Mortgage, Auto Loan, General Loan). Type-specific dashboards with amortization, PITI breakdown, equity tracking, vehicle value comparison, what-if scenarios, balance history, and notes. Card-based type picker in the add modal.
 - **Check-In Flow**: Step-by-step guided update (one account at a time), change detection, goal review, summary, and AI debrief.
 - **Plans & Projections**: Contribution schedules, growth rate assumptions, target amounts/dates, "what if" sliders, compound interest calculator.
 - **Cooper (AI Companion)**: Available app-wide for Q&A, scenario modeling, suggestions, guided actions, and financial education.
@@ -223,6 +223,38 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - `InvestmentProjectionChart` component (`apps/web/src/components/InvestmentProjectionChart.tsx`): Accepts `contributions: AccountContribution[]` array. Sums annualized contributions for projection. Shows expected line, variance bands (if variance > 0), and inflation-adjusted dashed line (if enabled).
 - Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) and 1 investment account (Vanguard 401(k)) with balance update history, sample notes, and planned contributions
 - **Quick seed** (`db:seed:quick` / `db:reset:quick`): Minimal seed with completed onboarding (dateOfBirth, retirementAge, retirement target with traditional strategy), 1 simple account (Chase Checking), and 1 investment account (Vanguard 401(k)) with history and contributions. Skips the Getting Started wizard. File: `packages/db/src/seed-dev-quick.ts`.
+
+### Liability Type System
+- **Simple Debt** (`simple`): Money owed with no interest. Medical bills, money owed to friends, any balance without loan terms. Only requires name + balance.
+- **Mortgage** (`mortgage`): Home loan with daily interest accrual, escrow, PMI, property tax, home insurance, and equity tracking. Default accrual method: `daily`.
+- **Auto Loan** (`auto`): Car loan, typically pre-computed (simple) interest. Tracks vehicle value for upside-down detection. Default accrual method: `precomputed`.
+- **Loan** (`loan`): General loan (personal, student, etc.) where the user picks the interest accrual method (monthly, daily, or precomputed). Default: `monthly`.
+- DB enum `interest_accrual_method` with values `monthly` | `daily` | `precomputed`
+- DB enum `debt_type` updated: added `simple` and `loan` to existing values (`mortgage`, `auto`, `student_loan`, `credit_card`, `other`)
+- New nullable columns on `debts`: `interest_accrual_method`, `home_value`, `pmi_monthly`, `property_tax_yearly`, `home_insurance_yearly`, `loan_start_date`, `loan_term_months`, `vehicle_value`
+- `original_balance`, `interest_rate`, `minimum_payment` are now nullable (not required for simple debts)
+- New tables: `debt_balance_updates` (mirrors `balance_updates` for assets), `debt_notes` (mirrors `account_notes`)
+- The Add Liability modal uses the same **card-based type picker** pattern as assets: step 1 picks type, step 2 shows type-specific form fields
+- Liability detail page adapts per type:
+  - Simple: just balance (inline editor), notes, activity timeline. No amortization or interest.
+  - Mortgage: PITI breakdown, home equity tracker, amortization chart, what-if scenarios, balance history, notes
+  - Auto: vehicle value vs loan balance comparison, upside-down warning, amortization chart, what-if, history, notes
+  - Loan: accrual method badge, amortization chart, what-if, history, notes
+- Loan calculation engine: `apps/web/src/lib/loan-calculations.ts`
+  - `calculateAmortizationMonthly()`: Standard monthly compounding (Balance x Rate/12)
+  - `calculateAmortizationDaily()`: Daily accrual (Balance x Rate/365 x ~30.44 days/month)
+  - `calculateAmortizationPrecomputed()`: Total interest = Principal x Rate x Term; fixed interest per payment
+  - `calculateAmortization()`: Unified dispatcher that picks the right method based on `accrualMethod` parameter
+  - `calculateMortgageBreakdown()`: Returns full PITI breakdown (P&I, property tax, insurance, PMI, escrow, total)
+  - `calculateEquity()`: Home value minus current balance
+  - `estimatePayoffMonths()`: Quick payoff estimate without full amortization schedule
+  - `ACCRUAL_METHOD_INFO`: Labels and descriptions for UI display
+- API routes:
+  - Standard CRUD: `GET/POST /api/liabilities`, `GET/PUT/DELETE /api/liabilities/[id]`
+  - Balance history: `GET/POST /api/liabilities/[id]/history` (list/create updates, auto-updates debt balance)
+  - Notes: `GET/POST /api/liabilities/[id]/notes` (list/create), `DELETE /api/liabilities/[id]/notes/[noteId]` (delete)
+  - Scenarios: `GET/POST /api/liabilities/[id]/scenarios`, `DELETE /api/liabilities/[id]/scenarios/[scenarioId]`
+- Dev seed creates 4 liabilities: simple debt (Money owed to Alex), mortgage (Home Mortgage), auto loan (Toyota RAV4), personal loan with balance history and notes
 
 ### Inline Value Editor Pattern
 Used on the asset detail page for the balance field. Reuse this pattern anywhere a user edits a single numeric value and benefits from quick math.

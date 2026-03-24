@@ -9,11 +9,17 @@ function parseDebt(row: DebtRow) {
   return {
     ...row,
     balance: parseFloat(row.balance),
-    originalBalance: parseFloat(row.originalBalance),
-    interestRate: parseFloat(row.interestRate),
-    minimumPayment: parseFloat(row.minimumPayment),
+    originalBalance: row.originalBalance != null ? parseFloat(row.originalBalance) : null,
+    interestRate: row.interestRate != null ? parseFloat(row.interestRate) : null,
+    minimumPayment: row.minimumPayment != null ? parseFloat(row.minimumPayment) : null,
     escrowAmount: row.escrowAmount != null ? parseFloat(row.escrowAmount) : null,
     remainingMonths: row.remainingMonths != null ? parseInt(row.remainingMonths, 10) : null,
+    homeValue: row.homeValue != null ? parseFloat(row.homeValue) : null,
+    pmiMonthly: row.pmiMonthly != null ? parseFloat(row.pmiMonthly) : null,
+    propertyTaxYearly: row.propertyTaxYearly != null ? parseFloat(row.propertyTaxYearly) : null,
+    homeInsuranceYearly: row.homeInsuranceYearly != null ? parseFloat(row.homeInsuranceYearly) : null,
+    loanTermMonths: row.loanTermMonths != null ? row.loanTermMonths : null,
+    vehicleValue: row.vehicleValue != null ? parseFloat(row.vehicleValue) : null,
   };
 }
 
@@ -40,23 +46,14 @@ export async function POST(request: Request) {
 
   const {
     name, type, balance, originalBalance, interestRate, minimumPayment,
-    escrowAmount, remainingMonths, notes, ownerId,
-  } = body as {
-    name?: string;
-    type?: string;
-    balance?: unknown;
-    originalBalance?: unknown;
-    interestRate?: unknown;
-    minimumPayment?: unknown;
-    escrowAmount?: unknown;
-    remainingMonths?: unknown;
-    notes?: string;
-    ownerId?: string | null;
-  };
+    escrowAmount, remainingMonths, notes, ownerId, interestAccrualMethod,
+    homeValue, pmiMonthly, propertyTaxYearly, homeInsuranceYearly,
+    loanStartDate, loanTermMonths, vehicleValue,
+  } = body as Record<string, unknown>;
 
-  if (!name || !type || balance === undefined || originalBalance === undefined || interestRate === undefined || minimumPayment === undefined) {
+  if (!name || !type || balance === undefined) {
     return NextResponse.json(
-      { message: "name, type, balance, originalBalance, interestRate, and minimumPayment are required" },
+      { message: "name, type, and balance are required" },
       { status: 400 }
     );
   }
@@ -64,17 +61,25 @@ export async function POST(request: Request) {
   const [row] = await getDb()
     .insert(debts)
     .values({
-      name,
+      name: name as string,
       type: type as typeof debts.$inferInsert["type"],
       balance: String(balance),
-      originalBalance: String(originalBalance),
-      interestRate: String(interestRate),
-      minimumPayment: String(minimumPayment),
+      originalBalance: originalBalance != null ? String(originalBalance) : null,
+      interestRate: interestRate != null ? String(interestRate) : null,
+      minimumPayment: minimumPayment != null ? String(minimumPayment) : null,
       escrowAmount: escrowAmount != null ? String(escrowAmount) : null,
       remainingMonths: remainingMonths != null ? String(remainingMonths) : null,
-      notes: notes || null,
+      notes: (notes as string) || null,
       householdId: session.householdId,
-      ownerId: ownerId ?? null,
+      ownerId: (ownerId as string) ?? null,
+      interestAccrualMethod: (interestAccrualMethod as typeof debts.$inferInsert["interestAccrualMethod"]) ?? null,
+      homeValue: homeValue != null ? String(homeValue) : null,
+      pmiMonthly: pmiMonthly != null ? String(pmiMonthly) : null,
+      propertyTaxYearly: propertyTaxYearly != null ? String(propertyTaxYearly) : null,
+      homeInsuranceYearly: homeInsuranceYearly != null ? String(homeInsuranceYearly) : null,
+      loanStartDate: (loanStartDate as string) ?? null,
+      loanTermMonths: loanTermMonths != null ? Number(loanTermMonths) : null,
+      vehicleValue: vehicleValue != null ? String(vehicleValue) : null,
     })
     .returning();
 

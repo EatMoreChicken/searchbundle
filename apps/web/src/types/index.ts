@@ -55,24 +55,51 @@ export interface Asset {
   updatedAt: Date;
 }
 
+export type DebtType = "mortgage" | "student_loan" | "auto" | "credit_card" | "other" | "simple" | "loan";
+export type InterestAccrualMethod = "monthly" | "daily" | "precomputed";
+
 export interface Debt {
   id: string;
   householdId: string;
   ownerId: string | null;
   name: string;
-  type: "mortgage" | "student_loan" | "auto" | "credit_card" | "other";
+  type: DebtType;
   balance: number;
-  originalBalance: number;
-  interestRate: number;
-  minimumPayment: number;
+  originalBalance: number | null;
+  interestRate: number | null;
+  minimumPayment: number | null;
   escrowAmount: number | null;
   remainingMonths: number | null;
   notes: string | null;
+  interestAccrualMethod: InterestAccrualMethod | null;
+  homeValue: number | null;
+  pmiMonthly: number | null;
+  propertyTaxYearly: number | null;
+  homeInsuranceYearly: number | null;
+  loanStartDate: string | null;
+  loanTermMonths: number | null;
+  vehicleValue: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type DebtType = Debt["type"];
+export interface DebtBalanceUpdate {
+  id: string;
+  debtId: string;
+  previousBalance: number;
+  newBalance: number;
+  changeAmount: number;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface DebtNote {
+  id: string;
+  debtId: string;
+  householdId: string;
+  content: string;
+  createdAt: string;
+}
 
 export interface Scenario {
   id: string;
