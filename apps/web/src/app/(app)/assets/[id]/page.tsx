@@ -131,7 +131,6 @@ interface EditFormState {
   notes: string;
   returnRate: string;
   returnRateVariance: string;
-  includeInflation: boolean;
 }
 
 type TimelineEntry =
@@ -145,11 +144,9 @@ interface CombinedChartPoint {
   projectedExpected: number | null;
   projectedLow: number | null;
   projectedRangeSize: number | null;
-  inflationAdjusted: number | null;
 }
 
 const PROJECTION_YEAR_OPTIONS = [5, 10, 15, 20, 30, 40, 50];
-const INFLATION_RATE = 0.03;
 const FREQ_MULTIPLIER: Record<ContributionFrequency, number> = {
   weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, yearly: 1,
 };
@@ -315,7 +312,6 @@ export default function AssetDetailPage() {
       notes: asset.notes ?? "",
       returnRate: asset.returnRate != null ? String(asset.returnRate) : "",
       returnRateVariance: asset.returnRateVariance != null ? String(asset.returnRateVariance) : "",
-      includeInflation: asset.includeInflation,
     });
     setEditOpen(true);
   }
@@ -332,7 +328,6 @@ export default function AssetDetailPage() {
       if (asset.type === "investment") {
         payload.returnRate = editForm.returnRate ? parseFloat(editForm.returnRate) : null;
         payload.returnRateVariance = editForm.returnRateVariance ? parseFloat(editForm.returnRateVariance) : null;
-        payload.includeInflation = editForm.includeInflation;
       }
       await apiClient.put(`/api/assets/${asset.id}`, payload);
       setEditOpen(false);
@@ -438,8 +433,12 @@ export default function AssetDetailPage() {
   })();
 
   // Chart note markers: collect from standalone notes AND balance updates with notes
+  // x = idx for simple charts; timeX = fractional year offset for combined chart
   const allNoteMarkers = (() => {
     if (chartData.length <= 1) return [];
+
+    const earliestMs = new Date(chartData[0].date).getTime();
+    const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
 
     function findClosestIdx(createdAt: string) {
       const time = new Date(createdAt).getTime();
@@ -447,26 +446,35 @@ export default function AssetDetailPage() {
       for (let i = 0; i < chartData.length; i++) {
         if (new Date(chartData[i].date).getTime() <= time) closest = i;
       }
-      return chartData[closest].idx;
+      return closest;
     }
 
-    const markers: { id: string; content: string; x: number; scrollTarget: string }[] = [];
+    function computeTimeX(closestIdx: number) {
+      const ptMs = new Date(chartData[closestIdx].date).getTime();
+      return Math.round(((ptMs - earliestMs) / MS_PER_YEAR) * 100) / 100;
+    }
+
+    const markers: { id: string; content: string; x: number; timeX: number; scrollTarget: string }[] = [];
 
     for (const note of notes) {
+      const idx = findClosestIdx(note.createdAt);
       markers.push({
         id: `n-${note.id}`,
         content: note.content,
-        x: findClosestIdx(note.createdAt),
+        x: chartData[idx].idx,
+        timeX: computeTimeX(idx),
         scrollTarget: `note-${note.id}`,
       });
     }
 
     for (const update of history) {
       if (!update.note) continue;
+      const idx = findClosestIdx(update.createdAt);
       markers.push({
         id: `u-${update.id}`,
         content: update.note,
-        x: findClosestIdx(update.createdAt),
+        x: chartData[idx].idx,
+        timeX: computeTimeX(idx),
         scrollTarget: `update-${update.id}`,
       });
     }
@@ -489,6 +497,8 @@ export default function AssetDetailPage() {
   const totalUpdates = history.length;
 
   // Combined history + projection chart data (investment accounts only)
+  // Uses time-based x-axis: history dates map to fractional year offsets,
+  // projection years continue from "year 0" (today) to avoid visual spike.
   const combinedChartData = (() => {
     if (!asset || asset.type !== "investment") return null;
 
@@ -504,52 +514,59 @@ export default function AssetDetailPage() {
 
     const points: CombinedChartPoint[] = [];
 
-    // History portion
+    // Compute time-based x-values for history
+    // Map dates to fractional years relative to the earliest data point
+    const nowMs = Date.now();
+    const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+    const earliestMs = chartData.length > 0
+      ? new Date(chartData[0].date).getTime()
+      : nowMs;
+    const historySpanYears = (nowMs - earliestMs) / MS_PER_YEAR;
+
+    // bridgeX = the x-value for "today" (where history ends and projection starts)
+    const bridgeX = Math.round(historySpanYears * 100) / 100;
+
+    // History portion: x based on actual date offset in years
     for (const pt of chartData) {
+      const ptMs = new Date(pt.date).getTime();
+      const yearOffset = (ptMs - earliestMs) / MS_PER_YEAR;
       points.push({
-        x: pt.idx,
+        x: Math.round(yearOffset * 100) / 100,
         label: pt.label,
         historyValue: pt.value,
         projectedExpected: null,
         projectedLow: null,
         projectedRangeSize: null,
-        inflationAdjusted: null,
       });
     }
 
     // Bridge point: last history point also starts projection
-    const bridgeIdx = Math.max(0, chartData.length - 1);
-    if (points.length > 0) {
-      points[bridgeIdx].projectedExpected = currentBalance;
+    const lastHistIdx = points.length - 1;
+    if (lastHistIdx >= 0) {
+      points[lastHistIdx].projectedExpected = currentBalance;
       if (hasVariance) {
-        points[bridgeIdx].projectedLow = currentBalance;
-        points[bridgeIdx].projectedRangeSize = 0;
-      }
-      if (asset.includeInflation) {
-        points[bridgeIdx].inflationAdjusted = currentBalance;
+        points[lastHistIdx].projectedLow = currentBalance;
+        points[lastHistIdx].projectedRangeSize = 0;
       }
     }
 
-    // Projection portion (yearly increments)
+    // Projection portion (yearly increments from bridgeX)
     for (let n = 1; n <= projectionYears; n++) {
       const expected = fvProjection(currentBalance, annualContrib, r, n);
       const low = hasVariance ? fvProjection(currentBalance, annualContrib, rLow, n) : expected;
       const high = hasVariance ? fvProjection(currentBalance, annualContrib, rHigh, n) : expected;
 
       points.push({
-        x: bridgeIdx + n,
+        x: Math.round((bridgeX + n) * 100) / 100,
         label: n % 5 === 0 || n === 1 ? `+${n}yr` : "",
         historyValue: null,
         projectedExpected: Math.round(expected),
         projectedLow: hasVariance ? Math.round(low) : null,
         projectedRangeSize: hasVariance ? Math.round(high - low) : null,
-        inflationAdjusted: asset.includeInflation
-          ? Math.round(expected / Math.pow(1 + INFLATION_RATE, n))
-          : null,
       });
     }
 
-    return { points, bridgeIdx, hasVariance };
+    return { points, bridgeX, hasVariance };
   })();
 
   function handleProjectionYearsChange(years: number) {
@@ -682,6 +699,11 @@ export default function AssetDetailPage() {
         )}
       </div>
 
+      {/* Asset description */}
+      {asset.notes && (
+        <p className="mt-3 text-[14px] text-on-surface-variant">{asset.notes}</p>
+      )}
+
       {/* Quick stats */}
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div className="rounded-xl bg-surface-container-lowest p-5">
@@ -778,9 +800,9 @@ export default function AssetDetailPage() {
                   domain={["dataMin", "dataMax"]}
                   tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
                   tickFormatter={(x: number) => {
+                    if (Math.abs(x - combinedChartData.bridgeX) < 0.05) return "Now";
                     const pt = combinedChartData.points.find((d) => d.x === x);
                     if (!pt) return "";
-                    if (x === combinedChartData.bridgeIdx) return "Now";
                     return pt.label;
                   }}
                   axisLine={false}
@@ -800,7 +822,7 @@ export default function AssetDetailPage() {
                     payload.forEach((p) => {
                       if (p.dataKey && p.value != null) byKey[String(p.dataKey)] = Number(p.value);
                     });
-                    const isProjection = (label as number) > combinedChartData.bridgeIdx;
+                    const isProjection = (label as number) > combinedChartData.bridgeX;
                     const histVal = byKey["historyValue"];
                     const projVal = byKey["projectedExpected"];
                     const rLow = byKey["projectedLow"];
@@ -811,7 +833,7 @@ export default function AssetDetailPage() {
                       <div className="rounded-xl bg-on-surface px-4 py-3 shadow-lg text-[13px] text-white">
                         <p className="text-[11px] uppercase tracking-[1px] text-white/70 mb-2">
                           {isProjection
-                            ? `Year ${(label as number) - combinedChartData.bridgeIdx}`
+                            ? `Year ${Math.round((label as number) - combinedChartData.bridgeX)}`
                             : combinedChartData.points.find((p) => p.x === label)?.label ?? ""}
                         </p>
                         {histVal != null && (
@@ -880,23 +902,11 @@ export default function AssetDetailPage() {
                   isAnimationActive={false}
                 />
 
-                {/* Inflation-adjusted dashed line */}
-                {asset.includeInflation && (
-                  <Line
-                    type="monotone"
-                    dataKey="inflationAdjusted"
-                    stroke="var(--color-on-surface-variant)"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                    dot={false}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                )}
+                {/* Inflation-adjusted line removed — will be a chart-level toggle in the future */}
 
                 {/* "Today" divider */}
                 <ReferenceLine
-                  x={combinedChartData.bridgeIdx}
+                  x={combinedChartData.bridgeX}
                   stroke="var(--color-tertiary)"
                   strokeDasharray="6 4"
                   strokeWidth={1.5}
@@ -913,7 +923,7 @@ export default function AssetDetailPage() {
                 {allNoteMarkers.map((marker) => (
                   <ReferenceLine
                     key={marker.id}
-                    x={marker.x}
+                    x={marker.timeX}
                     stroke="var(--color-tertiary)"
                     strokeDasharray="4 4"
                     strokeWidth={1}
@@ -1355,14 +1365,6 @@ export default function AssetDetailPage() {
         )}
       </div>
 
-      {/* Asset description notes */}
-      {asset.notes && (
-        <div className="mt-6 rounded-xl bg-surface-container-lowest p-6">
-          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Description</p>
-          <p className="mt-2 text-[14px] text-on-surface-variant">{asset.notes}</p>
-        </div>
-      )}
-
       {/* Edit Modal */}
       {editOpen && editForm && (
         <div
@@ -1440,17 +1442,7 @@ export default function AssetDetailPage() {
                       />
                     </div>
                   </div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={editForm.includeInflation}
-                      onChange={(e) => setEditForm({ ...editForm, includeInflation: e.target.checked })}
-                      className="h-4 w-4 rounded accent-primary"
-                    />
-                    <span className="text-[13px] text-on-surface">
-                      Show inflation-adjusted values (3% annual)
-                    </span>
-                  </label>
+
                 </div>
               )}
 

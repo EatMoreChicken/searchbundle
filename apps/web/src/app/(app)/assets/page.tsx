@@ -70,7 +70,6 @@ interface FormState {
   notes: string;
   returnRate: string;
   returnRateVariance: string;
-  includeInflation: boolean;
 }
 
 const emptyForm: FormState = {
@@ -81,7 +80,6 @@ const emptyForm: FormState = {
   notes: "",
   returnRate: "7",
   returnRateVariance: "2",
-  includeInflation: false,
 };
 
 export default function AssetsPage() {
@@ -125,7 +123,6 @@ export default function AssetsPage() {
       notes: asset.notes ?? "",
       returnRate: asset.returnRate != null ? String(asset.returnRate) : "7",
       returnRateVariance: asset.returnRateVariance != null ? String(asset.returnRateVariance) : "2",
-      includeInflation: asset.includeInflation,
     });
     setModalOpen(true);
   }
@@ -150,7 +147,6 @@ export default function AssetsPage() {
       if (form.type === "investment") {
         payload.returnRate = form.returnRate ? parseFloat(form.returnRate) : null;
         payload.returnRateVariance = form.returnRateVariance ? parseFloat(form.returnRateVariance) : null;
-        payload.includeInflation = form.includeInflation;
       }
       if (editing) {
         await apiClient.put(`/api/assets/${editing.id}`, payload);
@@ -424,17 +420,7 @@ export default function AssetsPage() {
                       </p>
                     </div>
                   </div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.includeInflation}
-                      onChange={(e) => setForm({ ...form, includeInflation: e.target.checked })}
-                      className="h-4 w-4 rounded accent-primary"
-                    />
-                    <span className="text-[13px] text-on-surface">
-                      Show inflation-adjusted values (3% annual)
-                    </span>
-                  </label>
+
                 </div>
               )}
 

@@ -202,8 +202,9 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - Balance updates are tracked in the `balance_updates` table: `id`, `account_id` (FK CASCADE), `previous_balance`, `new_balance`, `change_amount`, `note`, `created_at`.
 - Asset detail page features:
   - Large clickable balance display with inline math expression editor (see "Inline Value Editor" pattern below)
+  - Asset description (notes) displayed directly below the balance, before Quick Stats
   - Balance history chart (recharts AreaChart) with note markers (amber ReferenceDots that scroll to the note in the timeline on click)
-  - **Combined history + projection chart (investment accounts)**: A single `ComposedChart` showing historical balance as a solid area and future projection as dashed lines with variance bands. A "Today" `ReferenceLine` divides history from projection. Projection years are user-configurable via a `<select>` dropdown (5/10/15/20/30/40/50 years), stored in `localStorage` under key `sb-projection-years`, defaulting to 30 or the user's `projectionEndAge` from their profile.
+  - **Combined history + projection chart (investment accounts)**: A single `ComposedChart` showing historical balance as a solid area and future projection as dashed lines with variance bands. A "Today" `ReferenceLine` divides history from projection. The x-axis uses **time-based fractional year values** (not sequential integers): history dates map to `(date - earliest) / MS_PER_YEAR` and projection continues from `bridgeX + n`. This prevents visual compression when months of history are plotted alongside decades of projection. Projection years are user-configurable via a `<select>` dropdown (5/10/15/20/30/40/50 years), stored in `localStorage` under key `sb-projection-years`, defaulting to 30 or the user's `projectionEndAge` from their profile.
   - Planned Contributions section (add/edit/delete recurring contributions with label, amount, frequency)
   - Projection chart (simple accounts only): standalone `InvestmentProjectionChart` for simple accounts with contributions (10-year linear projection). Investment accounts no longer use a separate projection chart.
   - Unified activity timeline merging balance updates and standalone notes, sorted by date
@@ -221,6 +222,7 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - `PlannedContributions` component (`apps/web/src/components/PlannedContributions.tsx`): Reusable UI for managing recurring contributions. Shows list with inline edit, add form, monthly equivalent total.
 - `InvestmentProjectionChart` component (`apps/web/src/components/InvestmentProjectionChart.tsx`): Accepts `contributions: AccountContribution[]` array. Sums annualized contributions for projection. Shows expected line, variance bands (if variance > 0), and inflation-adjusted dashed line (if enabled).
 - Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) and 1 investment account (Vanguard 401(k)) with balance update history, sample notes, and planned contributions
+- **Quick seed** (`db:seed:quick` / `db:reset:quick`): Minimal seed with completed onboarding (dateOfBirth, retirementAge, retirement target with traditional strategy), 1 simple account (Chase Checking), and 1 investment account (Vanguard 401(k)) with history and contributions. Skips the Getting Started wizard. File: `packages/db/src/seed-dev-quick.ts`.
 
 ### Inline Value Editor Pattern
 Used on the asset detail page for the balance field. Reuse this pattern anywhere a user edits a single numeric value and benefits from quick math.

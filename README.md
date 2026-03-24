@@ -179,6 +179,22 @@ This is useful when:
 
 ---
 
+## Database: Quick Reset
+
+To reset the database with **onboarding already completed** (skips the Getting Started wizard):
+
+```bash
+npm run db:reset:quick
+```
+
+This seeds a minimal dataset: 1 simple account (Chase Checking), 1 investment account (Vanguard 401(k)) with balance history and planned contributions, plus a pre-configured retirement target with the traditional savings strategy. You land directly on the dashboard after sign-in.
+
+Use this when you're working on features beyond onboarding and don't want to go through the wizard every time.
+
+The seed script lives at `packages/db/src/seed-dev-quick.ts`.
+
+---
+
 ## Deployment Steps
 
 ---
