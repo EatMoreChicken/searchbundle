@@ -3,7 +3,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
-import type { Asset, BalanceUpdate, AccountNote } from "@/types";
+import type { Asset, BalanceUpdate, AccountNote, AccountContribution } from "@/types";
+import PlannedContributions from "@/components/PlannedContributions";
+import InvestmentProjectionChart from "@/components/InvestmentProjectionChart";
 import {
   AreaChart,
   Area,
@@ -125,6 +127,9 @@ interface ChartDataPoint {
 interface EditFormState {
   name: string;
   notes: string;
+  returnRate: string;
+  returnRateVariance: string;
+  includeInflation: boolean;
 }
 
 type TimelineEntry =
@@ -137,6 +142,7 @@ export default function AssetDetailPage() {
   const [asset, setAsset] = useState<Asset | null>(null);
   const [history, setHistory] = useState<BalanceUpdate[]>([]);
   const [notes, setNotes] = useState<AccountNote[]>([]);
+  const [contributions, setContributions] = useState<AccountContribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
@@ -185,11 +191,21 @@ export default function AssetDetailPage() {
     }
   }, [id]);
 
+  const fetchContributions = useCallback(async () => {
+    try {
+      const data = await apiClient.get<AccountContribution[]>(`/api/assets/${id}/contributions`);
+      setContributions(data);
+    } catch {
+      /* ignore */
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchAsset();
     fetchHistory();
     fetchNotes();
-  }, [fetchAsset, fetchHistory, fetchNotes]);
+    fetchContributions();
+  }, [fetchAsset, fetchHistory, fetchNotes, fetchContributions]);
 
   function openBalanceEditor() {
     if (!asset) return;
@@ -251,6 +267,9 @@ export default function AssetDetailPage() {
     setEditForm({
       name: asset.name,
       notes: asset.notes ?? "",
+      returnRate: asset.returnRate != null ? String(asset.returnRate) : "",
+      returnRateVariance: asset.returnRateVariance != null ? String(asset.returnRateVariance) : "",
+      includeInflation: asset.includeInflation,
     });
     setEditOpen(true);
   }
@@ -260,10 +279,16 @@ export default function AssetDetailPage() {
     if (!editForm || !asset) return;
     setSaving(true);
     try {
-      await apiClient.put(`/api/assets/${asset.id}`, {
+      const payload: Record<string, unknown> = {
         name: editForm.name,
         notes: editForm.notes || null,
-      });
+      };
+      if (asset.type === "investment") {
+        payload.returnRate = editForm.returnRate ? parseFloat(editForm.returnRate) : null;
+        payload.returnRateVariance = editForm.returnRateVariance ? parseFloat(editForm.returnRateVariance) : null;
+        payload.includeInflation = editForm.includeInflation;
+      }
+      await apiClient.put(`/api/assets/${asset.id}`, payload);
       setEditOpen(false);
       await fetchAsset();
     } finally {
@@ -568,6 +593,15 @@ export default function AssetDetailPage() {
             created {formatDate(asset.createdAt)}
           </p>
         </div>
+        {asset.type === "investment" && asset.returnRate != null && (
+          <div className="rounded-xl bg-surface-container-lowest p-5">
+            <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Expected Return</p>
+            <p className="mt-2 text-xl font-bold text-primary">{asset.returnRate}%</p>
+            <p className="mt-1 text-[11px] text-on-surface-variant">
+              {asset.returnRateVariance ? `+/- ${asset.returnRateVariance}% variance` : "annual"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Balance History Chart */}
@@ -731,6 +765,42 @@ export default function AssetDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Planned Contributions */}
+      <div className="mt-8">
+        <PlannedContributions
+          assetId={asset.id}
+          contributions={contributions}
+          onUpdate={fetchContributions}
+        />
+      </div>
+
+      {/* Projection Chart */}
+      {contributions.length > 0 && (
+        <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
+          <div>
+            <p className="text-[11px] uppercase tracking-[2px] text-primary">Projection</p>
+            <h2 className="mt-1 text-xl font-bold text-on-surface">
+              {asset.type === "investment" ? "Growth Projection" : "Balance Projection"}
+            </h2>
+            <p className="mt-1 text-[12px] text-on-surface-variant">
+              {asset.type === "investment"
+                ? "Estimated growth based on your contributions and expected return rate"
+                : "Projected balance based on your planned contributions over 10 years"}
+            </p>
+          </div>
+          <div className="mt-6">
+            <InvestmentProjectionChart
+              balance={asset.balance}
+              contributions={contributions}
+              returnRate={asset.type === "investment" ? asset.returnRate : 0}
+              returnRateVariance={asset.type === "investment" ? asset.returnRateVariance : null}
+              includeInflation={asset.type === "investment" ? asset.includeInflation : false}
+              years={10}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Activity Timeline */}
       <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
@@ -956,6 +1026,56 @@ export default function AssetDetailPage() {
                   className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                 />
               </div>
+
+              {/* Investment-specific fields */}
+              {asset.type === "investment" && (
+                <div className="rounded-xl bg-surface-container-low p-4 space-y-4">
+                  <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-[1px]">
+                    Investment Settings
+                  </p>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Expected annual return (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={editForm.returnRate}
+                        onChange={(e) => setEditForm({ ...editForm, returnRate: e.target.value })}
+                        className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Variance (+/- %)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="20"
+                        value={editForm.returnRateVariance}
+                        onChange={(e) => setEditForm({ ...editForm, returnRateVariance: e.target.value })}
+                        className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editForm.includeInflation}
+                      onChange={(e) => setEditForm({ ...editForm, includeInflation: e.target.checked })}
+                      className="h-4 w-4 rounded accent-primary"
+                    />
+                    <span className="text-[13px] text-on-surface">
+                      Show inflation-adjusted values (3% annual)
+                    </span>
+                  </label>
+                </div>
+              )}
 
               <p className="text-[11px] text-on-surface-variant">
                 To update the balance, use the clickable balance display on the detail page.

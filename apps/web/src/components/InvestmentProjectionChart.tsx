@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import type { ContributionFrequency } from "@/types";
+import type { ContributionFrequency, AccountContribution } from "@/types";
 
 const FREQ_MULTIPLIER: Record<ContributionFrequency, number> = {
   weekly: 52,
@@ -21,6 +21,13 @@ const FREQ_MULTIPLIER: Record<ContributionFrequency, number> = {
 };
 
 const INFLATION_RATE = 0.03;
+
+function annualizeContributions(contributions: AccountContribution[]): number {
+  return contributions.reduce(
+    (sum, c) => sum + c.amount * (FREQ_MULTIPLIER[c.frequency] ?? 12),
+    0
+  );
+}
 
 interface DataPoint {
   year: number;
@@ -37,15 +44,13 @@ function fv(balance: number, annualContrib: number, r: number, n: number): numbe
 
 function generateData(
   balance: number,
-  contributionAmount: number | null,
-  contributionFrequency: ContributionFrequency | null,
+  contributions: AccountContribution[],
   returnRate: number | null,
   returnRateVariance: number | null,
   includeInflation: boolean,
   years: number
 ): DataPoint[] {
-  const annualContrib =
-    (contributionAmount ?? 0) * (FREQ_MULTIPLIER[contributionFrequency ?? "monthly"] ?? 12);
+  const annualContrib = annualizeContributions(contributions);
   const r = (returnRate ?? 0) / 100;
   const v = (returnRateVariance ?? 0) / 100;
   const rLow = Math.max(0, r - v);
@@ -120,8 +125,7 @@ function CustomTooltip({
 
 interface Props {
   balance: number;
-  contributionAmount: number | null;
-  contributionFrequency: ContributionFrequency | null;
+  contributions: AccountContribution[];
   returnRate: number | null;
   returnRateVariance: number | null;
   includeInflation: boolean;
@@ -130,8 +134,7 @@ interface Props {
 
 export default function InvestmentProjectionChart({
   balance,
-  contributionAmount,
-  contributionFrequency,
+  contributions,
   returnRate,
   returnRateVariance,
   includeInflation,
@@ -139,8 +142,7 @@ export default function InvestmentProjectionChart({
 }: Props) {
   const data = generateData(
     balance,
-    contributionAmount,
-    contributionFrequency,
+    contributions,
     returnRate,
     returnRateVariance,
     includeInflation,

@@ -92,6 +92,13 @@
       "when": 1774700000000,
       "tag": "0012_account_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1774800000000,
+      "tag": "0013_account_contributions",
+      "breakpoints": true
     }
   ]
 }

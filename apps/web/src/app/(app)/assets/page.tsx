@@ -18,6 +18,13 @@ const ASSET_TYPES: {
     description:
       "A basic account with no interest or growth. Examples: checking account, cash savings, petty cash, gift cards, or any balance you want to track.",
   },
+  {
+    value: "investment",
+    label: "Investment Account",
+    icon: "trending_up",
+    description:
+      "An account that grows over time with an expected return rate. Examples: 401(k), IRA, brokerage account, index funds.",
+  },
 ];
 
 const TYPE_ICON_NAMES: Record<string, string> = {
@@ -61,6 +68,9 @@ interface FormState {
   balance: string;
   currency: string;
   notes: string;
+  returnRate: string;
+  returnRateVariance: string;
+  includeInflation: boolean;
 }
 
 const emptyForm: FormState = {
@@ -69,6 +79,9 @@ const emptyForm: FormState = {
   balance: "",
   currency: "USD",
   notes: "",
+  returnRate: "7",
+  returnRateVariance: "2",
+  includeInflation: false,
 };
 
 export default function AssetsPage() {
@@ -110,6 +123,9 @@ export default function AssetsPage() {
       balance: String(asset.balance),
       currency: asset.currency,
       notes: asset.notes ?? "",
+      returnRate: asset.returnRate != null ? String(asset.returnRate) : "7",
+      returnRateVariance: asset.returnRateVariance != null ? String(asset.returnRateVariance) : "2",
+      includeInflation: asset.includeInflation,
     });
     setModalOpen(true);
   }
@@ -124,13 +140,18 @@ export default function AssetsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: form.name,
         type: form.type,
         balance: form.balance,
         currency: form.currency,
         notes: form.notes || null,
       };
+      if (form.type === "investment") {
+        payload.returnRate = form.returnRate ? parseFloat(form.returnRate) : null;
+        payload.returnRateVariance = form.returnRateVariance ? parseFloat(form.returnRateVariance) : null;
+        payload.includeInflation = form.includeInflation;
+      }
       if (editing) {
         await apiClient.put(`/api/assets/${editing.id}`, payload);
       } else {
@@ -356,6 +377,64 @@ export default function AssetsPage() {
                       className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Investment-specific fields */}
+              {form.type === "investment" && (
+                <div className="rounded-xl bg-surface-container-low p-4 space-y-4">
+                  <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-[1px]">
+                    Investment Settings
+                  </p>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Expected annual return (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        placeholder="7"
+                        value={form.returnRate}
+                        onChange={(e) => setForm({ ...form, returnRate: e.target.value })}
+                        className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                      />
+                      <p className="mt-1 text-[11px] text-on-surface-variant">
+                        The average annual return you expect. S&P 500 averages ~10% historically.
+                      </p>
+                    </div>
+                    <div className="flex-1">
+                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                        Variance (+/- %)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="20"
+                        placeholder="2"
+                        value={form.returnRateVariance}
+                        onChange={(e) => setForm({ ...form, returnRateVariance: e.target.value })}
+                        className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                      />
+                      <p className="mt-1 text-[11px] text-on-surface-variant">
+                        Shows best/worst case bands on the projection chart.
+                      </p>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.includeInflation}
+                      onChange={(e) => setForm({ ...form, includeInflation: e.target.checked })}
+                      className="h-4 w-4 rounded accent-primary"
+                    />
+                    <span className="text-[13px] text-on-surface">
+                      Show inflation-adjusted values (3% annual)
+                    </span>
+                  </label>
                 </div>
               )}
 

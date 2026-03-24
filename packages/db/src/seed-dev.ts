@@ -22,6 +22,7 @@ import {
   accounts,
   balanceUpdates,
   accountNotes,
+  accountContributions,
   netWorthCategories,
   netWorthEntries,
 } from "./schema";
@@ -35,10 +36,12 @@ const HOUSEHOLD_ID  = "00000000-0000-0000-0001-000000000001";
 const ACCOUNT_CHECKING = "00000000-0000-0000-0002-000000000001";
 const ACCOUNT_EMERGENCY = "00000000-0000-0000-0002-000000000002";
 const ACCOUNT_CASH     = "00000000-0000-0000-0002-000000000003";
+const ACCOUNT_401K     = "00000000-0000-0000-0002-000000000004";
 
 const CAT_CHECKING    = "00000000-0000-0000-0004-000000000001";
 const CAT_EMERGENCY   = "00000000-0000-0000-0004-000000000002";
 const CAT_CASH        = "00000000-0000-0000-0004-000000000003";
+const CAT_401K        = "00000000-0000-0000-0004-000000000004";
 
 // ─── Monthly Values for Net Worth Tracker ────────────────────────────────
 // Keyed as [categoryId][year][month] = value. Months are 1-indexed.
@@ -55,6 +58,10 @@ const MONTHLY: Record<string, Record<number, Record<number, number>>> = {
   [CAT_CASH]: {
     2025: { 1: 3500, 2: 3200, 3: 3000, 4: 3100, 5: 2800, 6: 3400, 7: 3600, 8: 3300, 9: 3100, 10: 3000, 11: 3200, 12: 3500 },
     2026: { 1: 3200, 2: 3100, 3: 3200 },
+  },
+  [CAT_401K]: {
+    2025: { 1: 45000, 2: 46800, 3: 48200, 4: 47500, 5: 50100, 6: 51800, 7: 53500, 8: 52900, 9: 55200, 10: 57000, 11: 59100, 12: 61500 },
+    2026: { 1: 63200, 2: 65800, 3: 67500 },
   },
 };
 
@@ -192,6 +199,19 @@ async function seed() {
       currency: "USD",
       notes: "Miscellaneous cash, gift cards, and petty cash.",
     },
+    {
+      id: ACCOUNT_401K,
+      householdId: HOUSEHOLD_ID,
+      ownerId: USER_ID,
+      name: "Vanguard 401(k)",
+      type: "investment" as const,
+      balance: "67500",
+      currency: "USD",
+      notes: "Company 401(k) through Vanguard. Target date fund 2055.",
+      returnRate: "7",
+      returnRateVariance: "2",
+      includeInflation: true,
+    },
   ];
 
   for (const row of assetRows) {
@@ -202,10 +222,13 @@ async function seed() {
         type: row.type,
         balance: row.balance,
         notes: row.notes ?? null,
+        returnRate: "returnRate" in row ? (row as Record<string, unknown>).returnRate as string : null,
+        returnRateVariance: "returnRateVariance" in row ? (row as Record<string, unknown>).returnRateVariance as string : null,
+        includeInflation: "includeInflation" in row ? (row as Record<string, unknown>).includeInflation as boolean : false,
       },
     });
   }
-  console.log("✓ Assets upserted (simple accounts only)");
+  console.log("✓ Assets upserted");
 
   // ── 4. Seed balance update history ─────────────────────────────────────
 
@@ -228,6 +251,12 @@ async function seed() {
     }),
     ...generateBalanceHistory(ACCOUNT_CASH, MONTHLY[CAT_CASH], {
       "2025-6":  "Sold old electronics + received birthday cash.",
+    }),
+    ...generateBalanceHistory(ACCOUNT_401K, MONTHLY[CAT_401K], {
+      "2025-4":  "Market dip after tariff announcement, balance dropped.",
+      "2025-7":  "Increased contribution rate from 6% to 8%.",
+      "2025-12": "Year-end rebalance. Shifted 10% from bonds to equities.",
+      "2026-2":  "Strong Q1 earnings. Portfolio up ~4% in February alone.",
     }),
   ];
 
@@ -273,10 +302,46 @@ async function seed() {
       content: "Includes ~$200 in gift cards. Cash in wallet: $120.",
       createdAt: new Date(2025, 11, 28, 18, 0, 0),
     },
+    {
+      accountId: ACCOUNT_401K,
+      householdId: HOUSEHOLD_ID,
+      content: "Check beneficiary designations annually.",
+      createdAt: new Date(2025, 6, 1, 9, 0, 0),
+    },
   ];
 
   await db.insert(accountNotes).values(noteRows);
   console.log(`✓ Account notes inserted (${noteRows.length} rows)`);
+
+  // ── 4c. Seed planned contributions ─────────────────────────────────────
+
+  for (const acct of assetRows) {
+    await db.delete(accountContributions).where(eq(accountContributions.accountId, acct.id));
+  }
+
+  const contributionRows = [
+    {
+      accountId: ACCOUNT_EMERGENCY,
+      label: "Monthly savings transfer",
+      amount: "500",
+      frequency: "monthly" as const,
+    },
+    {
+      accountId: ACCOUNT_401K,
+      label: "Paycheck contribution (8%)",
+      amount: "600",
+      frequency: "biweekly" as const,
+    },
+    {
+      accountId: ACCOUNT_401K,
+      label: "Employer match (4%)",
+      amount: "300",
+      frequency: "biweekly" as const,
+    },
+  ];
+
+  await db.insert(accountContributions).values(contributionRows);
+  console.log(`✓ Planned contributions inserted (${contributionRows.length} rows)`);
 
   // ── 5. Upsert net worth categories ────────────────────────────────────
 
@@ -284,6 +349,7 @@ async function seed() {
     { id: CAT_CHECKING, householdId: HOUSEHOLD_ID, name: "Checking Account", type: "asset" as const, sortOrder: 0 },
     { id: CAT_EMERGENCY, householdId: HOUSEHOLD_ID, name: "Emergency Fund", type: "asset" as const, sortOrder: 1 },
     { id: CAT_CASH, householdId: HOUSEHOLD_ID, name: "Cash Reserve", type: "asset" as const, sortOrder: 2 },
+    { id: CAT_401K, householdId: HOUSEHOLD_ID, name: "Vanguard 401(k)", type: "asset" as const, sortOrder: 3 },
   ];
 
   for (const row of categoryRows) {

@@ -192,25 +192,33 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - **Assets** (not "accounts"): page `/assets`, API `/api/assets`, TypeScript type `Asset`. DB table stays `accounts` internally.
 - **Liabilities** (not "debts"): page `/liabilities`. DB table stays `debts` internally.
 - Asset types (DB enum): `investment`, `savings`, `hsa`, `property`, `other`, `simple`
-- Currently only "Simple Account" (`simple`) is exposed in the UI. Other types exist in the DB enum for future use.
+- Currently "Simple Account" (`simple`) and "Investment Account" (`investment`) are exposed in the UI. Other types exist in the DB enum for future use.
 - `recharts` is installed in `apps/web` for charts (balance history, investment projections)
 
 ### Asset Type System
 - **Simple Account** (`simple`): A basic balance-only account with no interest or growth. Used for checking accounts, cash reserves, petty cash, gift cards, etc.
+- **Investment Account** (`investment`): An account with expected return rate, variance, and growth projections. Used for 401(k), IRA, brokerage accounts, index funds. Includes return rate (%), variance (+/- %), and inflation adjustment toggle.
 - The Add Asset modal uses a **card-based type picker** (not a dropdown) with icon, title, and description for each type.
 - Balance updates are tracked in the `balance_updates` table: `id`, `account_id` (FK CASCADE), `previous_balance`, `new_balance`, `change_amount`, `note`, `created_at`.
 - Asset detail page features:
   - Large clickable balance display with inline math expression editor (see "Inline Value Editor" pattern below)
   - Balance history chart (recharts AreaChart) with note markers (amber ReferenceDots that scroll to the note in the timeline on click)
+  - Planned Contributions section (add/edit/delete recurring contributions with label, amount, frequency)
+  - Projection chart: linear for simple accounts, compound growth with variance bands for investment accounts. Only visible when contributions exist.
   - Unified activity timeline merging balance updates and standalone notes, sorted by date
   - Quick-add note input in the Activity section for fast annotation
-  - Edit modal for name/notes (balance changes go through the inline editor to maintain history)
+  - Edit modal for name/notes (balance changes go through the inline editor to maintain history). Investment accounts also edit return rate, variance, and inflation toggle.
+  - Investment accounts show expected return stat tile in quick stats
 - `account_notes` table: `id`, `account_id` (FK CASCADE), `household_id` (FK CASCADE), `content`, `created_at`. Standalone notes attached to an asset.
+- `account_contributions` table: `id`, `account_id` (FK CASCADE), `label` (text), `amount` (numeric 14,2), `frequency` (contribution_frequency enum), `created_at`. Multiple recurring contributions per account.
 - API routes:
   - Standard CRUD: `GET/POST /api/assets`, `GET/PUT/DELETE /api/assets/[id]`
   - Balance history: `GET /api/assets/[id]/history` (list updates), `POST /api/assets/[id]/history` (create update + change balance)
   - Notes: `GET/POST /api/assets/[id]/notes` (list/create), `DELETE /api/assets/[id]/notes/[noteId]` (delete)
-- Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) with balance update history and sample notes
+  - Contributions: `GET/POST /api/assets/[id]/contributions` (list/create), `PUT/DELETE /api/assets/[id]/contributions/[contributionId]` (update/delete)
+- `PlannedContributions` component (`apps/web/src/components/PlannedContributions.tsx`): Reusable UI for managing recurring contributions. Shows list with inline edit, add form, monthly equivalent total.
+- `InvestmentProjectionChart` component (`apps/web/src/components/InvestmentProjectionChart.tsx`): Accepts `contributions: AccountContribution[]` array. Sums annualized contributions for projection. Shows expected line, variance bands (if variance > 0), and inflation-adjusted dashed line (if enabled).
+- Dev seed creates 3 simple accounts (Chase Checking, Emergency Fund, Cash Reserve) and 1 investment account (Vanguard 401(k)) with balance update history, sample notes, and planned contributions
 
 ### Inline Value Editor Pattern
 Used on the asset detail page for the balance field. Reuse this pattern anywhere a user edits a single numeric value and benefits from quick math.

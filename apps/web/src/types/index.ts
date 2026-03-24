@@ -105,6 +105,15 @@ export interface AccountNote {
   createdAt: string;
 }
 
+export interface AccountContribution {
+  id: string;
+  accountId: string;
+  label: string;
+  amount: number;
+  frequency: ContributionFrequency;
+  createdAt: string;
+}
+
 export type CategoryType = "asset" | "liability";
 
 export interface NetWorthCategory {

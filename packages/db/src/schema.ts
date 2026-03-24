@@ -152,6 +152,17 @@ export const accountNotes = pgTable("account_notes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// --- Account Contributions (planned recurring additions/deductions) ---
+
+export const accountContributions = pgTable("account_contributions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id").notNull().references(() => accounts.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+  frequency: contributionFrequencyEnum("frequency").notNull().default("monthly"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // --- Net Worth Tracker ---
 
 export const categoryTypeEnum = pgEnum("category_type", ["asset", "liability"]);
