@@ -203,12 +203,14 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - Asset detail page features:
   - Large clickable balance display with inline math expression editor (see "Inline Value Editor" pattern below)
   - Balance history chart (recharts AreaChart) with note markers (amber ReferenceDots that scroll to the note in the timeline on click)
+  - **Combined history + projection chart (investment accounts)**: A single `ComposedChart` showing historical balance as a solid area and future projection as dashed lines with variance bands. A "Today" `ReferenceLine` divides history from projection. Projection years are user-configurable via a `<select>` dropdown (5/10/15/20/30/40/50 years), stored in `localStorage` under key `sb-projection-years`, defaulting to 30 or the user's `projectionEndAge` from their profile.
   - Planned Contributions section (add/edit/delete recurring contributions with label, amount, frequency)
-  - Projection chart: linear for simple accounts, compound growth with variance bands for investment accounts. Only visible when contributions exist.
+  - Projection chart (simple accounts only): standalone `InvestmentProjectionChart` for simple accounts with contributions (10-year linear projection). Investment accounts no longer use a separate projection chart.
   - Unified activity timeline merging balance updates and standalone notes, sorted by date
   - Quick-add note input in the Activity section for fast annotation
   - Edit modal for name/notes (balance changes go through the inline editor to maintain history). Investment accounts also edit return rate, variance, and inflation toggle.
   - Investment accounts show expected return stat tile in quick stats
+  - Add Asset modal uses `max-w-2xl` width (not `max-w-lg`) to accommodate investment account fields without scrolling
 - `account_notes` table: `id`, `account_id` (FK CASCADE), `household_id` (FK CASCADE), `content`, `created_at`. Standalone notes attached to an asset.
 - `account_contributions` table: `id`, `account_id` (FK CASCADE), `label` (text), `amount` (numeric 14,2), `frequency` (contribution_frequency enum), `created_at`. Multiple recurring contributions per account.
 - API routes:
@@ -538,6 +540,7 @@ For floating navigation, modal overlays, and projection result cards:
 - Use standard 1px borders for content separation.
 - Use standard modal overlays. Use glassmorphism to keep the UI light and interconnected.
 - Use Font Awesome. Use Material Symbols Outlined.
+- Forget `cursor: pointer` on interactive elements. A global CSS rule in `globals.css` sets `cursor: pointer` on `button`, `select`, and `[role="button"]`. For clickable `<div>` elements, add `cursor-pointer` in the className.
 
 ---
 

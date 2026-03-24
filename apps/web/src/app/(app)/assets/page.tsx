@@ -278,7 +278,7 @@ export default function AssetsPage() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-on-surface/20 sm:items-center"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="w-full max-w-lg rounded-t-2xl bg-surface-container-lowest p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-t-2xl bg-surface-container-lowest p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="font-headline font-extrabold text-2xl text-on-surface">
                 {editing ? "Edit Asset" : "New Asset"}

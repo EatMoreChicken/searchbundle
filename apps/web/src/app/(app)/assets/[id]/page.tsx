@@ -3,12 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
-import type { Asset, BalanceUpdate, AccountNote, AccountContribution } from "@/types";
+import type { Asset, BalanceUpdate, AccountNote, AccountContribution, User, ContributionFrequency } from "@/types";
 import PlannedContributions from "@/components/PlannedContributions";
 import InvestmentProjectionChart from "@/components/InvestmentProjectionChart";
 import {
   AreaChart,
+  ComposedChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -136,6 +138,33 @@ type TimelineEntry =
   | { type: "update"; data: BalanceUpdate; createdAt: string }
   | { type: "note"; data: AccountNote; createdAt: string };
 
+interface CombinedChartPoint {
+  x: number;
+  label: string;
+  historyValue: number | null;
+  projectedExpected: number | null;
+  projectedLow: number | null;
+  projectedRangeSize: number | null;
+  inflationAdjusted: number | null;
+}
+
+const PROJECTION_YEAR_OPTIONS = [5, 10, 15, 20, 30, 40, 50];
+const INFLATION_RATE = 0.03;
+const FREQ_MULTIPLIER: Record<ContributionFrequency, number> = {
+  weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, yearly: 1,
+};
+
+function fvProjection(balance: number, annualContrib: number, rate: number, n: number): number {
+  if (rate === 0) return balance + annualContrib * n;
+  return balance * Math.pow(1 + rate, n) + annualContrib * ((Math.pow(1 + rate, n) - 1) / rate);
+}
+
+function formatCompact(value: number): string {
+  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `$${Math.round(value / 1_000)}K`;
+  return `$${Math.round(value)}`;
+}
+
 export default function AssetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -162,6 +191,15 @@ export default function AssetDetailPage() {
   const [activitySaving, setActivitySaving] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
+
+  // Projection years (for investment combined chart)
+  const [projectionYears, setProjectionYears] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("sb-projection-years");
+      if (stored) return parseInt(stored, 10) || 30;
+    }
+    return 30;
+  });
 
   const fetchAsset = useCallback(async () => {
     setLoading(true);
@@ -205,6 +243,14 @@ export default function AssetDetailPage() {
     fetchHistory();
     fetchNotes();
     fetchContributions();
+    // Fetch user profile for default projection years
+    if (!localStorage.getItem("sb-projection-years")) {
+      apiClient.get<User>("/api/users/me").then((user) => {
+        if (user.projectionEndAge && user.projectionEndAge !== 100) {
+          setProjectionYears(user.projectionEndAge);
+        }
+      }).catch(() => { /* ignore */ });
+    }
   }, [fetchAsset, fetchHistory, fetchNotes, fetchContributions]);
 
   function openBalanceEditor() {
@@ -442,6 +488,75 @@ export default function AssetDetailPage() {
   const netChange = history.length > 0 ? asset!.balance - history[history.length - 1].previousBalance : 0;
   const totalUpdates = history.length;
 
+  // Combined history + projection chart data (investment accounts only)
+  const combinedChartData = (() => {
+    if (!asset || asset.type !== "investment") return null;
+
+    const currentBalance = asset.balance;
+    const annualContrib = contributions.reduce(
+      (sum, c) => sum + c.amount * (FREQ_MULTIPLIER[c.frequency] ?? 12), 0
+    );
+    const r = (asset.returnRate ?? 0) / 100;
+    const v = (asset.returnRateVariance ?? 0) / 100;
+    const rLow = Math.max(0, r - v);
+    const rHigh = r + v;
+    const hasVariance = v > 0;
+
+    const points: CombinedChartPoint[] = [];
+
+    // History portion
+    for (const pt of chartData) {
+      points.push({
+        x: pt.idx,
+        label: pt.label,
+        historyValue: pt.value,
+        projectedExpected: null,
+        projectedLow: null,
+        projectedRangeSize: null,
+        inflationAdjusted: null,
+      });
+    }
+
+    // Bridge point: last history point also starts projection
+    const bridgeIdx = Math.max(0, chartData.length - 1);
+    if (points.length > 0) {
+      points[bridgeIdx].projectedExpected = currentBalance;
+      if (hasVariance) {
+        points[bridgeIdx].projectedLow = currentBalance;
+        points[bridgeIdx].projectedRangeSize = 0;
+      }
+      if (asset.includeInflation) {
+        points[bridgeIdx].inflationAdjusted = currentBalance;
+      }
+    }
+
+    // Projection portion (yearly increments)
+    for (let n = 1; n <= projectionYears; n++) {
+      const expected = fvProjection(currentBalance, annualContrib, r, n);
+      const low = hasVariance ? fvProjection(currentBalance, annualContrib, rLow, n) : expected;
+      const high = hasVariance ? fvProjection(currentBalance, annualContrib, rHigh, n) : expected;
+
+      points.push({
+        x: bridgeIdx + n,
+        label: n % 5 === 0 || n === 1 ? `+${n}yr` : "",
+        historyValue: null,
+        projectedExpected: Math.round(expected),
+        projectedLow: hasVariance ? Math.round(low) : null,
+        projectedRangeSize: hasVariance ? Math.round(high - low) : null,
+        inflationAdjusted: asset.includeInflation
+          ? Math.round(expected / Math.pow(1 + INFLATION_RATE, n))
+          : null,
+      });
+    }
+
+    return { points, bridgeIdx, hasVariance };
+  })();
+
+  function handleProjectionYearsChange(years: number) {
+    setProjectionYears(years);
+    localStorage.setItem("sb-projection-years", String(years));
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -606,9 +721,27 @@ export default function AssetDetailPage() {
 
       {/* Balance History Chart */}
       <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
-        <div>
-          <p className="text-[11px] uppercase tracking-[2px] text-primary">History</p>
-          <h2 className="mt-1 text-xl font-bold text-on-surface">Balance Over Time</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[2px] text-primary">
+              {asset.type === "investment" ? "History & Projection" : "History"}
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-on-surface">Balance Over Time</h2>
+          </div>
+          {asset.type === "investment" && chartData.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] text-on-surface-variant">Project</label>
+              <select
+                value={projectionYears}
+                onChange={(e) => handleProjectionYearsChange(Number(e.target.value))}
+                className="cursor-pointer rounded-xl bg-surface-container-high px-3 py-1.5 text-[12px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                {PROJECTION_YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>{y} years</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {chartData.length <= 1 ? (
@@ -618,12 +751,260 @@ export default function AssetDetailPage() {
               Update the balance to start building a history chart.
             </p>
           </div>
+        ) : asset.type === "investment" && combinedChartData ? (
+          /* Combined history + projection chart for investment accounts */
+          <div className="mt-6 h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={combinedChartData.points} margin={{ top: 28, right: 10, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="projectionGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.08} />
+                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="var(--color-outline-variant)"
+                  strokeOpacity={0.3}
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="x"
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
+                  tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  tickFormatter={(x: number) => {
+                    const pt = combinedChartData.points.find((d) => d.x === x);
+                    if (!pt) return "";
+                    if (x === combinedChartData.bridgeIdx) return "Now";
+                    return pt.label;
+                  }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={formatCompact}
+                  width={70}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const byKey: Record<string, number> = {};
+                    payload.forEach((p) => {
+                      if (p.dataKey && p.value != null) byKey[String(p.dataKey)] = Number(p.value);
+                    });
+                    const isProjection = (label as number) > combinedChartData.bridgeIdx;
+                    const histVal = byKey["historyValue"];
+                    const projVal = byKey["projectedExpected"];
+                    const rLow = byKey["projectedLow"];
+                    const rSize = byKey["projectedRangeSize"];
+                    const inflAdj = byKey["inflationAdjusted"];
+                    const fmt = (v: number) => formatCurrencyFull(v, asset.currency);
+                    return (
+                      <div className="rounded-xl bg-on-surface px-4 py-3 shadow-lg text-[13px] text-white">
+                        <p className="text-[11px] uppercase tracking-[1px] text-white/70 mb-2">
+                          {isProjection
+                            ? `Year ${(label as number) - combinedChartData.bridgeIdx}`
+                            : combinedChartData.points.find((p) => p.x === label)?.label ?? ""}
+                        </p>
+                        {histVal != null && (
+                          <p className="font-semibold">Balance: <span className="text-primary-fixed">{fmt(histVal)}</span></p>
+                        )}
+                        {projVal != null && (
+                          <p className="font-semibold">Expected: <span className="text-primary-fixed">{fmt(projVal)}</span></p>
+                        )}
+                        {combinedChartData.hasVariance && rLow != null && rSize != null && (
+                          <p className="text-white/70 mt-1">Range: {fmt(rLow)} – {fmt(rLow + rSize)}</p>
+                        )}
+                        {inflAdj != null && (
+                          <p className="text-white/70 mt-1">Inflation-adj: {fmt(inflAdj)}</p>
+                        )}
+                      </div>
+                    );
+                  }}
+                />
+
+                {/* Variance bands (projection only) */}
+                {combinedChartData.hasVariance && (
+                  <>
+                    <Area
+                      dataKey="projectedLow"
+                      stackId="range"
+                      fill="transparent"
+                      stroke="transparent"
+                      isAnimationActive={false}
+                      connectNulls={false}
+                    />
+                    <Area
+                      dataKey="projectedRangeSize"
+                      stackId="range"
+                      fill="var(--color-primary-fixed)"
+                      stroke="transparent"
+                      fillOpacity={0.25}
+                      isAnimationActive={false}
+                      connectNulls={false}
+                    />
+                  </>
+                )}
+
+                {/* History area (solid) */}
+                <Area
+                  type="monotone"
+                  dataKey="historyValue"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2}
+                  fill="url(#balanceGradient)"
+                  dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: "var(--color-primary)", strokeWidth: 2, stroke: "white" }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+
+                {/* Projected expected line (dashed) */}
+                <Line
+                  type="monotone"
+                  dataKey="projectedExpected"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  dot={false}
+                  activeDot={{ r: 5, fill: "var(--color-primary)", stroke: "var(--color-surface-container-lowest)", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+
+                {/* Inflation-adjusted dashed line */}
+                {asset.includeInflation && (
+                  <Line
+                    type="monotone"
+                    dataKey="inflationAdjusted"
+                    stroke="var(--color-on-surface-variant)"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    dot={false}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                )}
+
+                {/* "Today" divider */}
+                <ReferenceLine
+                  x={combinedChartData.bridgeIdx}
+                  stroke="var(--color-tertiary)"
+                  strokeDasharray="6 4"
+                  strokeWidth={1.5}
+                  label={{
+                    value: "Today",
+                    position: "top",
+                    fill: "var(--color-tertiary)",
+                    fontSize: 10,
+                    fontWeight: 600,
+                  }}
+                />
+
+                {/* Note markers (history portion only) */}
+                {allNoteMarkers.map((marker) => (
+                  <ReferenceLine
+                    key={marker.id}
+                    x={marker.x}
+                    stroke="var(--color-tertiary)"
+                    strokeDasharray="4 4"
+                    strokeWidth={1}
+                    strokeOpacity={0.35}
+                    label={({ viewBox }: { viewBox?: { x?: number } }) => {
+                      const cx = viewBox?.x ?? 0;
+                      const isHovered = hoveredMarker === marker.id;
+                      return (
+                        <g>
+                          <circle
+                            cx={cx}
+                            cy={9}
+                            r={7}
+                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            style={{ cursor: "pointer", transition: "fill 0.15s" }}
+                            onClick={() => scrollToEntry(marker.scrollTarget)}
+                            onMouseEnter={() => setHoveredMarker(marker.id)}
+                            onMouseLeave={() => setHoveredMarker(null)}
+                          />
+                          <path
+                            d={`M${cx - 4},14 Q${cx},22 ${cx + 4},14`}
+                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            style={{ cursor: "pointer", transition: "fill 0.15s" }}
+                          />
+                          <text
+                            x={cx}
+                            y={12}
+                            textAnchor="middle"
+                            fill="white"
+                            fontSize={9}
+                            fontWeight={700}
+                            style={{ pointerEvents: "none" }}
+                          >
+                            ✦
+                          </text>
+                          <rect
+                            x={cx - 14}
+                            y={0}
+                            width={28}
+                            height={24}
+                            fill="transparent"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => scrollToEntry(marker.scrollTarget)}
+                            onMouseEnter={() => setHoveredMarker(marker.id)}
+                            onMouseLeave={() => setHoveredMarker(null)}
+                          />
+                          {isHovered && (
+                            <foreignObject
+                              x={cx - 110}
+                              y={24}
+                              width={220}
+                              height={60}
+                              style={{ pointerEvents: "none", overflow: "visible" }}
+                            >
+                              <div
+                                style={{
+                                  background: "var(--color-on-surface)",
+                                  color: "white",
+                                  borderRadius: 8,
+                                  padding: "6px 10px",
+                                  fontSize: 11,
+                                  lineHeight: "1.4",
+                                  maxWidth: 200,
+                                  margin: "0 auto",
+                                  overflow: "hidden",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical" as const,
+                                  textOverflow: "ellipsis",
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {marker.content}
+                              </div>
+                            </foreignObject>
+                          )}
+                        </g>
+                      );
+                    }}
+                  />
+                ))}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
+          /* Simple history-only chart for non-investment accounts */
           <div className="mt-6 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 28, right: 10, left: 10, bottom: 5 }}>
                 <defs>
-                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="balanceGradientSimple" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                   </linearGradient>
@@ -671,7 +1052,7 @@ export default function AssetDetailPage() {
                   dataKey="value"
                   stroke="var(--color-primary)"
                   strokeWidth={2}
-                  fill="url(#balanceGradient)"
+                  fill="url(#balanceGradientSimple)"
                   dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: "var(--color-primary)", strokeWidth: 2, stroke: "white" }}
                 />
@@ -775,27 +1156,23 @@ export default function AssetDetailPage() {
         />
       </div>
 
-      {/* Projection Chart */}
-      {contributions.length > 0 && (
+      {/* Projection Chart (simple accounts only; investment accounts use combined chart above) */}
+      {asset.type !== "investment" && contributions.length > 0 && (
         <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
           <div>
             <p className="text-[11px] uppercase tracking-[2px] text-primary">Projection</p>
-            <h2 className="mt-1 text-xl font-bold text-on-surface">
-              {asset.type === "investment" ? "Growth Projection" : "Balance Projection"}
-            </h2>
+            <h2 className="mt-1 text-xl font-bold text-on-surface">Balance Projection</h2>
             <p className="mt-1 text-[12px] text-on-surface-variant">
-              {asset.type === "investment"
-                ? "Estimated growth based on your contributions and expected return rate"
-                : "Projected balance based on your planned contributions over 10 years"}
+              Projected balance based on your planned contributions over 10 years
             </p>
           </div>
           <div className="mt-6">
             <InvestmentProjectionChart
               balance={asset.balance}
               contributions={contributions}
-              returnRate={asset.type === "investment" ? asset.returnRate : 0}
-              returnRateVariance={asset.type === "investment" ? asset.returnRateVariance : null}
-              includeInflation={asset.type === "investment" ? asset.includeInflation : false}
+              returnRate={0}
+              returnRateVariance={null}
+              includeInflation={false}
               years={10}
             />
           </div>
@@ -992,7 +1369,7 @@ export default function AssetDetailPage() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-on-surface/20 sm:items-center"
           onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false); }}
         >
-          <div className="w-full max-w-lg rounded-t-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-t-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="font-headline font-extrabold text-2xl text-on-surface">Edit Asset</h2>
               <button
