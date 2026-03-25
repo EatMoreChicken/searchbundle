@@ -3,13 +3,23 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
-import type { User, RetirementTarget, TargetMode } from "@/types";
-import type { SavingsStrategy, StrategyParams, YearlyDataPoint } from "@/lib/retirement-strategies";
+import type { User, RetirementTarget, TargetMode, Asset, BalanceUpdate, AccountContribution } from "@/types";
+import type { SavingsStrategy, StrategyParams } from "@/lib/retirement-strategies";
 import {
   getExtendedSchedule,
   calculateStartingMonthly,
 } from "@/lib/retirement-strategies";
+import {
+  projectAsset,
+  mergeProjections,
+  buildDashboardChartData,
+  calculateOnTrackStatus,
+  type AssetProjectionResult,
+  type DashboardChartPoint,
+  type OnTrackInfo,
+} from "@/lib/asset-projections";
 import {
   ComposedChart,
   Area,
@@ -21,6 +31,8 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) {
@@ -60,6 +72,8 @@ function calculateMonthlySavings(target: number, annualReturn: number, years: nu
 }
 
 const INFLATION_RATE = 0.03;
+
+// ─── Edit Target Form Helpers ────────────────────────────────────────────────
 
 const INPUT_CLASS =
   "w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all";
@@ -140,16 +154,76 @@ function NumericInput({
   );
 }
 
+// ─── On-Track Badge ──────────────────────────────────────────────────────────
+
+function OnTrackBadge({ info }: { info: OnTrackInfo }) {
+  const config = {
+    ahead: { icon: "trending_up", bg: "bg-secondary-container", text: "text-secondary", iconColor: "text-secondary" },
+    on_track: { icon: "check_circle", bg: "bg-secondary-container", text: "text-secondary", iconColor: "text-secondary" },
+    slightly_behind: { icon: "trending_down", bg: "bg-tertiary-fixed", text: "text-on-tertiary-fixed-variant", iconColor: "text-tertiary" },
+    behind: { icon: "warning", bg: "bg-error-container", text: "text-on-error-container", iconColor: "text-error" },
+    no_data: { icon: "remove_circle_outline", bg: "bg-surface-container-high", text: "text-on-surface-variant", iconColor: "text-on-surface-variant" },
+  };
+  const c = config[info.status];
+
+  return (
+    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${c.bg}`}>
+      <span className={`material-symbols-outlined text-[16px] ${c.iconColor}`}>{c.icon}</span>
+      <span className={`text-xs font-semibold ${c.text}`}>{info.label}</span>
+      {info.status !== "no_data" && (
+        <span className={`text-xs ${c.text} opacity-70`}>
+          ({Math.round(info.ratio * 100)}%)
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Chart Time Window ───────────────────────────────────────────────────────
+
+type TimeWindow = "focused" | "15y" | "all";
+
+const TIME_WINDOWS: { key: TimeWindow; label: string }[] = [
+  { key: "focused", label: "Focused" },
+  { key: "15y", label: "15 Years" },
+  { key: "all", label: "Full Plan" },
+];
+
+// ─── Asset Data Fetching ─────────────────────────────────────────────────────
+
+interface AssetWithDetails {
+  asset: Asset;
+  history: BalanceUpdate[];
+  contributions: AccountContribution[];
+}
+
+async function fetchAssetDetails(assets: Asset[]): Promise<AssetWithDetails[]> {
+  const results = await Promise.all(
+    assets.map(async (asset) => {
+      const [history, contributions] = await Promise.all([
+        apiClient.get<BalanceUpdate[]>(`/api/assets/${asset.id}/history`),
+        apiClient.get<AccountContribution[]>(`/api/assets/${asset.id}/contributions`),
+      ]);
+      return { asset, history, contributions };
+    }),
+  );
+  return results;
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
   const [target, setTarget] = useState<RetirementTarget | null>(null);
+  const [assets, setAssets] = useState<AssetWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("focused");
 
-  // Target configurator form (for edit mode)
+  // Target configurator form state
   const [mode, setMode] = useState<TargetMode>("income_replacement");
   const [fixedAmount, setFixedAmount] = useState("");
   const [targetAge, setTargetAge] = useState("");
@@ -162,9 +236,10 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [u, t] = await Promise.all([
+      const [u, t, assetList] = await Promise.all([
         apiClient.get<User>("/api/users/me"),
         apiClient.get<RetirementTarget | null>("/api/retirement-target"),
+        apiClient.get<Asset[]>("/api/assets"),
       ]);
 
       if ((!u.dateOfBirth || u.retirementAge == null) && !t) {
@@ -183,6 +258,12 @@ export default function DashboardPage() {
         setWithdrawalRate(String((t.withdrawalRate ?? 0.04) * 100));
         setExpectedReturn(String((t.expectedReturn ?? 0.07) * 100));
       }
+
+      // Fetch details for all assets
+      if (assetList.length > 0) {
+        const details = await fetchAssetDetails(assetList);
+        setAssets(details);
+      }
     } catch {
       /* ignore */
     } finally {
@@ -194,10 +275,21 @@ export default function DashboardPage() {
     if (session?.user) loadData();
   }, [session, loadData]);
 
-  // Live calculations (for edit mode)
+  // ─── Derived State ─────────────────────────────────────────────────────────
+
   const currentAge = user?.dateOfBirth ? calculateAge(user.dateOfBirth) : null;
+  const currentYear = new Date().getFullYear();
   const tAge = Number(targetAge) || 0;
   const yearsRemaining = currentAge != null ? tAge - currentAge : null;
+  const firstName = user?.name?.split(" ")[0] ?? "there";
+
+  // Total current asset value
+  const totalAssets = useMemo(
+    () => assets.reduce((sum, a) => sum + a.asset.balance, 0),
+    [assets],
+  );
+
+  // ─── Edit Mode Calculations ────────────────────────────────────────────────
 
   const annualIncomeInFutureDollars = useMemo(() => {
     const income = Number(annualIncome) || 0;
@@ -206,9 +298,7 @@ export default function DashboardPage() {
   }, [annualIncome, incomeValueType, yearsRemaining]);
 
   const portfolioTarget = useMemo(() => {
-    if (mode === "fixed") {
-      return Number(fixedAmount) || 0;
-    }
+    if (mode === "fixed") return Number(fixedAmount) || 0;
     const income = annualIncomeInFutureDollars;
     const wr = (Number(withdrawalRate) || 4) / 100;
     if (wr === 0) return 0;
@@ -229,68 +319,14 @@ export default function DashboardPage() {
 
   const annualSavings = monthlySavings * 12;
 
-  async function saveTarget(e: React.FormEvent) {
-    e.preventDefault();
-    setTargetError("");
-
-    if (portfolioTarget <= 0) {
-      setTargetError("Please enter a valid target amount.");
-      return;
-    }
-    if (tAge < 1 || tAge > 120) {
-      setTargetError("Target age must be between 1 and 120.");
-      return;
-    }
-    if (yearsRemaining != null && yearsRemaining <= 0) {
-      setTargetError("Target age must be greater than your current age.");
-      return;
-    }
-
-    setTargetSaving(true);
-    try {
-      const saved = await apiClient.put<RetirementTarget>("/api/retirement-target", {
-        mode,
-        targetAmount: portfolioTarget,
-        targetAge: tAge,
-        annualIncome: mode === "income_replacement" ? Number(annualIncome) || null : null,
-        withdrawalRate: (Number(withdrawalRate) || 4) / 100,
-        expectedReturn: (Number(expectedReturn) || 7) / 100,
-        inflationRate: INFLATION_RATE,
-        includeInflation: true,
-      });
-      setTarget(saved);
-      setEditing(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save target";
-      setTargetError(msg);
-    } finally {
-      setTargetSaving(false);
-    }
-  }
-
-  function startEditing() {
-    if (target) {
-      setMode(target.mode);
-      setFixedAmount(target.mode === "fixed" ? String(target.targetAmount) : "");
-      setTargetAge(String(target.targetAge));
-      setAnnualIncome(target.annualIncome != null ? String(target.annualIncome) : "");
-      setIncomeValueType("present");
-      setWithdrawalRate(String((target.withdrawalRate ?? 0.04) * 100));
-      setExpectedReturn(String((target.expectedReturn ?? 0.07) * 100));
-    }
-    setEditing(true);
-  }
+  // ─── Saved Summary + Plan Chart Data ───────────────────────────────────────
 
   const savedSummary = useMemo(() => {
     if (!target || !currentAge) return null;
     const years = target.targetAge - currentAge;
     if (years <= 0) return null;
     const inflAdjTarget = target.targetAmount * Math.pow(1 + INFLATION_RATE, years);
-    const monthly = calculateMonthlySavings(
-      inflAdjTarget,
-      target.expectedReturn ?? 0.07,
-      years,
-    );
+    const monthly = calculateMonthlySavings(inflAdjTarget, target.expectedReturn ?? 0.07, years);
 
     const strategy = (target.savingsStrategy ?? "traditional") as SavingsStrategy;
     const params: StrategyParams = {
@@ -309,16 +345,113 @@ export default function DashboardPage() {
       params,
       startMonthly,
       currentAge,
-      new Date().getFullYear(),
+      currentYear,
       target.targetAge,
       projectionEndAge,
     );
 
     return { years, monthly, annual: monthly * 12, inflAdjTarget, chartData, retirementAge: target.targetAge };
-  }, [target, currentAge, user?.projectionEndAge]);
+  }, [target, currentAge, currentYear, user?.projectionEndAge]);
 
-  const showConfigurator = editing;
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  // ─── Asset Projections ─────────────────────────────────────────────────────
+
+  const assetProjections: AssetProjectionResult[] = useMemo(() => {
+    if (!currentAge) return [];
+    const yearsForward = (user?.projectionEndAge ?? 100) - currentAge;
+    return assets.map((a) =>
+      projectAsset(a.asset, a.history, a.contributions, yearsForward, currentAge, currentYear),
+    );
+  }, [assets, currentAge, currentYear, user?.projectionEndAge]);
+
+  const mergedAssetProjection = useMemo(() => {
+    if (!currentAge) return [];
+    const yearsForward = (user?.projectionEndAge ?? 100) - currentAge;
+    return mergeProjections(assetProjections, yearsForward, currentAge, currentYear);
+  }, [assetProjections, currentAge, currentYear, user?.projectionEndAge]);
+
+  // ─── Combined Chart Data ───────────────────────────────────────────────────
+
+  const dashboardChartData: DashboardChartPoint[] = useMemo(() => {
+    if (!savedSummary?.chartData || !currentAge) return [];
+    return buildDashboardChartData(savedSummary.chartData, mergedAssetProjection, currentAge);
+  }, [savedSummary, mergedAssetProjection, currentAge]);
+
+  // Filter chart data by time window
+  const visibleChartData = useMemo(() => {
+    if (!currentAge || dashboardChartData.length === 0) return dashboardChartData;
+
+    switch (timeWindow) {
+      case "focused": {
+        const minAge = currentAge - 5;
+        const maxAge = currentAge + 10;
+        return dashboardChartData.filter((d) => d.age >= minAge && d.age <= maxAge);
+      }
+      case "15y": {
+        const minAge = currentAge - 2;
+        const maxAge = currentAge + 15;
+        return dashboardChartData.filter((d) => d.age >= minAge && d.age <= maxAge);
+      }
+      case "all":
+        return dashboardChartData;
+    }
+  }, [dashboardChartData, currentAge, timeWindow]);
+
+  // ─── On-Track Status ───────────────────────────────────────────────────────
+
+  const onTrackInfo: OnTrackInfo = useMemo(() => {
+    if (!savedSummary?.chartData || !currentAge) {
+      return { status: "no_data", label: "No data yet", ratio: 0, planValue: 0, actualValue: 0 };
+    }
+    const planPoint = savedSummary.chartData.find((d) => d.age === currentAge);
+    const planValue = planPoint?.portfolioValue ?? 0;
+    return calculateOnTrackStatus(planValue, totalAssets);
+  }, [savedSummary, currentAge, totalAssets]);
+
+  // ─── Save / Edit Handlers ──────────────────────────────────────────────────
+
+  async function saveTarget(e: React.FormEvent) {
+    e.preventDefault();
+    setTargetError("");
+
+    if (portfolioTarget <= 0) { setTargetError("Please enter a valid target amount."); return; }
+    if (tAge < 1 || tAge > 120) { setTargetError("Target age must be between 1 and 120."); return; }
+    if (yearsRemaining != null && yearsRemaining <= 0) { setTargetError("Target age must be greater than your current age."); return; }
+
+    setTargetSaving(true);
+    try {
+      const saved = await apiClient.put<RetirementTarget>("/api/retirement-target", {
+        mode,
+        targetAmount: portfolioTarget,
+        targetAge: tAge,
+        annualIncome: mode === "income_replacement" ? Number(annualIncome) || null : null,
+        withdrawalRate: (Number(withdrawalRate) || 4) / 100,
+        expectedReturn: (Number(expectedReturn) || 7) / 100,
+        inflationRate: INFLATION_RATE,
+        includeInflation: true,
+      });
+      setTarget(saved);
+      setEditing(false);
+    } catch (err: unknown) {
+      setTargetError(err instanceof Error ? err.message : "Failed to save target");
+    } finally {
+      setTargetSaving(false);
+    }
+  }
+
+  function startEditing() {
+    if (target) {
+      setMode(target.mode);
+      setFixedAmount(target.mode === "fixed" ? String(target.targetAmount) : "");
+      setTargetAge(String(target.targetAge));
+      setAnnualIncome(target.annualIncome != null ? String(target.annualIncome) : "");
+      setIncomeValueType("present");
+      setWithdrawalRate(String((target.withdrawalRate ?? 0.04) * 100));
+      setExpectedReturn(String((target.expectedReturn ?? 0.07) * 100));
+    }
+    setEditing(true);
+  }
+
+  // ─── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -329,77 +462,58 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl space-y-6">
-      {/* Page header */}
-      <div>
-        <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase mb-1">Dashboard</p>
-        <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
-          Hey {firstName}
-        </h1>
+    <div className="p-6 space-y-6">
+      {/* ── Header Row ─────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase mb-1">Dashboard</p>
+            <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
+              Hey {firstName}
+            </h1>
+          </div>
+          {savedSummary && <OnTrackBadge info={onTrackInfo} />}
+        </div>
+        {target && !editing && (
+          <button
+            onClick={startEditing}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-primary hover:bg-primary-fixed/40 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">edit</span>
+            Edit Target
+          </button>
+        )}
       </div>
 
-      {/* Financial Independence Target */}
-      <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* ── Edit Target Modal ──────────────────────────────────────────── */}
+      {editing && (
+        <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
               <span className="material-symbols-outlined text-primary text-[20px]">flag</span>
             </div>
-            <div>
-              <h2 className="text-title-md font-bold text-on-surface">Financial Independence Target</h2>
-              <p className="text-sm text-on-surface-variant">Figure out how much you need to save and what it takes to get there</p>
-            </div>
+            <h2 className="text-title-md font-bold text-on-surface">Edit Financial Independence Target</h2>
           </div>
-          {target && !editing && (
-            <button
-              onClick={startEditing}
-              className="px-4 py-2 rounded-full text-sm font-medium text-primary hover:bg-primary-fixed/40 transition-all"
-            >
-              Edit
-            </button>
-          )}
-        </div>
 
-        {/* Configurator (edit mode only, not shown for new users since they use the wizard) */}
-        {showConfigurator && (
           <form onSubmit={saveTarget} className="space-y-6">
-
             {/* Mode selector */}
             <div>
               <p className="text-sm font-semibold text-on-surface mb-1">How do you want to describe your goal?</p>
               <p className="text-xs text-on-surface-variant mb-3">Choose the approach that feels more natural to you.</p>
               <div className="grid grid-cols-2 gap-3">
                 {([
-                  {
-                    id: "income_replacement" as TargetMode,
-                    icon: "paid",
-                    title: "I know my lifestyle",
-                    desc: "Tell us your desired annual spending and we'll calculate the total you need to save.",
-                  },
-                  {
-                    id: "fixed" as TargetMode,
-                    icon: "savings",
-                    title: "I know my number",
-                    desc: "You already have a total portfolio target in mind and want to work backward from it.",
-                  },
+                  { id: "income_replacement" as TargetMode, icon: "paid", title: "I know my lifestyle", desc: "Tell us your desired annual spending and we'll calculate the total you need to save." },
+                  { id: "fixed" as TargetMode, icon: "savings", title: "I know my number", desc: "You already have a total portfolio target in mind and want to work backward from it." },
                 ] as const).map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
                     onClick={() => setMode(opt.id)}
-                    className={`text-left p-4 rounded-2xl transition-all ${
-                      mode === opt.id
-                        ? "bg-primary-fixed"
-                        : "bg-surface-container-high hover:bg-surface-container"
-                    }`}
+                    className={`text-left p-4 rounded-2xl transition-all ${mode === opt.id ? "bg-primary-fixed" : "bg-surface-container-high hover:bg-surface-container"}`}
                   >
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`material-symbols-outlined text-[18px] ${mode === opt.id ? "text-primary" : "text-on-surface-variant"}`}>
-                        {opt.icon}
-                      </span>
-                      <span className={`text-sm font-bold ${mode === opt.id ? "text-primary" : "text-on-surface"}`}>
-                        {opt.title}
-                      </span>
+                      <span className={`material-symbols-outlined text-[18px] ${mode === opt.id ? "text-primary" : "text-on-surface-variant"}`}>{opt.icon}</span>
+                      <span className={`text-sm font-bold ${mode === opt.id ? "text-primary" : "text-on-surface"}`}>{opt.title}</span>
                     </div>
                     <p className="text-xs text-on-surface-variant leading-relaxed">{opt.desc}</p>
                   </button>
@@ -411,370 +525,411 @@ export default function DashboardPage() {
             <div className="space-y-5">
               {mode === "fixed" ? (
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-2">
-                    What is your total savings target?
-                  </label>
+                  <label className="block text-sm font-semibold text-on-surface mb-2">What is your total savings target?</label>
                   <PrefixedInput prefix="$">
-                    <NumericInput
-                      value={fixedAmount}
-                      onChange={setFixedAmount}
-                      placeholder="2,000,000"
-                      className={INPUT_CLASS}
-                    />
+                    <NumericInput value={fixedAmount} onChange={setFixedAmount} placeholder="2,000,000" className={INPUT_CLASS} />
                   </PrefixedInput>
-                  <FieldHint>
-                    The total amount you want invested across all accounts when you reach your goal: retirement funds, index funds, brokerage, etc. We&apos;ll adjust this for inflation automatically.
-                  </FieldHint>
+                  <FieldHint>The total amount you want invested across all accounts when you reach your goal. We&apos;ll adjust this for inflation automatically.</FieldHint>
                 </div>
               ) : (
                 <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-semibold text-on-surface mb-2">
-                      How much do you want to spend per year in retirement?
-                    </label>
+                    <label className="block text-sm font-semibold text-on-surface mb-2">How much do you want to spend per year in retirement?</label>
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
                         <PrefixedInput prefix="$">
-                          <NumericInput
-                            value={annualIncome}
-                            onChange={setAnnualIncome}
-                            placeholder="80,000"
-                            className={INPUT_CLASS}
-                          />
+                          <NumericInput value={annualIncome} onChange={setAnnualIncome} placeholder="80,000" className={INPUT_CLASS} />
                         </PrefixedInput>
                       </div>
-                      {/* Present / future value toggle */}
                       <div className="flex rounded-xl overflow-hidden border border-outline-variant/30 flex-shrink-0">
                         {([
-                          {
-                            key: "present" as const,
-                            label: "Today",
-                            tooltip: "Enter your goal in today's dollars. We'll inflate this forward to account for rising prices. For example, $80,000 today will need to be more in 30 years to buy the same things.",
-                          },
-                          {
-                            key: "future" as const,
-                            label: "Future",
-                            tooltip: "Enter your goal as the actual dollar amount you expect to spend at retirement, already accounting for inflation. Use this if you've already done that math yourself.",
-                          },
-                        ]).map(({ key, label, tooltip }) => (
-                          <div key={key} className="relative group">
-                            <button
-                              type="button"
-                              onClick={() => setIncomeValueType(key)}
-                              className={`px-3 py-2.5 text-xs font-semibold transition-colors ${
-                                incomeValueType === key
-                                  ? "bg-primary text-white"
-                                  : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container"
-                              }`}
-                            >
-                              {label}
-                            </button>
-                            <span className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 w-56 rounded-xl bg-on-surface px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                              {tooltip}
-                            </span>
-                          </div>
+                          { key: "present" as const, label: "Today" },
+                          { key: "future" as const, label: "Future" },
+                        ]).map(({ key, label }) => (
+                          <button key={key} type="button" onClick={() => setIncomeValueType(key)}
+                            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${incomeValueType === key ? "bg-primary text-white" : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container"}`}
+                          >{label}</button>
                         ))}
                       </div>
                     </div>
-                    <FieldHint>
-                      {incomeValueType === "present"
-                        ? "In today's dollars. We'll inflate this forward automatically so your goal keeps pace with rising prices."
-                        : "The actual dollar amount you expect to spend at retirement, already adjusted for inflation."}
-                    </FieldHint>
+                    <FieldHint>{incomeValueType === "present" ? "In today's dollars. We'll inflate this forward automatically." : "Already adjusted for inflation."}</FieldHint>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
                       Safe withdrawal rate
-                      <InfoTooltip>
-                        The percentage of your portfolio you withdraw each year. The widely accepted "4% rule" means your savings should last 30+ years without running out. A lower rate is more conservative but requires more savings. A higher rate requires less savings but carries more risk of running out.
-                      </InfoTooltip>
+                      <InfoTooltip>The percentage of your portfolio you withdraw each year. The widely accepted "4% rule" means your savings should last 30+ years.</InfoTooltip>
                     </label>
                     <PrefixedInput suffix="%">
-                      <input
-                        type="number"
-                        min={0.5}
-                        max={20}
-                        step="0.1"
-                        value={withdrawalRate}
-                        onChange={(e) => setWithdrawalRate(e.target.value)}
-                        className={INPUT_CLASS}
-                      />
+                      <input type="number" min={0.5} max={20} step="0.1" value={withdrawalRate} onChange={(e) => setWithdrawalRate(e.target.value)} className={INPUT_CLASS} />
                     </PrefixedInput>
-                    <FieldHint>
-                      Default 4%: your portfolio is designed to last 30+ years. Lower is more conservative; higher carries more risk.
-                    </FieldHint>
+                    <FieldHint>Default 4%: designed to last 30+ years.</FieldHint>
                   </div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-2">
-                    Target age
-                  </label>
+                  <label className="block text-sm font-semibold text-on-surface mb-2">Target age</label>
                   <PrefixedInput suffix="yrs">
-                    <input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={targetAge}
-                      onChange={(e) => setTargetAge(e.target.value)}
-                      placeholder="65"
-                      className={INPUT_CLASS}
-                    />
+                    <input type="number" min={1} max={120} value={targetAge} onChange={(e) => setTargetAge(e.target.value)} placeholder="65" className={INPUT_CLASS} />
                   </PrefixedInput>
-                  <FieldHint>The age you want to be financially independent. This doesn&apos;t have to be when you stop working.</FieldHint>
+                  <FieldHint>The age you want to be financially independent.</FieldHint>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
                     Expected annual return
-                    <InfoTooltip>
-                      How much you expect your investments to grow each year on average. Historically, a diversified index fund portfolio has returned around 7% per year over long periods. A conservative estimate is 5-6%. A more optimistic estimate is 8-9%.
-                    </InfoTooltip>
+                    <InfoTooltip>How much you expect your investments to grow each year on average. 7% is the long-term historical average for diversified stock portfolios.</InfoTooltip>
                   </label>
                   <PrefixedInput suffix="%">
-                    <input
-                      type="number"
-                      min={0}
-                      max={30}
-                      step="0.1"
-                      value={expectedReturn}
-                      onChange={(e) => setExpectedReturn(e.target.value)}
-                      className={INPUT_CLASS}
-                    />
+                    <input type="number" min={0} max={30} step="0.1" value={expectedReturn} onChange={(e) => setExpectedReturn(e.target.value)} className={INPUT_CLASS} />
                   </PrefixedInput>
-                  <FieldHint>Default is 7%, the long-term historical average for a diversified stock portfolio.</FieldHint>
+                  <FieldHint>Default is 7%.</FieldHint>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-container rounded-2xl px-4 py-3">
                 <span className="material-symbols-outlined text-[14px] flex-shrink-0">info</span>
-                <span>A 3% annual inflation rate is automatically applied so your goal reflects real future purchasing power.</span>
+                <span>A 3% annual inflation rate is automatically applied.</span>
               </div>
             </div>
 
             {/* Live summary */}
             <div className="bg-surface-container-low rounded-2xl p-6 space-y-4">
-              <div>
-                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">Your plan at a glance</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">Inflation-adjusted at 3% annually. Updates live as you fill in the fields.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">Preview</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-sm text-on-surface-variant mb-0.5">Portfolio Target</p>
-                  <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+                  <p className="text-xs text-on-surface-variant mb-0.5">Portfolio Target</p>
+                  <p className="text-lg font-extrabold text-on-surface tracking-tight">
                     {inflationAdjustedTarget > 0 ? formatCurrency(inflationAdjustedTarget) : <span className="text-outline-variant">-</span>}
                   </p>
-                  {inflationAdjustedTarget > 0 && portfolioTarget > 0 && (
-                    <p className="text-xs text-on-surface-variant mt-0.5">
-                      {formatCurrency(portfolioTarget)} in today&apos;s dollars
-                    </p>
-                  )}
-                  <p className="text-xs text-on-surface-variant mt-0.5">Total you need invested</p>
                 </div>
                 <div>
-                  <p className="text-sm text-on-surface-variant mb-0.5">Years Remaining</p>
-                  <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+                  <p className="text-xs text-on-surface-variant mb-0.5">Years Remaining</p>
+                  <p className="text-lg font-extrabold text-on-surface tracking-tight">
                     {yearsRemaining != null && yearsRemaining > 0 ? yearsRemaining : <span className="text-outline-variant">-</span>}
                   </p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">
-                    {currentAge != null && tAge > 0 && yearsRemaining != null && yearsRemaining > 0
-                      ? `Age ${currentAge} → Age ${tAge}`
-                      : "Enter your age and target above"}
-                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-on-surface-variant mb-0.5">Monthly Savings Needed</p>
-                  <p className="text-2xl font-extrabold text-primary tracking-tight">
+                  <p className="text-xs text-on-surface-variant mb-0.5">Monthly Savings</p>
+                  <p className="text-lg font-extrabold text-primary tracking-tight">
                     {monthlySavings > 0 ? formatFullCurrency(monthlySavings) : <span className="text-outline-variant">-</span>}
                   </p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">What to set aside each month</p>
                 </div>
                 <div>
-                  <p className="text-sm text-on-surface-variant mb-0.5">Annual Savings Needed</p>
-                  <p className="text-2xl font-extrabold text-primary tracking-tight">
+                  <p className="text-xs text-on-surface-variant mb-0.5">Annual Savings</p>
+                  <p className="text-lg font-extrabold text-primary tracking-tight">
                     {annualSavings > 0 ? formatFullCurrency(annualSavings) : <span className="text-outline-variant">-</span>}
                   </p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">Per year total</p>
                 </div>
               </div>
-              {yearsRemaining != null && yearsRemaining > 0 && monthlySavings > 0 && (
-                <p className="text-xs text-on-surface-variant border-t border-outline-variant/20 pt-3">
-                  Based on a <strong>{Number(expectedReturn).toFixed(1)}%</strong> annual return and 3% annual inflation over <strong>{yearsRemaining} years</strong>.
-                  {mode === "income_replacement" && Number(annualIncome) > 0 && incomeValueType === "present"
-                    ? ` Your ${formatCurrency(Number(annualIncome))}/yr in today's dollars grows to ${formatCurrency(Math.round(annualIncomeInFutureDollars))}/yr at retirement after inflation.`
-                    : ""}
-                  {" "}Projections only. Actual results will vary.
-                </p>
-              )}
             </div>
 
             {targetError && <p className="text-sm text-error">{targetError}</p>}
 
             <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                disabled={targetSaving || portfolioTarget <= 0}
-                className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60"
-              >
-                {targetSaving ? "Saving…" : "Update Target"}
+              <button type="submit" disabled={targetSaving || portfolioTarget <= 0}
+                className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60">
+                {targetSaving ? "Saving\u2026" : "Update Target"}
               </button>
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-all"
-              >
+              <button type="button" onClick={() => setEditing(false)}
+                className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-all">
                 Cancel
               </button>
             </div>
           </form>
-        )}
+        </section>
+      )}
 
-        {/* Static summary card */}
-        {target && !editing && savedSummary && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-surface-container-low rounded-2xl p-5">
-                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-                <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  {formatCurrency(target.targetAmount)} in today&apos;s dollars
-                </p>
-              </div>
-              <div className="bg-surface-container-low rounded-2xl p-5">
-                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
-                <p className="text-xl font-extrabold text-on-surface tracking-tight">{target.targetAge}</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
-              </div>
-              <div className="bg-surface-container-low rounded-2xl p-5">
-                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
-                <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
-              </div>
-              <div className="bg-surface-container-low rounded-2xl p-5">
-                <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
-                <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
-              </div>
-            </div>
-
-            {/* Savings plan trajectory chart */}
-            {savedSummary.chartData && savedSummary.chartData.length > 1 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
-                  Your savings plan
-                </h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={savedSummary.chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                      <defs>
-                        <linearGradient id="dashGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#006761" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#006761" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#bdc9c7" strokeOpacity={0.3} />
-                      <XAxis
-                        dataKey="age"
-                        tick={{ fill: "#3e4947", fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                        label={{ value: "Age", position: "insideBottom", offset: -2, fill: "#3e4947", fontSize: 11 }}
-                      />
-                      <YAxis
-                        yAxisId="portfolio"
-                        tickFormatter={(v: number) => formatCurrency(v)}
-                        tick={{ fill: "#3e4947", fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={70}
-                      />
-                      <YAxis
-                        yAxisId="contribution"
-                        orientation="right"
-                        tickFormatter={(v: number) => formatCurrency(v)}
-                        tick={{ fill: "#805200", fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={60}
-                      />
-                      <RechartsTooltip
-                        content={({ active, payload, label }) => {
-                          if (!active || !payload || payload.length === 0) return null;
-                          const data = payload[0]?.payload as YearlyDataPoint;
-                          const isPostRetirement = savedSummary.retirementAge && data.age > savedSummary.retirementAge;
-                          return (
-                            <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5">
-                              <p className="font-semibold">
-                                Age {label} ({data.year})
-                                {data.age === savedSummary.retirementAge && (
-                                  <span className="ml-1 text-tertiary-fixed">Retirement</span>
-                                )}
-                                {isPostRetirement && (
-                                  <span className="ml-1 text-white/50">Post-retirement</span>
-                                )}
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-primary" />
-                                <span>Portfolio: {formatFullCurrency(data.portfolioValue)}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-tertiary" />
-                                <span>Monthly contribution: {formatFullCurrency(data.monthlyContribution)}</span>
-                              </div>
-                              <div className="border-t border-white/20 pt-1 mt-1 space-y-0.5">
-                                <p className="text-white/70">Total contributed: {formatFullCurrency(data.cumulativeContributions)}</p>
-                                <p className="text-white/70">Growth earned: {formatFullCurrency(data.cumulativeGrowth)}</p>
-                              </div>
-                            </div>
-                          );
-                        }}
-                      />
-                      <ReferenceLine
-                        x={savedSummary.retirementAge}
-                        yAxisId="portfolio"
-                        stroke="#805200"
-                        strokeWidth={2}
-                        strokeDasharray="6 4"
-                        label={{
-                          value: `Retire ${savedSummary.retirementAge}`,
-                          position: "top",
-                          fill: "#805200",
-                          fontSize: 11,
-                          fontWeight: 700,
-                        }}
-                      />
-                      <Area
-                        yAxisId="portfolio"
-                        type="monotone"
-                        dataKey="portfolioValue"
-                        name="Portfolio value"
-                        stroke="#006761"
-                        strokeWidth={2}
-                        fill="url(#dashGradient)"
-                      />
-                      <Line
-                        yAxisId="contribution"
-                        type="stepAfter"
-                        dataKey="monthlyContribution"
-                        name="Monthly contribution"
-                        stroke="#805200"
-                        strokeWidth={2}
-                        strokeDasharray="6 3"
-                        dot={false}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="text-xs text-on-surface-variant">
-                  Based on a {((target.expectedReturn ?? 0.07) * 100).toFixed(1)}% annual return over {savedSummary.years} years. Projections only.
-                </p>
-              </div>
-            )}
+      {/* ── Key Metrics Strip ──────────────────────────────────────────── */}
+      {savedSummary && !editing && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
+            <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">{target ? formatCurrency(target.targetAmount) : ""} today</p>
           </div>
-        )}
-      </section>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
+            <p className="text-xl font-extrabold text-on-surface tracking-tight">{target?.targetAge}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
+            <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
+            <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Current Assets</p>
+            <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Hero Chart ─────────────────────────────────────────────────── */}
+      {savedSummary && !editing && visibleChartData.length > 1 && (
+        <section className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
+              Savings Trajectory
+            </h2>
+            <div className="flex items-center gap-1 bg-surface-container rounded-full p-0.5">
+              {TIME_WINDOWS.map((tw) => (
+                <button
+                  key={tw.key}
+                  onClick={() => setTimeWindow(tw.key)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    timeWindow === tw.key
+                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                      : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+                >
+                  {tw.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={visibleChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="planGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#006761" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#bdc9c7" strokeOpacity={0.3} />
+                <XAxis
+                  dataKey="age"
+                  tick={{ fill: "#3e4947", fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  label={{ value: "Age", position: "insideBottom", offset: -2, fill: "#3e4947", fontSize: 11 }}
+                />
+                <YAxis
+                  tickFormatter={(v: number) => formatCurrency(v)}
+                  tick={{ fill: "#3e4947", fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={70}
+                />
+                <RechartsTooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    const d = payload[0]?.payload as DashboardChartPoint;
+                    return (
+                      <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5 max-w-xs">
+                        <p className="font-semibold">
+                          Age {d.age} ({d.year})
+                          {d.age === savedSummary.retirementAge && <span className="ml-1 text-tertiary-fixed">Retirement</span>}
+                        </p>
+                        {d.planValue != null && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <span>Plan: {formatFullCurrency(d.planValue)}</span>
+                          </div>
+                        )}
+                        {d.projectedTotal != null && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ background: "#2c6956" }} />
+                            <span>{d.age === currentAge ? "Actual" : "Projected"}: {formatFullCurrency(d.projectedTotal)}</span>
+                          </div>
+                        )}
+                        {d.planValue != null && d.projectedTotal != null && d.planValue > 0 && (
+                          <div className="border-t border-white/20 pt-1 mt-1">
+                            <p className="text-white/70">
+                              {d.projectedTotal >= d.planValue
+                                ? `${formatFullCurrency(d.projectedTotal - d.planValue)} ahead of plan`
+                                : `${formatFullCurrency(d.planValue - d.projectedTotal)} behind plan`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }}
+                />
+
+                {/* Retirement age marker */}
+                {savedSummary.retirementAge && (
+                  <ReferenceLine
+                    x={savedSummary.retirementAge}
+                    stroke="#805200"
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                    label={{
+                      value: `Retire ${savedSummary.retirementAge}`,
+                      position: "top",
+                      fill: "#805200",
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  />
+                )}
+
+                {/* Today marker */}
+                {currentAge && (
+                  <ReferenceLine
+                    x={currentAge}
+                    stroke="#3e4947"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 3"
+                    label={{
+                      value: "Today",
+                      position: "top",
+                      fill: "#3e4947",
+                      fontSize: 10,
+                      fontWeight: 600,
+                    }}
+                  />
+                )}
+
+                {/* Plan area */}
+                <Area
+                  type="monotone"
+                  dataKey="planValue"
+                  name="Savings Plan"
+                  stroke="#006761"
+                  strokeWidth={2}
+                  fill="url(#planGradient)"
+                  connectNulls
+                />
+
+                {/* Actual/Projected asset line (today and forward, dashed for future) */}
+                {assets.length > 0 && (
+                  <Line
+                    type="monotone"
+                    dataKey="projectedTotal"
+                    name="Your Assets"
+                    stroke="#2c6956"
+                    strokeWidth={2.5}
+                    strokeDasharray="6 3"
+                    dot={false}
+                    activeDot={{ r: 5, fill: "#2c6956", stroke: "#ffffff", strokeWidth: 2 }}
+                    connectNulls
+                  />
+                )}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-5 text-xs text-on-surface-variant">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-0.5 bg-primary rounded-full" />
+              <span>Savings Plan</span>
+            </div>
+            {assets.length > 0 && (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-0.5 bg-secondary rounded-full" />
+                  <span>Your Assets (actual)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-0.5 bg-secondary rounded-full" style={{ borderTop: "2px dashed #2c6956", height: 0 }} />
+                  <span>Projected</span>
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-0.5 bg-tertiary rounded-full" style={{ opacity: 0.6 }} />
+              <span>Retirement</span>
+            </div>
+            <p className="ml-auto text-xs text-on-surface-variant">
+              {((target?.expectedReturn ?? 0.07) * 100).toFixed(1)}% return, 3% inflation. Projections only.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ── No target prompt ───────────────────────────────────────────── */}
+      {!target && !editing && (
+        <section className="bg-surface-container-lowest rounded-2xl p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-primary text-[28px]">flag</span>
+          </div>
+          <h2 className="text-title-md font-bold text-on-surface">Set your financial independence target</h2>
+          <p className="text-sm text-on-surface-variant max-w-md mx-auto">
+            Define how much you need to save and by when. This becomes the benchmark shown on your dashboard chart.
+          </p>
+          <button
+            onClick={startEditing}
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all"
+          >
+            Set a Target
+          </button>
+        </section>
+      )}
+
+      {/* ── Asset Cards ────────────────────────────────────────────────── */}
+      {!editing && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">account_balance</span>
+              Your Assets
+            </h2>
+            <Link
+              href="/assets"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              View all
+            </Link>
+          </div>
+
+          {assets.length === 0 ? (
+            <div className="bg-surface-container-lowest rounded-2xl p-6 text-center">
+              <p className="text-sm text-on-surface-variant mb-3">No assets yet. Add your first account to start tracking progress against your plan.</p>
+              <Link
+                href="/assets"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Add Asset
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {assets.map(({ asset }) => {
+                const isInvestment = asset.type === "investment";
+                return (
+                  <Link
+                    key={asset.id}
+                    href={`/assets/${asset.id}`}
+                    className="group bg-surface-container-lowest rounded-2xl p-5 hover:bg-surface-container-low transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isInvestment ? "bg-primary-fixed" : "bg-surface-container-high"}`}>
+                        <span className={`material-symbols-outlined text-[16px] ${isInvestment ? "text-primary" : "text-on-surface-variant"}`}>
+                          {isInvestment ? "trending_up" : "account_balance_wallet"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-semibold tracking-widest uppercase text-on-surface-variant">
+                        {isInvestment ? "Investment" : "Simple"}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-on-surface truncate">{asset.name}</p>
+                    <p className="text-lg font-extrabold text-on-surface tracking-tight mt-0.5">
+                      {formatCurrency(asset.balance)}
+                    </p>
+                    {isInvestment && asset.returnRate != null && (
+                      <p className="text-xs text-on-surface-variant mt-1">
+                        {asset.returnRate}% expected return
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

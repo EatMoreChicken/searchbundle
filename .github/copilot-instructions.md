@@ -360,19 +360,43 @@ setTimeout(() => {
   - **Traditional**: Flat monthly amount for the entire period. Uses standard PMT formula.
   - **Back-Loaded**: Starts low, increases contributions by a configurable annual percentage (e.g. 5%/year).
 - **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getExtendedSchedule()` (generates data from current age to `maxAge`, with $0 contributions post-retirement; accepts optional `maxAge` parameter, default 100), `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
-- **Post-onboarding dashboard**: Shows greeting + Financial Independence Target section with static 4-tile summary card (Target, Target Age, Monthly Savings, Annual Savings) and a savings trajectory chart showing portfolio value and monthly contribution over time. Chart extends to the user's `projectionEndAge` (default 100) with a vertical ReferenceLine marking retirement age. Edit button opens the inline configurator.
+- **Post-onboarding dashboard**: Redirects to the main dashboard (`/dashboard`), which shows the full "single pane of glass" layout: greeting, on-track badge, key metrics strip, hero savings trajectory chart with asset projections overlay, and asset cards. See the Dashboard section below for full details.
 
 ### Dashboard
-- The dashboard (`/dashboard`) is the primary landing page after sign-in
+- The dashboard (`/dashboard`) is the primary landing page after sign-in: a "single pane of glass" overview of the user's financial position
 - If the user hasn't completed onboarding, the dashboard redirects to `/getting-started`
-- **Edit mode**: Inline form configurator (same as before) with mode selector, inputs, live summary, and save/cancel buttons. Separate from the wizard.
+- **Full-width layout**: No `max-w-3xl` constraint. Dashboard uses the full available width (`p-6 space-y-6`)
+- **Header row**: Greeting ("Hey {firstName}"), on-track badge, and Edit Target button
+- **On-track badge**: Colored pill showing how actual assets compare to the savings plan at the current age. Statuses: `ahead` (green), `on_track` (green), `slightly_behind` (amber), `behind` (red), `no_data` (gray). Component: `OnTrackBadge`. Logic: `calculateOnTrackStatus()` in `asset-projections.ts`.
+- **Key metrics strip**: 5-tile horizontal grid (Target, Target Age, Monthly, Annual, Current Assets). Only shown when a retirement target exists and not in edit mode.
+- **Hero savings trajectory chart**: 400px tall `ComposedChart` (recharts) showing:
+  - Plan area fill (teal gradient): the idealized savings schedule from the retirement strategy engine
+  - Asset projection line (dashed, secondary green): user's actual total assets projected forward using contributions + return rates
+  - "Today" `ReferenceLine` at current age (gray dashed)
+  - Retirement age `ReferenceLine` (amber dashed)
+  - Rich tooltip showing Plan vs Actual with difference calculation
+  - Legend below the chart with assumption disclaimer
+- **Time window controls**: Segmented pill selector with 3 views:
+  - **Focused** (default): `currentAge - 5` to `currentAge + 10` (plan data starts at currentAge, so effectively 0-10 years of data)
+  - **15 Years**: `currentAge - 2` to `currentAge + 15`
+  - **Full Plan**: All ages from currentAge to `projectionEndAge`
+- **Asset cards**: Grid of cards (1-4 columns responsive) linking to individual asset detail pages. Shows type icon, name, balance, and expected return for investments.
+- **No-target prompt**: CTA card shown when no retirement target exists
+- **No-asset prompt**: CTA shown in asset cards section when user has no accounts
+- **Edit mode**: Inline form configurator with mode selector, inputs, live summary, and save/cancel buttons. Replaces the metrics strip and chart while editing.
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age
   - **Income Replacement**: user enters desired annual retirement income, safe withdrawal rate (default 4%), and target age. Portfolio target = `annualIncome / withdrawalRate`.
 - Inflation adjustment: automatically applied using `target x (1 + inflationRate)^years`
-- **Live summary panel**: Shows portfolio target, years remaining, required monthly savings (PMT formula), required annual savings. Updates in real-time as user adjusts inputs.
+- **Live summary panel** (edit mode only): Shows portfolio target, years remaining, required monthly savings (PMT formula), required annual savings. Updates in real-time as user adjusts inputs.
 - **PMT formula**: `monthlySavings = target x r / ((1 + r)^n - 1)` where `r = expectedReturn/12`, `n = years x 12`
-- After save, configurator collapses to a static summary card (4-tile grid) with Edit button
+- **Asset projection utility**: `apps/web/src/lib/asset-projections.ts` contains:
+  - `buildHistorical(asset, history)`: builds chronological timeline from balance updates
+  - `projectAsset(asset, history, contributions, yearsForward, currentAge, currentYear)`: full projection for one asset (linear for simple, compound for investment)
+  - `mergeProjections(projections, yearsForward, currentAge, currentYear)`: sums all asset projections by year
+  - `buildDashboardChartData(planData, assetProjectedTotal, currentAge)`: merges plan schedule + asset projections into unified `DashboardChartPoint[]` for the chart
+  - `calculateOnTrackStatus(planValue, actualTotal)`: returns `OnTrackInfo` with status, label, ratio
+- Dashboard fetches all user assets + their history + contributions on load. Uses `fetchAssetDetails()` to parallel-fetch per-asset data.
 - DB table: `retirement_targets` (one per household, UNIQUE on `household_id`)
 - DB enum: `target_mode` with values `fixed` | `income_replacement`
 - DB enum: `savings_strategy` with values `front_loaded` | `coast_fire` | `barista_fire` | `traditional` | `back_loaded`
