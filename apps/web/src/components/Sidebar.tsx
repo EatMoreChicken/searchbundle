@@ -92,16 +92,43 @@ export default function Sidebar() {
   return (
     <aside className={`sticky top-0 flex h-screen flex-col py-6 bg-surface-container-low rounded-r-[32px] transition-all duration-300 ${collapsed ? "w-14 px-2" : "w-64 px-4"}`}>
 
-      {/* Toggle button */}
-      <button
-        onClick={() => setCollapsed((c) => !c)}
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className={`mb-6 flex items-center justify-center w-8 h-8 rounded-xl hover:bg-surface-container-high transition-all text-on-surface-variant ${collapsed ? "self-center" : "self-end"}`}
-      >
-        <span className="material-symbols-outlined text-[18px]">
-          {collapsed ? "chevron_right" : "chevron_left"}
-        </span>
-      </button>
+      {/* Brand */}
+      <div className={`mb-6 flex items-center ${collapsed ? "justify-center" : "px-4 justify-between"}`}>
+        {collapsed ? (
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container">
+            <span className="material-symbols-outlined text-[16px] text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>search</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container">
+                <span className="material-symbols-outlined text-[16px] text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>search</span>
+              </div>
+              <span className="font-headline font-extrabold text-[15px] tracking-tight text-on-surface">
+                Search<span className="text-primary">Bundle</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setCollapsed((c) => !c)}
+              title="Collapse sidebar"
+              className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-surface-container-high transition-all text-on-surface-variant"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Expand button (collapsed only) */}
+      {collapsed && (
+        <button
+          onClick={() => setCollapsed(false)}
+          title="Expand sidebar"
+          className="mb-4 flex items-center justify-center w-8 h-8 self-center rounded-xl hover:bg-surface-container-high transition-all text-on-surface-variant"
+        >
+          <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+        </button>
+      )}
 
       {/* Welcome — only shown when expanded */}
       {!collapsed && (
