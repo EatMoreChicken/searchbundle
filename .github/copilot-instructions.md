@@ -367,20 +367,26 @@ setTimeout(() => {
 - If the user hasn't completed onboarding, the dashboard redirects to `/getting-started`
 - **Full-width layout**: No `max-w-3xl` constraint. Dashboard uses the full available width (`p-6 space-y-6`)
 - **Header row**: Greeting ("Hey {firstName}"), on-track badge, and Edit Target button
-- **On-track badge**: Colored pill showing how actual assets compare to the savings plan at the current age. Statuses: `ahead` (green), `on_track` (green), `slightly_behind` (amber), `behind` (red), `no_data` (gray). Component: `OnTrackBadge`. Logic: `calculateOnTrackStatus()` in `asset-projections.ts`.
-- **Key metrics strip**: 5-tile horizontal grid (Target, Target Age, Monthly, Annual, Current Assets). Only shown when a retirement target exists and not in edit mode.
+- **On-track badge**: Colored pill showing how net worth compares to the savings plan at the current age. Statuses: `ahead` (green), `on_track` (green), `slightly_behind` (amber), `behind` (red), `no_data` (gray). Component: `OnTrackBadge`. Logic: `calculateOnTrackStatus()` in `asset-projections.ts`. Uses net worth (assets - liabilities), not just assets.
+- **Key metrics strip**: Two rows when a retirement target exists:
+  - **Primary row** (4 tiles): Target, Target Age, Monthly Savings, Annual Savings
+  - **Secondary row** (3 tiles): Net Worth (color-coded: green if positive, red if negative), Total Assets (green), Total Liabilities (red if > 0)
+  - The secondary "position" row also appears standalone (without the target row) when user has assets or debts but no retirement target.
 - **Hero savings trajectory chart**: 400px tall `ComposedChart` (recharts) showing:
   - Plan area fill (teal gradient): the idealized savings schedule from the retirement strategy engine
-  - Asset projection line (dashed, secondary green): user's actual total assets projected forward using contributions + return rates
+  - Asset projection area (green, dashed, semi-transparent): total assets projected forward using contributions + return rates
+  - Liability projection area (red, dashed, semi-transparent): total debts projected forward using amortization (minimum payments + interest rates). Debts decrease over time and reach $0 when paid off.
+  - Net Worth line (solid dark, `on-surface` color): assets minus liabilities. This is the primary "your reality" indicator.
   - "Today" `ReferenceLine` at current age (gray dashed)
   - Retirement age `ReferenceLine` (amber dashed)
-  - Rich tooltip showing Plan vs Actual with difference calculation
+  - Rich tooltip showing Plan, Net Worth, Assets, Liabilities, and ahead/behind difference
   - Legend below the chart with assumption disclaimer
 - **Time window controls**: Segmented pill selector with 3 views:
   - **Focused** (default): `currentAge - 5` to `currentAge + 10` (plan data starts at currentAge, so effectively 0-10 years of data)
   - **15 Years**: `currentAge - 2` to `currentAge + 15`
   - **Full Plan**: All ages from currentAge to `projectionEndAge`
 - **Asset cards**: Grid of cards (1-4 columns responsive) linking to individual asset detail pages. Shows type icon, name, balance, and expected return for investments.
+- **Liability cards**: Grid of cards (1-4 columns responsive) linking to individual liability detail pages. Shows type-specific icon (home, car, receipt, etc.), name, balance, interest rate, and monthly payment. Only shown when user has liabilities.
 - **No-target prompt**: CTA card shown when no retirement target exists
 - **No-asset prompt**: CTA shown in asset cards section when user has no accounts
 - **Edit mode**: Inline form configurator with mode selector, inputs, live summary, and save/cancel buttons. Replaces the metrics strip and chart while editing.
@@ -394,9 +400,11 @@ setTimeout(() => {
   - `buildHistorical(asset, history)`: builds chronological timeline from balance updates
   - `projectAsset(asset, history, contributions, yearsForward, currentAge, currentYear)`: full projection for one asset (linear for simple, compound for investment)
   - `mergeProjections(projections, yearsForward, currentAge, currentYear)`: sums all asset projections by year
-  - `buildDashboardChartData(planData, assetProjectedTotal, currentAge)`: merges plan schedule + asset projections into unified `DashboardChartPoint[]` for the chart
-  - `calculateOnTrackStatus(planValue, actualTotal)`: returns `OnTrackInfo` with status, label, ratio
-- Dashboard fetches all user assets + their history + contributions on load. Uses `fetchAssetDetails()` to parallel-fetch per-asset data.
+  - `projectDebt(debt, yearsForward, currentAge, currentYear)`: projects a single debt forward. Simple debts stay flat; debts with `minimumPayment` + `interestRate` amortize monthly to $0.
+  - `mergeDebtProjections(projections, yearsForward, currentAge, currentYear)`: sums all debt projections by year
+  - `buildDashboardChartData(planData, assetProjectedTotal, liabilityProjectedTotal, currentAge)`: merges plan schedule + asset projections + liability projections into unified `DashboardChartPoint[]` with `netWorth`, `liabilityTotal`, `projectedTotal`, and `planValue` fields
+  - `calculateOnTrackStatus(planValue, netWorth)`: returns `OnTrackInfo` with status, label, ratio. Uses net worth (assets - liabilities), not just asset total.
+- Dashboard fetches all user assets + their history + contributions on load, plus all liabilities via `GET /api/liabilities`.
 - DB table: `retirement_targets` (one per household, UNIQUE on `household_id`)
 - DB enum: `target_mode` with values `fixed` | `income_replacement`
 - DB enum: `savings_strategy` with values `front_loaded` | `coast_fire` | `barista_fire` | `traditional` | `back_loaded`

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
-import type { User, RetirementTarget, TargetMode, Asset, BalanceUpdate, AccountContribution } from "@/types";
+import type { User, RetirementTarget, TargetMode, Asset, BalanceUpdate, AccountContribution, Debt } from "@/types";
 import type { SavingsStrategy, StrategyParams } from "@/lib/retirement-strategies";
 import {
   getExtendedSchedule,
@@ -14,9 +14,12 @@ import {
 import {
   projectAsset,
   mergeProjections,
+  projectDebt,
+  mergeDebtProjections,
   buildDashboardChartData,
   calculateOnTrackStatus,
   type AssetProjectionResult,
+  type DebtProjectionResult,
   type DashboardChartPoint,
   type OnTrackInfo,
 } from "@/lib/asset-projections";
@@ -210,6 +213,12 @@ async function fetchAssetDetails(assets: Asset[]): Promise<AssetWithDetails[]> {
   return results;
 }
 
+// ─── Liability Data Fetching ─────────────────────────────────────────────────
+
+interface DebtWithDetails {
+  debt: Debt;
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -219,6 +228,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [target, setTarget] = useState<RetirementTarget | null>(null);
   const [assets, setAssets] = useState<AssetWithDetails[]>([]);
+  const [debts, setDebts] = useState<DebtWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("focused");
@@ -236,10 +246,11 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [u, t, assetList] = await Promise.all([
+      const [u, t, assetList, debtList] = await Promise.all([
         apiClient.get<User>("/api/users/me"),
         apiClient.get<RetirementTarget | null>("/api/retirement-target"),
         apiClient.get<Asset[]>("/api/assets"),
+        apiClient.get<Debt[]>("/api/liabilities"),
       ]);
 
       if ((!u.dateOfBirth || u.retirementAge == null) && !t) {
@@ -263,6 +274,11 @@ export default function DashboardPage() {
       if (assetList.length > 0) {
         const details = await fetchAssetDetails(assetList);
         setAssets(details);
+      }
+
+      // Set liability data
+      if (debtList.length > 0) {
+        setDebts(debtList.map((debt) => ({ debt })));
       }
     } catch {
       /* ignore */
@@ -288,6 +304,14 @@ export default function DashboardPage() {
     () => assets.reduce((sum, a) => sum + a.asset.balance, 0),
     [assets],
   );
+
+  // Total current liability value
+  const totalLiabilities = useMemo(
+    () => debts.reduce((sum, d) => sum + d.debt.balance, 0),
+    [debts],
+  );
+
+  const netWorth = totalAssets - totalLiabilities;
 
   // ─── Edit Mode Calculations ────────────────────────────────────────────────
 
@@ -369,12 +393,28 @@ export default function DashboardPage() {
     return mergeProjections(assetProjections, yearsForward, currentAge, currentYear);
   }, [assetProjections, currentAge, currentYear, user?.projectionEndAge]);
 
+  // ─── Liability Projections ─────────────────────────────────────────────────
+
+  const debtProjections: DebtProjectionResult[] = useMemo(() => {
+    if (!currentAge) return [];
+    const yearsForward = (user?.projectionEndAge ?? 100) - currentAge;
+    return debts.map((d) =>
+      projectDebt(d.debt, yearsForward, currentAge, currentYear),
+    );
+  }, [debts, currentAge, currentYear, user?.projectionEndAge]);
+
+  const mergedDebtProjection = useMemo(() => {
+    if (!currentAge) return [];
+    const yearsForward = (user?.projectionEndAge ?? 100) - currentAge;
+    return mergeDebtProjections(debtProjections, yearsForward, currentAge, currentYear);
+  }, [debtProjections, currentAge, currentYear, user?.projectionEndAge]);
+
   // ─── Combined Chart Data ───────────────────────────────────────────────────
 
   const dashboardChartData: DashboardChartPoint[] = useMemo(() => {
     if (!savedSummary?.chartData || !currentAge) return [];
-    return buildDashboardChartData(savedSummary.chartData, mergedAssetProjection, currentAge);
-  }, [savedSummary, mergedAssetProjection, currentAge]);
+    return buildDashboardChartData(savedSummary.chartData, mergedAssetProjection, mergedDebtProjection, currentAge);
+  }, [savedSummary, mergedAssetProjection, mergedDebtProjection, currentAge]);
 
   // Filter chart data by time window
   const visibleChartData = useMemo(() => {
@@ -404,8 +444,8 @@ export default function DashboardPage() {
     }
     const planPoint = savedSummary.chartData.find((d) => d.age === currentAge);
     const planValue = planPoint?.portfolioValue ?? 0;
-    return calculateOnTrackStatus(planValue, totalAssets);
-  }, [savedSummary, currentAge, totalAssets]);
+    return calculateOnTrackStatus(planValue, netWorth);
+  }, [savedSummary, currentAge, netWorth]);
 
   // ─── Save / Edit Handlers ──────────────────────────────────────────────────
 
@@ -642,31 +682,77 @@ export default function DashboardPage() {
 
       {/* ── Key Metrics Strip ──────────────────────────────────────────── */}
       {savedSummary && !editing && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <div className="space-y-4">
+          {/* Primary row: plan metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
+              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">{target ? formatCurrency(target.targetAmount) : ""} today</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
+              <p className="text-xl font-extrabold text-on-surface tracking-tight">{target?.targetAge}</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
+              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
+              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+            </div>
+          </div>
+
+          {/* Secondary row: current position */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
+              <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
+                {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">assets minus liabilities</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Assets</p>
+              <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
+              <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-2xl p-5">
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Liabilities</p>
+              <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-on-surface"}`}>
+                {totalLiabilities > 0 ? formatCurrency(totalLiabilities) : "$0"}
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Position Summary (shows without target too) ────────────────── */}
+      {!editing && (assets.length > 0 || debts.length > 0) && !savedSummary && (
+        <div className="grid grid-cols-3 gap-4">
           <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-            <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">{target ? formatCurrency(target.targetAmount) : ""} today</p>
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
+            <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
+              {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">assets minus liabilities</p>
           </div>
           <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
-            <p className="text-xl font-extrabold text-on-surface tracking-tight">{target?.targetAge}</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
-          </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
-            <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
-          </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
-            <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
-          </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Current Assets</p>
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Assets</p>
             <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
             <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Liabilities</p>
+            <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-on-surface"}`}>
+              {totalLiabilities > 0 ? formatCurrency(totalLiabilities) : "$0"}
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
           </div>
         </div>
       )}
@@ -704,6 +790,14 @@ export default function DashboardPage() {
                     <stop offset="5%" stopColor="#006761" stopOpacity={0.15} />
                     <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
                   </linearGradient>
+                  <linearGradient id="assetGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2c6956" stopOpacity={0.12} />
+                    <stop offset="95%" stopColor="#2c6956" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="liabilityGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ba1a1a" stopOpacity={0.10} />
+                    <stop offset="95%" stopColor="#ba1a1a" stopOpacity={0.02} />
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#bdc9c7" strokeOpacity={0.3} />
                 <XAxis
@@ -736,18 +830,30 @@ export default function DashboardPage() {
                             <span>Plan: {formatFullCurrency(d.planValue)}</span>
                           </div>
                         )}
+                        {d.netWorth != null && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ background: "#181c1b" }} />
+                            <span className="font-semibold">Net Worth: {d.netWorth < 0 ? `-${formatFullCurrency(Math.abs(d.netWorth))}` : formatFullCurrency(d.netWorth)}</span>
+                          </div>
+                        )}
                         {d.projectedTotal != null && (
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full" style={{ background: "#2c6956" }} />
-                            <span>{d.age === currentAge ? "Actual" : "Projected"}: {formatFullCurrency(d.projectedTotal)}</span>
+                            <span>Assets: {formatFullCurrency(d.projectedTotal)}</span>
                           </div>
                         )}
-                        {d.planValue != null && d.projectedTotal != null && d.planValue > 0 && (
+                        {d.liabilityTotal != null && d.liabilityTotal > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ background: "#ba1a1a" }} />
+                            <span>Liabilities: {formatFullCurrency(d.liabilityTotal)}</span>
+                          </div>
+                        )}
+                        {d.planValue != null && d.netWorth != null && d.planValue > 0 && (
                           <div className="border-t border-white/20 pt-1 mt-1">
                             <p className="text-white/70">
-                              {d.projectedTotal >= d.planValue
-                                ? `${formatFullCurrency(d.projectedTotal - d.planValue)} ahead of plan`
-                                : `${formatFullCurrency(d.planValue - d.projectedTotal)} behind plan`}
+                              {d.netWorth >= d.planValue
+                                ? `${formatFullCurrency(d.netWorth - d.planValue)} ahead of plan`
+                                : `${formatFullCurrency(d.planValue - d.netWorth)} behind plan`}
                             </p>
                           </div>
                         )}
@@ -801,17 +907,44 @@ export default function DashboardPage() {
                   connectNulls
                 />
 
-                {/* Actual/Projected asset line (today and forward, dashed for future) */}
+                {/* Asset projection area */}
                 {assets.length > 0 && (
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="projectedTotal"
-                    name="Your Assets"
+                    name="Assets"
                     stroke="#2c6956"
-                    strokeWidth={2.5}
+                    strokeWidth={1.5}
                     strokeDasharray="6 3"
+                    fill="url(#assetGradient)"
+                    connectNulls
+                  />
+                )}
+
+                {/* Liability projection area */}
+                {debts.length > 0 && (
+                  <Area
+                    type="monotone"
+                    dataKey="liabilityTotal"
+                    name="Liabilities"
+                    stroke="#ba1a1a"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 3"
+                    fill="url(#liabilityGradient)"
+                    connectNulls
+                  />
+                )}
+
+                {/* Net Worth line: the primary "your reality" indicator */}
+                {(assets.length > 0 || debts.length > 0) && (
+                  <Line
+                    type="monotone"
+                    dataKey="netWorth"
+                    name="Net Worth"
+                    stroke="#181c1b"
+                    strokeWidth={2.5}
                     dot={false}
-                    activeDot={{ r: 5, fill: "#2c6956", stroke: "#ffffff", strokeWidth: 2 }}
+                    activeDot={{ r: 5, fill: "#181c1b", stroke: "#ffffff", strokeWidth: 2 }}
                     connectNulls
                   />
                 )}
@@ -820,22 +953,28 @@ export default function DashboardPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-5 text-xs text-on-surface-variant">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-on-surface-variant">
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-0.5 bg-primary rounded-full" />
               <span>Savings Plan</span>
             </div>
+            {(assets.length > 0 || debts.length > 0) && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5 rounded-full" style={{ background: "#181c1b" }} />
+                <span>Net Worth</span>
+              </div>
+            )}
             {assets.length > 0 && (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-0.5 bg-secondary rounded-full" />
-                  <span>Your Assets (actual)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-0.5 bg-secondary rounded-full" style={{ borderTop: "2px dashed #2c6956", height: 0 }} />
-                  <span>Projected</span>
-                </div>
-              </>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5 rounded-full" style={{ background: "#2c6956" }} />
+                <span>Assets</span>
+              </div>
+            )}
+            {debts.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-0.5 rounded-full" style={{ background: "#ba1a1a" }} />
+                <span>Liabilities</span>
+              </div>
             )}
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-0.5 bg-tertiary rounded-full" style={{ opacity: 0.6 }} />
@@ -928,6 +1067,68 @@ export default function DashboardPage() {
               })}
             </div>
           )}
+        </section>
+      )}
+
+      {/* ── Liability Cards ────────────────────────────────────────────── */}
+      {!editing && debts.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-error">credit_card</span>
+              Your Liabilities
+            </h2>
+            <Link
+              href="/liabilities"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              View all
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {debts.map(({ debt }) => {
+              const typeConfig: Record<string, { icon: string; label: string }> = {
+                simple: { icon: "receipt_long", label: "Simple Debt" },
+                mortgage: { icon: "home", label: "Mortgage" },
+                auto: { icon: "directions_car", label: "Auto Loan" },
+                loan: { icon: "account_balance", label: "Loan" },
+                student_loan: { icon: "school", label: "Student Loan" },
+                credit_card: { icon: "credit_card", label: "Credit Card" },
+                other: { icon: "receipt", label: "Other" },
+              };
+              const config = typeConfig[debt.type] ?? typeConfig.other;
+
+              return (
+                <Link
+                  key={debt.id}
+                  href={`/liabilities/${debt.id}`}
+                  className="group bg-surface-container-lowest rounded-2xl p-5 hover:bg-surface-container-low transition-all"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-error-container">
+                      <span className="material-symbols-outlined text-[16px] text-on-error-container">
+                        {config.icon}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold tracking-widest uppercase text-on-surface-variant">
+                      {config.label}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-on-surface truncate">{debt.name}</p>
+                  <p className="text-lg font-extrabold text-on-surface tracking-tight mt-0.5">
+                    {formatCurrency(debt.balance)}
+                  </p>
+                  {debt.interestRate != null && debt.interestRate > 0 && (
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      {debt.interestRate}% interest
+                      {debt.minimumPayment ? ` \u00b7 ${formatFullCurrency(debt.minimumPayment)}/mo` : ""}
+                    </p>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
         </section>
       )}
     </div>
