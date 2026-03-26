@@ -22,7 +22,6 @@ const navItems: NavItem[] = [
   { href: "/tracker", icon: "query_stats", label: "Tracker" },
   { href: "/assets", icon: "account_balance_wallet", label: "Assets" },
   { href: "/liabilities", icon: "payments", label: "Liabilities" },
-  { href: "/projections", icon: "area_chart", label: "Projections" },
 ];
 
 export default function Sidebar() {
@@ -37,8 +36,21 @@ export default function Sidebar() {
 
   useEffect(() => {
     setMounted(true);
-    if (window.innerWidth < 1024) setCollapsed(true);
+    const stored = localStorage.getItem("sb-sidebar-collapsed");
+    if (stored !== null) {
+      setCollapsed(stored === "true");
+    } else {
+      setCollapsed(window.innerWidth < 1024);
+    }
   }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem("sb-sidebar-collapsed", String(next));
+      return next;
+    });
+  }
 
   const activeHouseholdId = (session as { activeHouseholdId?: string } | null)?.activeHouseholdId;
 
@@ -109,7 +121,7 @@ export default function Sidebar() {
               </span>
             </div>
             <button
-              onClick={() => setCollapsed((c) => !c)}
+              onClick={toggleCollapsed}
               title="Collapse sidebar"
               className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-surface-container-high transition-all text-on-surface-variant"
             >
@@ -122,7 +134,7 @@ export default function Sidebar() {
       {/* Expand button (collapsed only) */}
       {collapsed && (
         <button
-          onClick={() => setCollapsed(false)}
+          onClick={toggleCollapsed}
           title="Expand sidebar"
           className="mb-4 flex items-center justify-center w-8 h-8 self-center rounded-xl hover:bg-surface-container-high transition-all text-on-surface-variant"
         >

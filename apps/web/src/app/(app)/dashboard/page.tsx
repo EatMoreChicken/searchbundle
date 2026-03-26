@@ -513,7 +513,6 @@ export default function DashboardPage() {
             <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
               Hey {firstName}
             </h1>
-            {savedSummary && <OnTrackBadge info={onTrackInfo} />}
           </div>
           {target && !editing && (
             <button
@@ -768,10 +767,10 @@ export default function DashboardPage() {
             </h2>
             <div className="flex items-center gap-2">
               {/* Chart mode toggle */}
-              <div className="flex items-center gap-1 bg-surface-container rounded-full p-0.5">
+              <div className="flex items-center bg-surface-container rounded-full p-0.5">
                 <button
                   onClick={() => setChartMode("summary")}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     chartMode === "summary"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -781,7 +780,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   onClick={() => setChartMode("detailed")}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     chartMode === "detailed"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -792,10 +791,10 @@ export default function DashboardPage() {
               </div>
 
               {/* Time range controls */}
-              <div className="flex items-center gap-1 bg-surface-container rounded-full p-0.5">
+              <div className="flex items-center bg-surface-container rounded-full p-0.5">
                 <button
                   onClick={() => setTimeWindow("focused")}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     timeWindow === "focused"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -812,13 +811,13 @@ export default function DashboardPage() {
                   }`}>
                     <button
                       onClick={() => setTimeWindow("custom")}
-                      className="pl-3 pr-1 py-1 hover:text-on-surface transition-colors"
+                      className="pl-4 pr-1 py-1.5 hover:text-on-surface transition-colors"
                     >
                       {customYears} Years
                     </button>
                     <button
                       onClick={() => setShowYearMenu((v) => !v)}
-                      className="pr-2 py-1 hover:text-on-surface transition-colors"
+                      className="pr-3 py-1.5 hover:text-on-surface transition-colors"
                     >
                       <span className="material-symbols-outlined text-[13px] leading-none">
                         {showYearMenu ? "expand_less" : "expand_more"}
@@ -852,7 +851,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => setTimeWindow("all")}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     timeWindow === "all"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"

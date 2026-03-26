@@ -373,14 +373,13 @@ setTimeout(() => {
   - **Traditional**: Flat monthly amount for the entire period. Uses standard PMT formula.
   - **Back-Loaded**: Starts low, increases contributions by a configurable annual percentage (e.g. 5%/year).
 - **Strategy calculation engine**: Pure functions in `apps/web/src/lib/retirement-strategies.ts`. Key functions: `simulateGrowth()` (month-by-month simulation), `solveStartingAmount()` (binary search solver), `calculateStartingMonthly()`, `getStrategyDefaults()`, `generateSchedule()`, `getScheduleWithOverride()`, `getExtendedSchedule()` (generates data from current age to `maxAge`, with $0 contributions post-retirement; accepts optional `maxAge` parameter, default 100), `getFinalValue()`, `getStrategySummary()`, `getMiniChartData()`. Exports `STRATEGY_LIST` constant with metadata for all 5 strategies (name, subtitle, icon, description, bestFor).
-- **Post-onboarding dashboard**: Redirects to the main dashboard (`/dashboard`), which shows the full "single pane of glass" layout: greeting, on-track badge, key metrics strip, hero savings trajectory chart with asset projections overlay, and asset cards. See the Dashboard section below for full details.
+- **Post-onboarding dashboard**: Redirects to the main dashboard (`/dashboard`), which shows the full "single pane of glass" layout: greeting, key metrics strip, hero savings trajectory chart with asset projections overlay, and asset cards. See the Dashboard section below for full details.
 
 ### Dashboard
 - The dashboard (`/dashboard`) is the primary landing page after sign-in: a "single pane of glass" overview of the user's financial position
 - If the user hasn't completed onboarding, the dashboard redirects to `/getting-started`
 - **Full-width layout**: No `max-w-3xl` constraint. Dashboard uses the full available width (`p-6 space-y-6`)
-- **Hero header**: Gradient banner with decorative blurred circles (`from-primary-fixed/40 via-surface-container-lowest to-secondary-fixed/30`). Contains greeting ("Hey {firstName}"), on-track badge, and Edit Target button.
-- **On-track badge**: Colored pill showing how net worth compares to the savings plan at the current age. Statuses: `ahead` (green), `on_track` (green), `slightly_behind` (amber), `behind` (red), `no_data` (gray). Component: `OnTrackBadge`. Logic: `calculateOnTrackStatus()` in `asset-projections.ts`. Uses net worth (assets - liabilities), not just assets.
+- **Hero header**: Gradient banner with decorative blurred circles (`from-primary-fixed/40 via-surface-container-lowest to-secondary-fixed/30`). Contains greeting ("Hey {firstName}") and Edit Target button. The on-track status badge was intentionally removed; the chart communicates this visually.
 - **Key metrics strip**: Two rows when a retirement target exists:
   - **Primary row** (4 tiles): Target, Target Age, Monthly Savings, Annual Savings
   - **Secondary row** (3 tiles): Net Worth (color-coded: green if positive, red if negative), Total Assets (green), Total Liabilities (red if > 0)
@@ -441,6 +440,8 @@ setTimeout(() => {
   - `POST /api/users/me/password`: change password; requires `{ currentPassword, newPassword }`. Also clears `mustResetPassword`.
 - Household section in settings: rename household, edit financial goal, manage members, invite new members, switch between households
 - Settings link is in the Sidebar footer (icon: `manage_accounts`)
+- Sidebar collapsed state is persisted via `localStorage` key `"sb-sidebar-collapsed"` (`"true"` / `"false"`). Falls back to `window.innerWidth < 1024` on first load.
+- Sidebar nav items: Dashboard, Tracker, Assets, Liabilities. The Projections page/nav item has been removed.
 
 ---
 
