@@ -51,6 +51,7 @@ export interface Asset {
   returnRate: number | null;
   returnRateVariance: number | null;
   includeInflation: boolean;
+  archivedAt: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +80,7 @@ export interface Debt {
   loanStartDate: string | null;
   loanTermMonths: number | null;
   vehicleValue: number | null;
+  archivedAt: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -86,6 +86,7 @@ export const accounts = pgTable("accounts", {
   returnRate: numeric("return_rate", { precision: 6, scale: 4 }),
   returnRateVariance: numeric("return_rate_variance", { precision: 6, scale: 4 }).default("0"),
   includeInflation: boolean("include_inflation").default(false).notNull(),
+  archivedAt: timestamp("archived_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -111,6 +112,7 @@ export const debts = pgTable("debts", {
   loanStartDate: date("loan_start_date"),
   loanTermMonths: integer("loan_term_months"),
   vehicleValue: numeric("vehicle_value", { precision: 14, scale: 2 }),
+  archivedAt: timestamp("archived_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

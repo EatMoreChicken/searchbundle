@@ -368,6 +368,16 @@ export function buildDashboardChartData(
 
   const sortedAges = Array.from(allAges).sort((a, b) => a - b);
 
+  // Find the age at which all liabilities are paid off (value reaches 0 and stays 0)
+  let liabilitiesPaidOffAge: number | null = null;
+  for (const age of sortedAges) {
+    const debtValue = debtByAge.get(age) ?? null;
+    if (debtValue != null && debtValue <= 0 && age > currentAge) {
+      liabilitiesPaidOffAge = age;
+      break;
+    }
+  }
+
   return sortedAges.map((age) => {
     const plan = planByAge.get(age);
     const assetValue = projByAge.get(age) ?? null;
@@ -376,6 +386,9 @@ export function buildDashboardChartData(
     const hasData = age >= currentAge && (assetValue != null || debtValue != null);
     const netWorthValue = hasData ? (assetValue ?? 0) - (debtValue ?? 0) : null;
 
+    // Stop rendering liability line once liabilities are fully paid off
+    const showLiability = age >= currentAge && debtValue != null && (liabilitiesPaidOffAge == null || age <= liabilitiesPaidOffAge);
+
     return {
       year: plan?.year ?? (new Date().getFullYear() + (age - currentAge)),
       age,
@@ -383,7 +396,7 @@ export function buildDashboardChartData(
       planMonthlyContribution: plan?.monthlyContribution ?? null,
       actualTotal: age === currentAge ? (assetValue ?? null) : null,
       projectedTotal: age >= currentAge ? (assetValue ?? null) : null,
-      liabilityTotal: age >= currentAge ? debtValue : null,
+      liabilityTotal: showLiability ? debtValue : null,
       netWorth: netWorthValue,
     };
   });

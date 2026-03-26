@@ -51,6 +51,7 @@ export async function PUT(
   const {
     name, type, balance, currency, notes, ownerId,
     contributionAmount, contributionFrequency, returnRate, returnRateVariance, includeInflation,
+    archivedAt,
   } = body as {
     name?: string;
     type?: string;
@@ -63,6 +64,7 @@ export async function PUT(
     returnRate?: unknown;
     returnRateVariance?: unknown;
     includeInflation?: boolean;
+    archivedAt?: string | null;
   };
 
   const updates: Partial<typeof accounts.$inferInsert> = { updatedAt: new Date() };
@@ -77,6 +79,7 @@ export async function PUT(
   if (returnRate !== undefined) updates.returnRate = returnRate != null ? String(returnRate) : null;
   if (returnRateVariance !== undefined) updates.returnRateVariance = returnRateVariance != null ? String(returnRateVariance) : null;
   if (includeInflation !== undefined) updates.includeInflation = includeInflation;
+  if (archivedAt !== undefined) updates.archivedAt = archivedAt ? new Date(archivedAt) : null;
 
   const [row] = await getDb()
     .update(accounts)

@@ -60,7 +60,7 @@ export async function PUT(
     name, type, balance, originalBalance, interestRate, minimumPayment,
     escrowAmount, remainingMonths, notes, ownerId, interestAccrualMethod,
     homeValue, pmiMonthly, propertyTaxYearly, homeInsuranceYearly,
-    loanStartDate, loanTermMonths, vehicleValue,
+    loanStartDate, loanTermMonths, vehicleValue, archivedAt,
   } = body as Record<string, unknown>;
 
   const updates: Partial<typeof debts.$inferInsert> = { updatedAt: new Date() };
@@ -82,6 +82,7 @@ export async function PUT(
   if (loanStartDate !== undefined) updates.loanStartDate = (loanStartDate as string) ?? null;
   if (loanTermMonths !== undefined) updates.loanTermMonths = loanTermMonths != null ? Number(loanTermMonths) : null;
   if (vehicleValue !== undefined) updates.vehicleValue = vehicleValue != null ? String(vehicleValue) : null;
+  if (archivedAt !== undefined) updates.archivedAt = archivedAt ? new Date(archivedAt as string) : null;
 
   const [row] = await getDb()
     .update(debts)

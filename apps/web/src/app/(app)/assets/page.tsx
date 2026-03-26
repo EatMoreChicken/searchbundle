@@ -91,11 +91,13 @@ export default function AssetsPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [archiveConfirm, setArchiveConfirm] = useState<string | null>(null);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   async function fetchAssets() {
     setLoading(true);
     try {
-      const data = await apiClient.get<Asset[]>("/api/assets");
+      const data = await apiClient.get<Asset[]>("/api/assets?includeArchived=true");
       setAssetList(data);
     } finally {
       setLoading(false);
@@ -166,7 +168,20 @@ export default function AssetsPage() {
     await fetchAssets();
   }
 
-  const totalBalance = assetList.reduce((sum, a) => sum + a.balance, 0);
+  async function handleArchive(id: string) {
+    await apiClient.put(`/api/assets/${id}`, { archivedAt: new Date().toISOString() });
+    setArchiveConfirm(null);
+    await fetchAssets();
+  }
+
+  async function handleUnarchive(id: string) {
+    await apiClient.put(`/api/assets/${id}`, { archivedAt: null });
+    await fetchAssets();
+  }
+
+  const activeAssets = assetList.filter((a) => !a.archivedAt);
+  const archivedAssets = assetList.filter((a) => !!a.archivedAt);
+  const totalBalance = activeAssets.reduce((sum, a) => sum + a.balance, 0);
 
   return (
     <div className="min-h-screen p-6">
@@ -194,7 +209,7 @@ export default function AssetsPage() {
       {/* Content */}
       {loading ? (
         <div className="mt-16 text-center text-[14px] text-on-surface-variant">Loading…</div>
-      ) : assetList.length === 0 ? (
+      ) : activeAssets.length === 0 && archivedAssets.length === 0 ? (
         <div className="mt-16 flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed/30">
             <span className="material-symbols-outlined text-[22px] text-primary">account_balance_wallet</span>
@@ -211,60 +226,165 @@ export default function AssetsPage() {
           </button>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {assetList.map((asset) => (
-            <div
-              key={asset.id}
-              onClick={() => router.push(`/assets/${asset.id}`)}
-              className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-fixed/30">
-                    <span className="material-symbols-outlined text-[16px] text-primary">
-                      {TYPE_ICON_NAMES[asset.type] ?? "account_balance_wallet"}
-                    </span>
+        <div className="mt-8 space-y-8">
+          {activeAssets.length > 0 && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {activeAssets.map((asset) => (
+                <div
+                  key={asset.id}
+                  onClick={() => router.push(`/assets/${asset.id}`)}
+                  className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-fixed/30">
+                        <span className="material-symbols-outlined text-[16px] text-primary">
+                          {TYPE_ICON_NAMES[asset.type] ?? "account_balance_wallet"}
+                        </span>
+                      </div>
+                      <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
+                        {TYPE_LABELS[asset.type] ?? asset.type}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={(e) => openEdit(asset, e)}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setArchiveConfirm(asset.id); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-tertiary-fixed hover:text-tertiary"
+                        title="Archive"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(asset.id); }}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">delete</span>
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
-                    {TYPE_LABELS[asset.type] ?? asset.type}
-                  </span>
-                </div>
-                <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    onClick={(e) => openEdit(asset, e)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">edit</span>
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(asset.id); }}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">delete</span>
-                  </button>
-                </div>
-              </div>
 
-              <p className="mt-4 text-[17px] font-semibold text-on-surface">{asset.name}</p>
-              <p className="mt-1 text-3xl font-bold tracking-tight text-on-surface">
-                {formatCurrency(asset.balance, asset.currency)}
-              </p>
+                  <p className="mt-4 text-[17px] font-semibold text-on-surface">{asset.name}</p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-on-surface">
+                    {formatCurrency(asset.balance, asset.currency)}
+                  </p>
 
-              {asset.notes && (
-                <p className="mt-3 text-[12px] text-on-surface-variant line-clamp-2">{asset.notes}</p>
-              )}
+                  {asset.balance === 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setArchiveConfirm(asset.id); }}
+                      className="mt-3 flex items-center gap-1.5 rounded-full bg-tertiary-fixed/50 px-3 py-1.5 text-[11px] font-semibold text-on-tertiary-fixed-variant transition-colors hover:bg-tertiary-fixed"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                      Balance is zero. Archive this?
+                    </button>
+                  )}
 
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-[11px] text-on-surface-variant">
-                  Added {formatDate(asset.createdAt)}
-                </span>
-                <div className="flex items-center gap-1 text-[12px] text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  <span>View details</span>
+                  {asset.notes && (
+                    <p className="mt-3 text-[12px] text-on-surface-variant line-clamp-2">{asset.notes}</p>
+                  )}
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-[11px] text-on-surface-variant">
+                      Added {formatDate(asset.createdAt)}
+                    </span>
+                    <div className="flex items-center gap-1 text-[12px] text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      <span>View details</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {activeAssets.length === 0 && archivedAssets.length > 0 && (
+            <div className="flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-fixed/30">
+                <span className="material-symbols-outlined text-[22px] text-primary">account_balance_wallet</span>
+              </div>
+              <h2 className="mt-5 font-headline font-extrabold text-2xl text-on-surface">All assets archived</h2>
+              <p className="mt-2 max-w-sm text-[14px] text-on-surface-variant">
+                All your assets are currently archived. Add a new one or restore an archived asset below.
+              </p>
+              <button
+                onClick={openAdd}
+                className="mt-6 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
+              >
+                Add Asset
+              </button>
+            </div>
+          )}
+
+          {archivedAssets.length > 0 && (
+            <div>
+              <button
+                onClick={() => setArchivedOpen(!archivedOpen)}
+                className="flex items-center gap-2 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[18px]" style={{ transform: archivedOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                  chevron_right
+                </span>
+                Archived ({archivedAssets.length})
+              </button>
+
+              {archivedOpen && (
+                <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {archivedAssets.map((asset) => (
+                    <div
+                      key={asset.id}
+                      onClick={() => router.push(`/assets/${asset.id}`)}
+                      className="group relative cursor-pointer rounded-2xl bg-surface-container-low p-8 opacity-60 transition-all hover:opacity-100"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-container-high">
+                            <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
+                              {TYPE_ICON_NAMES[asset.type] ?? "account_balance_wallet"}
+                            </span>
+                          </div>
+                          <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
+                            {TYPE_LABELS[asset.type] ?? asset.type}
+                          </span>
+                        </div>
+                        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleUnarchive(asset.id); }}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary"
+                            title="Restore"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">unarchive</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(asset.id); }}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-[17px] font-semibold text-on-surface">{asset.name}</p>
+                      <p className="mt-1 text-3xl font-bold tracking-tight text-on-surface-variant">
+                        {formatCurrency(asset.balance, asset.currency)}
+                      </p>
+
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[14px] text-on-surface-variant">inventory_2</span>
+                        <span className="text-[11px] text-on-surface-variant">
+                          Archived {asset.archivedAt ? formatDate(asset.archivedAt) : ""}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -454,6 +574,44 @@ export default function AssetsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Archive confirmation */}
+      {archiveConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
+          onClick={(e) => { if (e.target === e.currentTarget) setArchiveConfirm(null); }}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed">
+              <span className="material-symbols-outlined text-[22px] text-tertiary">inventory_2</span>
+            </div>
+            <h2 className="mt-4 font-headline font-extrabold text-2xl text-on-surface">Archive this asset?</h2>
+            <div className="mt-3 space-y-2 text-[13px] text-on-surface-variant">
+              <p>Archiving will:</p>
+              <ul className="ml-4 list-disc space-y-1">
+                <li>Remove it from your dashboard and projections</li>
+                <li>Pause any planned contributions</li>
+                <li>Keep all history, notes, and data intact</li>
+              </ul>
+              <p>You can restore it at any time from the Archived section.</p>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setArchiveConfirm(null)}
+                className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleArchive(archiveConfirm)}
+                className="flex-1 rounded-full bg-gradient-to-r from-tertiary to-tertiary-container py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
+              >
+                Archive
+              </button>
+            </div>
           </div>
         </div>
       )}

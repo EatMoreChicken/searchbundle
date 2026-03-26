@@ -47,6 +47,11 @@ function formatMonths(months: number): string {
   return `${y}yr ${m}mo`;
 }
 
+function formatDate(dateStr: string | Date) {
+  const d = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 interface FormState {
   name: string;
   type: DebtType;
@@ -122,12 +127,14 @@ export default function LiabilitiesPage() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [archiveConfirm, setArchiveConfirm] = useState<string | null>(null);
+  const [archivedOpen, setArchivedOpen] = useState(false);
   const [step, setStep] = useState<"type" | "details">("type");
 
   async function fetchDebts() {
     setLoading(true);
     try {
-      const data = await apiClient.get<Debt[]>("/api/liabilities");
+      const data = await apiClient.get<Debt[]>("/api/liabilities?includeArchived=true");
       setDebtList(data);
     } finally {
       setLoading(false);
@@ -214,7 +221,20 @@ export default function LiabilitiesPage() {
     await fetchDebts();
   }
 
-  const totalBalance = debtList.reduce((sum, d) => sum + d.balance, 0);
+  async function handleArchive(id: string) {
+    await apiClient.put(`/api/liabilities/${id}`, { archivedAt: new Date().toISOString() });
+    setArchiveConfirm(null);
+    await fetchDebts();
+  }
+
+  async function handleUnarchive(id: string) {
+    await apiClient.put(`/api/liabilities/${id}`, { archivedAt: null });
+    await fetchDebts();
+  }
+
+  const activeDebts = debtList.filter((d) => !d.archivedAt);
+  const archivedDebts = debtList.filter((d) => !!d.archivedAt);
+  const totalBalance = activeDebts.reduce((sum, d) => sum + d.balance, 0);
 
   return (
     <div className="min-h-screen p-6">
@@ -244,7 +264,7 @@ export default function LiabilitiesPage() {
       {/* Content */}
       {loading ? (
         <div className="mt-16 text-center text-[14px] text-on-surface-variant">Loading...</div>
-      ) : debtList.length === 0 ? (
+      ) : activeDebts.length === 0 && archivedDebts.length === 0 ? (
         <div className="mt-16 flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error-container">
             <span className="material-symbols-outlined text-[22px] text-error">credit_card</span>
@@ -261,108 +281,211 @@ export default function LiabilitiesPage() {
           </button>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {debtList.map((debt) => {
-            const payoffMonths = debt.remainingMonths
-              ?? (debt.interestRate != null && debt.minimumPayment != null
-                ? estimatePayoffMonths(debt.balance, debt.interestRate, debt.minimumPayment)
-                : null);
-            const paidDown = debt.originalBalance != null && debt.originalBalance > 0
-              ? ((debt.originalBalance - debt.balance) / debt.originalBalance) * 100
-              : 0;
+        <div className="mt-8 space-y-8">
+          {activeDebts.length > 0 && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {activeDebts.map((debt) => {
+                const payoffMonths = debt.remainingMonths
+                  ?? (debt.interestRate != null && debt.minimumPayment != null
+                    ? estimatePayoffMonths(debt.balance, debt.interestRate, debt.minimumPayment)
+                    : null);
+                const paidDown = debt.originalBalance != null && debt.originalBalance > 0
+                  ? ((debt.originalBalance - debt.balance) / debt.originalBalance) * 100
+                  : 0;
 
-            return (
-              <div
-                key={debt.id}
-                onClick={() => router.push(`/liabilities/${debt.id}`)}
-                className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-error-container">
-                      <span className="material-symbols-outlined text-[16px] text-error">{TYPE_ICONS[debt.type] ?? "radio_button_checked"}</span>
+                return (
+                  <div
+                    key={debt.id}
+                    onClick={() => router.push(`/liabilities/${debt.id}`)}
+                    className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-error-container">
+                          <span className="material-symbols-outlined text-[16px] text-error">{TYPE_ICONS[debt.type] ?? "radio_button_checked"}</span>
+                        </div>
+                        <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
+                          {TYPE_LABELS[debt.type] ?? debt.type}
+                        </span>
+                      </div>
+                      <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          onClick={(e) => openEdit(debt, e)}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setArchiveConfirm(debt.id); }}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-tertiary-fixed hover:text-tertiary"
+                          title="Archive"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirm(debt.id); }}
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
-                      {TYPE_LABELS[debt.type] ?? debt.type}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={(e) => openEdit(debt, e)}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">edit</span>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeleteConfirm(debt.id); }}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">delete</span>
-                    </button>
-                  </div>
-                </div>
 
-                <p className="mt-4 text-[17px] font-semibold text-on-surface">{debt.name}</p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-error">
-                  {formatCurrency(debt.balance)}
-                </p>
+                    <p className="mt-4 text-[17px] font-semibold text-on-surface">{debt.name}</p>
+                    <p className="mt-1 text-3xl font-bold tracking-tight text-error">
+                      {formatCurrency(debt.balance)}
+                    </p>
 
-                {debt.type !== "simple" && (
-                  <div className="mt-4 pt-4">
-                    {debt.originalBalance != null && debt.originalBalance > 0 && (
-                      <>
-                        <div className="flex items-center justify-between text-[12px]">
-                          <span className="text-on-surface-variant">Paid off</span>
-                          <span className="font-semibold text-secondary">{paidDown.toFixed(1)}%</span>
-                        </div>
-                        <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-container-highest">
-                          <div
-                            className="h-full rounded-full bg-secondary transition-all"
-                            style={{ width: `${Math.min(100, paidDown)}%` }}
-                          />
-                        </div>
-                      </>
+                    {debt.balance === 0 && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setArchiveConfirm(debt.id); }}
+                        className="mt-3 flex items-center gap-1.5 rounded-full bg-tertiary-fixed/50 px-3 py-1.5 text-[11px] font-semibold text-on-tertiary-fixed-variant transition-colors hover:bg-tertiary-fixed"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                        Balance is zero. Archive this?
+                      </button>
                     )}
-                    <div className="mt-3 flex items-center justify-between">
-                      {debt.interestRate != null && (
-                        <div>
-                          <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Rate</p>
-                          <span className="rounded-full bg-tertiary-fixed px-2.5 py-1 text-[11px] font-semibold text-tertiary">
-                            {debt.interestRate}%
+
+                    {debt.type !== "simple" && (
+                      <div className="mt-4 pt-4">
+                        {debt.originalBalance != null && debt.originalBalance > 0 && (
+                          <>
+                            <div className="flex items-center justify-between text-[12px]">
+                              <span className="text-on-surface-variant">Paid off</span>
+                              <span className="font-semibold text-secondary">{paidDown.toFixed(1)}%</span>
+                            </div>
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-container-highest">
+                              <div
+                                className="h-full rounded-full bg-secondary transition-all"
+                                style={{ width: `${Math.min(100, paidDown)}%` }}
+                              />
+                            </div>
+                          </>
+                        )}
+                        <div className="mt-3 flex items-center justify-between">
+                          {debt.interestRate != null && (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Rate</p>
+                              <span className="rounded-full bg-tertiary-fixed px-2.5 py-1 text-[11px] font-semibold text-tertiary">
+                                {debt.interestRate}%
+                              </span>
+                            </div>
+                          )}
+                          {debt.minimumPayment != null && (
+                            <div className="text-right">
+                              <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Payment</p>
+                              <p className="text-[14px] font-bold text-on-surface">
+                                {formatCurrency(debt.minimumPayment)}/mo
+                              </p>
+                            </div>
+                          )}
+                          {payoffMonths != null && (
+                            <div className="text-right">
+                              <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Payoff</p>
+                              <p className="text-[13px] font-semibold text-on-surface">
+                                {formatMonths(payoffMonths)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {debt.notes && (
+                      <p className="mt-3 text-[12px] text-on-surface-variant line-clamp-2">{debt.notes}</p>
+                    )}
+
+                    <div className="mt-3 flex items-center gap-1 text-[12px] text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      <span>View details</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {activeDebts.length === 0 && archivedDebts.length > 0 && (
+            <div className="flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error-container">
+                <span className="material-symbols-outlined text-[22px] text-error">credit_card</span>
+              </div>
+              <h2 className="mt-5 font-headline font-extrabold text-2xl text-on-surface">All liabilities archived</h2>
+              <p className="mt-2 max-w-sm text-[14px] text-on-surface-variant">
+                All your liabilities are currently archived. Add a new one or restore an archived liability below.
+              </p>
+              <button
+                onClick={openAdd}
+                className="mt-6 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
+              >
+                Add Liability
+              </button>
+            </div>
+          )}
+
+          {archivedDebts.length > 0 && (
+            <div>
+              <button
+                onClick={() => setArchivedOpen(!archivedOpen)}
+                className="flex items-center gap-2 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[18px]" style={{ transform: archivedOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                  chevron_right
+                </span>
+                Archived ({archivedDebts.length})
+              </button>
+
+              {archivedOpen && (
+                <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {archivedDebts.map((debt) => (
+                    <div
+                      key={debt.id}
+                      onClick={() => router.push(`/liabilities/${debt.id}`)}
+                      className="group relative cursor-pointer rounded-2xl bg-surface-container-low p-8 opacity-60 transition-all hover:opacity-100"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-container-high">
+                            <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{TYPE_ICONS[debt.type] ?? "radio_button_checked"}</span>
+                          </div>
+                          <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
+                            {TYPE_LABELS[debt.type] ?? debt.type}
                           </span>
                         </div>
-                      )}
-                      {debt.minimumPayment != null && (
-                        <div className="text-right">
-                          <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Payment</p>
-                          <p className="text-[14px] font-bold text-on-surface">
-                            {formatCurrency(debt.minimumPayment)}/mo
-                          </p>
+                        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleUnarchive(debt.id); }}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary"
+                            title="Restore"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">unarchive</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(debt.id); }}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
                         </div>
-                      )}
-                      {payoffMonths != null && (
-                        <div className="text-right">
-                          <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Payoff</p>
-                          <p className="text-[13px] font-semibold text-on-surface">
-                            {formatMonths(payoffMonths)}
-                          </p>
-                        </div>
-                      )}
+                      </div>
+
+                      <p className="mt-4 text-[17px] font-semibold text-on-surface">{debt.name}</p>
+                      <p className="mt-1 text-3xl font-bold tracking-tight text-on-surface-variant">
+                        {formatCurrency(debt.balance)}
+                      </p>
+
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[14px] text-on-surface-variant">inventory_2</span>
+                        <span className="text-[11px] text-on-surface-variant">
+                          Archived {debt.archivedAt ? formatDate(debt.archivedAt) : ""}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {debt.notes && (
-                  <p className="mt-3 text-[12px] text-on-surface-variant line-clamp-2">{debt.notes}</p>
-                )}
-
-                <div className="mt-3 flex items-center gap-1 text-[12px] text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                  <span>View details</span>
+                  ))}
                 </div>
-              </div>
-            );
-          })}
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -745,6 +868,44 @@ export default function LiabilitiesPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Archive confirmation */}
+      {archiveConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
+          onClick={(e) => { if (e.target === e.currentTarget) setArchiveConfirm(null); }}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed">
+              <span className="material-symbols-outlined text-[22px] text-tertiary">inventory_2</span>
+            </div>
+            <h2 className="mt-4 font-headline font-extrabold text-2xl text-on-surface">Archive this liability?</h2>
+            <div className="mt-3 space-y-2 text-[13px] text-on-surface-variant">
+              <p>Archiving will:</p>
+              <ul className="ml-4 list-disc space-y-1">
+                <li>Remove it from your dashboard and projections</li>
+                <li>Pause any recurring payment tracking</li>
+                <li>Keep all history, notes, and data intact</li>
+              </ul>
+              <p>You can restore it at any time from the Archived section.</p>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setArchiveConfirm(null)}
+                className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleArchive(archiveConfirm)}
+                className="flex-1 rounded-full bg-gradient-to-r from-tertiary to-tertiary-container py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
+              >
+                Archive
+              </button>
+            </div>
           </div>
         </div>
       )}

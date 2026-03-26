@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, debts } from "@searchbundle/db";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type DebtRow = typeof debts.$inferSelect;
@@ -23,14 +23,22 @@ function parseDebt(row: DebtRow) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getHouseholdSession();
   if ("error" in session) return session.error;
+
+  const { searchParams } = new URL(request.url);
+  const includeArchived = searchParams.get("includeArchived") === "true";
+
+  const conditions = [eq(debts.householdId, session.householdId)];
+  if (!includeArchived) {
+    conditions.push(isNull(debts.archivedAt));
+  }
 
   const rows = await getDb()
     .select()
     .from(debts)
-    .where(eq(debts.householdId, session.householdId));
+    .where(and(...conditions));
 
   return NextResponse.json(rows.map(parseDebt));
 }

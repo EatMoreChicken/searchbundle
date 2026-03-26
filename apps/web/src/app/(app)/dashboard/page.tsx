@@ -184,13 +184,10 @@ function OnTrackBadge({ info }: { info: OnTrackInfo }) {
 
 // ─── Chart Time Window ───────────────────────────────────────────────────────
 
-type TimeWindow = "focused" | "15y" | "all";
+type TimeWindow = "focused" | "custom" | "all";
+type ChartMode = "summary" | "detailed";
 
-const TIME_WINDOWS: { key: TimeWindow; label: string }[] = [
-  { key: "focused", label: "Focused" },
-  { key: "15y", label: "15 Years" },
-  { key: "all", label: "Full Plan" },
-];
+const YEAR_RANGE_OPTIONS = [5, 10, 15, 20, 25];
 
 // ─── Asset Data Fetching ─────────────────────────────────────────────────────
 
@@ -232,6 +229,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [timeWindow, setTimeWindow] = useState<TimeWindow>("focused");
+  const [customYears, setCustomYears] = useState(15);
+  const [chartMode, setChartMode] = useState<ChartMode>("summary");
+  const [showYearMenu, setShowYearMenu] = useState(false);
 
   // Target configurator form state
   const [mode, setMode] = useState<TargetMode>("income_replacement");
@@ -349,13 +349,13 @@ export default function DashboardPage() {
     if (!target || !currentAge) return null;
     const years = target.targetAge - currentAge;
     if (years <= 0) return null;
-    const inflAdjTarget = target.targetAmount * Math.pow(1 + INFLATION_RATE, years);
-    const monthly = calculateMonthlySavings(inflAdjTarget, target.expectedReturn ?? 0.07, years);
+    const rawTarget = target.targetAmount;
+    const monthly = calculateMonthlySavings(rawTarget, target.expectedReturn ?? 0.07, years);
 
     const strategy = (target.savingsStrategy ?? "traditional") as SavingsStrategy;
     const params: StrategyParams = {
       strategy,
-      targetAmount: inflAdjTarget,
+      targetAmount: rawTarget,
       years,
       annualReturn: target.expectedReturn ?? 0.07,
       annualChangeRate: target.strategyAnnualChangeRate ?? undefined,
@@ -374,7 +374,7 @@ export default function DashboardPage() {
       projectionEndAge,
     );
 
-    return { years, monthly, annual: monthly * 12, inflAdjTarget, chartData, retirementAge: target.targetAge };
+    return { years, monthly, annual: monthly * 12, targetAmount: rawTarget, chartData, retirementAge: target.targetAge };
   }, [target, currentAge, currentYear, user?.projectionEndAge]);
 
   // ─── Asset Projections ─────────────────────────────────────────────────────
@@ -426,15 +426,15 @@ export default function DashboardPage() {
         const maxAge = currentAge + 10;
         return dashboardChartData.filter((d) => d.age >= minAge && d.age <= maxAge);
       }
-      case "15y": {
+      case "custom": {
         const minAge = currentAge - 2;
-        const maxAge = currentAge + 15;
+        const maxAge = currentAge + customYears;
         return dashboardChartData.filter((d) => d.age >= minAge && d.age <= maxAge);
       }
       case "all":
         return dashboardChartData;
     }
-  }, [dashboardChartData, currentAge, timeWindow]);
+  }, [dashboardChartData, currentAge, timeWindow, customYears]);
 
   // ─── On-Track Status ───────────────────────────────────────────────────────
 
@@ -503,26 +503,28 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* ── Header Row ─────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase mb-1">Dashboard</p>
+      {/* ── Hero Header ────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-fixed/40 via-surface-container-lowest to-secondary-fixed/30 rounded-2xl p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-fixed/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary-fixed/25 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase">Dashboard</p>
             <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
               Hey {firstName}
             </h1>
+            {savedSummary && <OnTrackBadge info={onTrackInfo} />}
           </div>
-          {savedSummary && <OnTrackBadge info={onTrackInfo} />}
+          {target && !editing && (
+            <button
+              onClick={startEditing}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-primary hover:bg-primary-fixed/40 transition-all"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+              Edit Target
+            </button>
+          )}
         </div>
-        {target && !editing && (
-          <button
-            onClick={startEditing}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-primary hover:bg-primary-fixed/40 transition-all"
-          >
-            <span className="material-symbols-outlined text-[18px]">edit</span>
-            Edit Target
-          </button>
-        )}
       </div>
 
       {/* ── Edit Target Modal ──────────────────────────────────────────── */}
@@ -687,8 +689,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-surface-container-lowest rounded-2xl p-5">
               <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.inflAdjTarget)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{target ? formatCurrency(target.targetAmount) : ""} today</p>
+              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.targetAmount)}</p>
             </div>
             <div className="bg-surface-container-lowest rounded-2xl p-5">
               <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
@@ -760,35 +761,116 @@ export default function DashboardPage() {
       {/* ── Hero Chart ─────────────────────────────────────────────────── */}
       {savedSummary && !editing && visibleChartData.length > 1 && (
         <section className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
               Savings Trajectory
             </h2>
-            <div className="flex items-center gap-1 bg-surface-container rounded-full p-0.5">
-              {TIME_WINDOWS.map((tw) => (
+            <div className="flex items-center gap-2">
+              {/* Chart mode toggle */}
+              <div className="flex items-center gap-1 bg-surface-container rounded-full p-0.5">
                 <button
-                  key={tw.key}
-                  onClick={() => setTimeWindow(tw.key)}
+                  onClick={() => setChartMode("summary")}
                   className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                    timeWindow === tw.key
+                    chartMode === "summary"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
-                  {tw.label}
+                  Summary
                 </button>
-              ))}
+                <button
+                  onClick={() => setChartMode("detailed")}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    chartMode === "detailed"
+                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                      : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+                >
+                  Detailed
+                </button>
+              </div>
+
+              {/* Time range controls */}
+              <div className="flex items-center gap-1 bg-surface-container rounded-full p-0.5">
+                <button
+                  onClick={() => setTimeWindow("focused")}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    timeWindow === "focused"
+                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                      : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+                >
+                  Focused
+                </button>
+                <div className="relative">
+                  {/* Split button: label selects, chevron opens dropdown */}
+                  <div className={`flex items-center rounded-full text-xs font-semibold transition-all ${
+                    timeWindow === "custom"
+                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                      : "text-on-surface-variant"
+                  }`}>
+                    <button
+                      onClick={() => setTimeWindow("custom")}
+                      className="pl-3 pr-1 py-1 hover:text-on-surface transition-colors"
+                    >
+                      {customYears} Years
+                    </button>
+                    <button
+                      onClick={() => setShowYearMenu((v) => !v)}
+                      className="pr-2 py-1 hover:text-on-surface transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[13px] leading-none">
+                        {showYearMenu ? "expand_less" : "expand_more"}
+                      </span>
+                    </button>
+                  </div>
+                  {showYearMenu && (
+                    <>
+                      <div className="fixed inset-0 z-20" onClick={() => setShowYearMenu(false)} />
+                      <div className="absolute top-full right-0 mt-1 z-30 bg-surface-container-lowest rounded-xl shadow-lg overflow-hidden border border-outline-variant/20 min-w-[110px]">
+                      {YEAR_RANGE_OPTIONS.map((yr) => (
+                        <button
+                          key={yr}
+                          onClick={() => {
+                            setCustomYears(yr);
+                            setTimeWindow("custom");
+                            setShowYearMenu(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors ${
+                            customYears === yr && timeWindow === "custom"
+                              ? "bg-primary-fixed text-primary"
+                              : "text-on-surface hover:bg-surface-container"
+                          }`}
+                        >
+                          {yr} Years
+                        </button>
+                      ))}
+                    </div>
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={() => setTimeWindow("all")}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    timeWindow === "all"
+                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                      : "text-on-surface-variant hover:text-on-surface"
+                  }`}
+                >
+                  Full Plan
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={visibleChartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+              <ComposedChart data={visibleChartData} margin={{ top: 30, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="planGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#006761" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#006761" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor="#006761" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#006761" stopOpacity={0.03} />
                   </linearGradient>
                   <linearGradient id="assetGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2c6956" stopOpacity={0.12} />
@@ -797,6 +879,10 @@ export default function DashboardPage() {
                   <linearGradient id="liabilityGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#ba1a1a" stopOpacity={0.10} />
                     <stop offset="95%" stopColor="#ba1a1a" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#96f3e9" stopOpacity={0.55} />
+                    <stop offset="95%" stopColor="#96f3e9" stopOpacity={0.04} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#bdc9c7" strokeOpacity={0.3} />
@@ -826,25 +912,25 @@ export default function DashboardPage() {
                         </p>
                         {d.planValue != null && (
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#006761" }} />
                             <span>Plan: {formatFullCurrency(d.planValue)}</span>
                           </div>
                         )}
                         {d.netWorth != null && (
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ background: "#181c1b" }} />
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#006761", border: "2px solid #96f3e9" }} />
                             <span className="font-semibold">Net Worth: {d.netWorth < 0 ? `-${formatFullCurrency(Math.abs(d.netWorth))}` : formatFullCurrency(d.netWorth)}</span>
                           </div>
                         )}
                         {d.projectedTotal != null && (
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ background: "#2c6956" }} />
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#2c6956" }} />
                             <span>Assets: {formatFullCurrency(d.projectedTotal)}</span>
                           </div>
                         )}
                         {d.liabilityTotal != null && d.liabilityTotal > 0 && (
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ background: "#ba1a1a" }} />
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ba1a1a" }} />
                             <span>Liabilities: {formatFullCurrency(d.liabilityTotal)}</span>
                           </div>
                         )}
@@ -871,10 +957,11 @@ export default function DashboardPage() {
                     strokeDasharray="6 4"
                     label={{
                       value: `Retire ${savedSummary.retirementAge}`,
-                      position: "top",
+                      position: "insideTopRight",
                       fill: "#805200",
                       fontSize: 11,
                       fontWeight: 700,
+                      dy: -10,
                     }}
                   />
                 )}
@@ -888,27 +975,44 @@ export default function DashboardPage() {
                     strokeDasharray="4 3"
                     label={{
                       value: "Today",
-                      position: "top",
+                      position: "insideTopLeft",
                       fill: "#3e4947",
                       fontSize: 10,
                       fontWeight: 600,
+                      dy: -10,
                     }}
                   />
                 )}
 
-                {/* Plan area */}
+                {/* Plan area: always visible */}
                 <Area
                   type="monotone"
                   dataKey="planValue"
                   name="Savings Plan"
                   stroke="#006761"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   fill="url(#planGradient)"
                   connectNulls
                 />
 
-                {/* Asset projection area */}
-                {assets.length > 0 && (
+                {/* Summary mode: Net Worth as an area fill */}
+                {chartMode === "summary" && (assets.length > 0 || debts.length > 0) && (
+                  <Area
+                    type="monotone"
+                    dataKey="netWorth"
+                    name="Net Worth"
+                    stroke="#006761"
+                    strokeWidth={2.5}
+                    strokeDasharray="0"
+                    fill="url(#netWorthGradient)"
+                    connectNulls
+                    dot={false}
+                    activeDot={{ r: 5, fill: "#006761", stroke: "#ffffff", strokeWidth: 2 }}
+                  />
+                )}
+
+                {/* Detailed mode: individual asset and liability areas */}
+                {chartMode === "detailed" && assets.length > 0 && (
                   <Area
                     type="monotone"
                     dataKey="projectedTotal"
@@ -921,8 +1025,7 @@ export default function DashboardPage() {
                   />
                 )}
 
-                {/* Liability projection area */}
-                {debts.length > 0 && (
+                {chartMode === "detailed" && debts.length > 0 && (
                   <Area
                     type="monotone"
                     dataKey="liabilityTotal"
@@ -931,20 +1034,20 @@ export default function DashboardPage() {
                     strokeWidth={1.5}
                     strokeDasharray="4 3"
                     fill="url(#liabilityGradient)"
-                    connectNulls
+                    connectNulls={false}
                   />
                 )}
 
-                {/* Net Worth line: the primary "your reality" indicator */}
-                {(assets.length > 0 || debts.length > 0) && (
+                {/* Detailed mode: Net Worth as a line on top */}
+                {chartMode === "detailed" && (assets.length > 0 || debts.length > 0) && (
                   <Line
                     type="monotone"
                     dataKey="netWorth"
                     name="Net Worth"
-                    stroke="#181c1b"
+                    stroke="#006761"
                     strokeWidth={2.5}
                     dot={false}
-                    activeDot={{ r: 5, fill: "#181c1b", stroke: "#ffffff", strokeWidth: 2 }}
+                    activeDot={{ r: 5, fill: "#006761", stroke: "#ffffff", strokeWidth: 2 }}
                     connectNulls
                   />
                 )}
@@ -953,35 +1056,35 @@ export default function DashboardPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-on-surface-variant">
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-0.5 bg-primary rounded-full" />
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-on-surface-variant">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-primary" />
               <span>Savings Plan</span>
             </div>
             {(assets.length > 0 || debts.length > 0) && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 rounded-full" style={{ background: "#181c1b" }} />
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" style={{ border: "2px solid #96f3e9" }} />
                 <span>Net Worth</span>
               </div>
             )}
-            {assets.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 rounded-full" style={{ background: "#2c6956" }} />
+            {chartMode === "detailed" && assets.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ background: "#2c6956" }} />
                 <span>Assets</span>
               </div>
             )}
-            {debts.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-4 h-0.5 rounded-full" style={{ background: "#ba1a1a" }} />
+            {chartMode === "detailed" && debts.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ background: "#ba1a1a" }} />
                 <span>Liabilities</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-0.5 bg-tertiary rounded-full" style={{ opacity: 0.6 }} />
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-tertiary" style={{ opacity: 0.6 }} />
               <span>Retirement</span>
             </div>
             <p className="ml-auto text-xs text-on-surface-variant">
-              {((target?.expectedReturn ?? 0.07) * 100).toFixed(1)}% return, 3% inflation. Projections only.
+              {((target?.expectedReturn ?? 0.07) * 100).toFixed(1)}% return. Projections only.
             </p>
           </div>
         </section>
@@ -1011,7 +1114,9 @@ export default function DashboardPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">account_balance</span>
+              <div className="w-7 h-7 rounded-full bg-primary-fixed/60 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[14px] text-primary">account_balance</span>
+              </div>
               Your Assets
             </h2>
             <Link
@@ -1075,7 +1180,9 @@ export default function DashboardPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-error">credit_card</span>
+              <div className="w-7 h-7 rounded-full bg-error-container/60 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[14px] text-on-error-container">credit_card</span>
+              </div>
               Your Liabilities
             </h2>
             <Link

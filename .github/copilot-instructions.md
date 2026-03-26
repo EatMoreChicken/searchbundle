@@ -324,6 +324,19 @@ setTimeout(() => {
 })()}
 ```
 
+### Archive (Assets & Liabilities)
+- Both `accounts` and `debts` tables have an `archived_at` (nullable timestamp) column. Null = active, non-null = archived.
+- `Asset` and `Debt` TypeScript interfaces include `archivedAt: string | null`.
+- **API filtering**: `GET /api/assets` and `GET /api/liabilities` return only active (non-archived) items by default. Pass `?includeArchived=true` query param to return all items.
+- **Dashboard exclusion**: The dashboard fetches without `includeArchived`, so archived items are automatically excluded from projections, metrics, and chart data. Contributions on archived assets are also excluded.
+- **Archive/unarchive via PUT**: Send `{ archivedAt: "ISO-string" }` to archive, `{ archivedAt: null }` to unarchive, via `PUT /api/assets/[id]` or `PUT /api/liabilities/[id]`.
+- **List page UI**: Assets and liabilities list pages fetch with `?includeArchived=true` and split items into active and archived groups. Active items display in the main card grid. Archived items appear in a collapsible "Archived (N)" section below, collapsed by default.
+- **Zero-balance indicator**: Active cards with $0 balance show an amber "Balance is zero. Archive this?" prompt using `tertiary-fixed` styling.
+- **Archive confirmation modal**: Glassmorphism modal explaining effects (removed from dashboard, contributions/payments paused, data preserved, can be restored).
+- **Archived cards**: Rendered with `opacity-60`, `bg-surface-container-low` (instead of `bg-surface-container-lowest`), and grayed icon containers. Show "Archived {date}" label with `inventory_2` icon. Hover actions: unarchive (restore) and delete.
+- **Card hover actions**: Active cards show edit, archive (`inventory_2`), and delete buttons on hover. Archived cards show unarchive and delete.
+- DB migration: `0015_archive_accounts.sql`
+
 ### Net Worth Tracker
 - The Net Worth Tracker (`/tracker`) is a spreadsheet-style monthly grid showing assets and liabilities with calculated totals
 - Two new DB tables: `net_worth_categories` (rows: asset or liability names) and `net_worth_entries` (monthly balance values per category)
@@ -366,24 +379,28 @@ setTimeout(() => {
 - The dashboard (`/dashboard`) is the primary landing page after sign-in: a "single pane of glass" overview of the user's financial position
 - If the user hasn't completed onboarding, the dashboard redirects to `/getting-started`
 - **Full-width layout**: No `max-w-3xl` constraint. Dashboard uses the full available width (`p-6 space-y-6`)
-- **Header row**: Greeting ("Hey {firstName}"), on-track badge, and Edit Target button
+- **Hero header**: Gradient banner with decorative blurred circles (`from-primary-fixed/40 via-surface-container-lowest to-secondary-fixed/30`). Contains greeting ("Hey {firstName}"), on-track badge, and Edit Target button.
 - **On-track badge**: Colored pill showing how net worth compares to the savings plan at the current age. Statuses: `ahead` (green), `on_track` (green), `slightly_behind` (amber), `behind` (red), `no_data` (gray). Component: `OnTrackBadge`. Logic: `calculateOnTrackStatus()` in `asset-projections.ts`. Uses net worth (assets - liabilities), not just assets.
 - **Key metrics strip**: Two rows when a retirement target exists:
   - **Primary row** (4 tiles): Target, Target Age, Monthly Savings, Annual Savings
   - **Secondary row** (3 tiles): Net Worth (color-coded: green if positive, red if negative), Total Assets (green), Total Liabilities (red if > 0)
   - The secondary "position" row also appears standalone (without the target row) when user has assets or debts but no retirement target.
+- **Chart mode toggle**: Two modes: "Summary" (default) and "Detailed".
+  - **Summary mode**: Only Plan area fill + Net Worth area. Clean, easy to understand.
+  - **Detailed mode**: All 4 series visible: Plan, Assets (green dashed), Liabilities (red dashed), Net Worth (solid teal line on top).
+  - Tooltip always shows full breakdown (Plan, Net Worth, Assets, Liabilities, ahead/behind) regardless of mode.
 - **Hero savings trajectory chart**: 400px tall `ComposedChart` (recharts) showing:
-  - Plan area fill (teal gradient): the idealized savings schedule from the retirement strategy engine
-  - Asset projection area (green, dashed, semi-transparent): total assets projected forward using contributions + return rates
-  - Liability projection area (red, dashed, semi-transparent): total debts projected forward using amortization (minimum payments + interest rates). Debts decrease over time and reach $0 when paid off.
-  - Net Worth line (solid dark, `on-surface` color): assets minus liabilities. This is the primary "your reality" indicator.
-  - "Today" `ReferenceLine` at current age (gray dashed)
-  - Retirement age `ReferenceLine` (amber dashed)
-  - Rich tooltip showing Plan, Net Worth, Assets, Liabilities, and ahead/behind difference
-  - Legend below the chart with assumption disclaimer
-- **Time window controls**: Segmented pill selector with 3 views:
-  - **Focused** (default): `currentAge - 5` to `currentAge + 10` (plan data starts at currentAge, so effectively 0-10 years of data)
-  - **15 Years**: `currentAge - 2` to `currentAge + 15`
+  - Plan area fill (teal gradient, solid 2.5px stroke): the idealized savings schedule
+  - Net Worth area (teal, lighter gradient) in summary mode, or line (solid teal 2.5px) in detailed mode
+  - Asset projection area (green, dashed, semi-transparent): only in detailed mode
+  - Liability projection area (red, dashed): only in detailed mode. Line stops rendering once all debts reach $0 (no trailing flat line).
+  - "Today" `ReferenceLine` at current age (gray dashed, `insideTopLeft` position to avoid clipping)
+  - Retirement age `ReferenceLine` (amber dashed, `insideTopRight` position to avoid clipping)
+  - Chart top margin: 30px (prevents label clipping)
+  - Legend below chart: uses colored dots (not thin lines) for better contrast. Net Worth dot has a teal fill with mint border to distinguish from Plan.
+- **Time window controls**: Segmented controls with a dropdown for flexible year ranges:
+  - **Focused** (default): `currentAge - 5` to `currentAge + 10`
+  - **Year dropdown** (5/10/15/20/25 years): `currentAge - 2` to `currentAge + N`. Select element styled as a pill.
   - **Full Plan**: All ages from currentAge to `projectionEndAge`
 - **Asset cards**: Grid of cards (1-4 columns responsive) linking to individual asset detail pages. Shows type icon, name, balance, and expected return for investments.
 - **Liability cards**: Grid of cards (1-4 columns responsive) linking to individual liability detail pages. Shows type-specific icon (home, car, receipt, etc.), name, balance, interest rate, and monthly payment. Only shown when user has liabilities.
@@ -393,7 +410,7 @@ setTimeout(() => {
 - **Financial Independence Target**: Guided configurator for long-term savings goals. Two modes:
   - **Fixed Amount**: user enters a total target amount and target age
   - **Income Replacement**: user enters desired annual retirement income, safe withdrawal rate (default 4%), and target age. Portfolio target = `annualIncome / withdrawalRate`.
-- Inflation adjustment: automatically applied using `target x (1 + inflationRate)^years`
+- Inflation adjustment: currently disabled for dashboard projections. All numbers shown in nominal dollars. The `INFLATION_RATE` constant and edit-mode inflation UI are preserved for future re-enablement.
 - **Live summary panel** (edit mode only): Shows portfolio target, years remaining, required monthly savings (PMT formula), required annual savings. Updates in real-time as user adjusts inputs.
 - **PMT formula**: `monthlySavings = target x r / ((1 + r)^n - 1)` where `r = expectedReturn/12`, `n = years x 12`
 - **Asset projection utility**: `apps/web/src/lib/asset-projections.ts` contains:

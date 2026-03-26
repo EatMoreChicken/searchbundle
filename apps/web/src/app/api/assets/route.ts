@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb, accounts } from "@searchbundle/db";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { getHouseholdSession } from "@/lib/auth-helpers";
 
 type AccountRow = typeof accounts.$inferSelect;
@@ -15,14 +15,22 @@ function parseAsset(row: AccountRow) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getHouseholdSession();
   if ("error" in session) return session.error;
+
+  const { searchParams } = new URL(request.url);
+  const includeArchived = searchParams.get("includeArchived") === "true";
+
+  const conditions = [eq(accounts.householdId, session.householdId)];
+  if (!includeArchived) {
+    conditions.push(isNull(accounts.archivedAt));
+  }
 
   const rows = await getDb()
     .select()
     .from(accounts)
-    .where(eq(accounts.householdId, session.householdId));
+    .where(and(...conditions));
 
   return NextResponse.json(rows.map(parseAsset));
 }
