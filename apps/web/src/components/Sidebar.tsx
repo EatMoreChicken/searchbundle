@@ -47,7 +47,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className={`sticky top-0 flex h-screen flex-col py-6 bg-surface-container-low rounded-r-[32px] transition-all duration-300 ${collapsed ? "w-14 px-2" : "w-64 px-4"}`}>
+    <aside className={`sticky top-0 flex h-screen flex-col py-6 bg-surface-container-low rounded-r-[32px] transition-all duration-300 ${collapsed ? "w-16 px-2" : "w-64 px-4"}`}>
 
       {/* Brand */}
       <div className={`mb-6 flex items-center ${collapsed ? "justify-center" : "px-4 justify-between"}`}>
@@ -96,7 +96,7 @@ export default function Sidebar() {
             title={collapsed ? item.label : undefined}
             className={[
               "flex items-center transition-all rounded-xl",
-              collapsed ? "justify-center p-3" : "gap-3 px-4 py-3 text-sm font-medium",
+              collapsed ? "justify-center p-2.5" : "gap-3 px-4 py-3 text-sm font-medium",
               isActive(item.href)
                 ? "bg-surface-container-lowest text-primary shadow-sm"
                 : "text-on-surface hover:bg-white/50" + (collapsed ? "" : " hover:translate-x-1"),
@@ -117,7 +117,7 @@ export default function Sidebar() {
           title={collapsed ? "Settings" : undefined}
           className={[
             "flex items-center transition-all rounded-xl",
-            collapsed ? "justify-center p-3" : "gap-3 px-4 py-2 text-sm",
+            collapsed ? "justify-center p-2.5" : "gap-3 px-4 py-2 text-sm",
             isActive("/settings")
               ? "bg-surface-container-lowest text-primary shadow-sm"
               : "text-on-surface hover:bg-white/50" + (collapsed ? "" : " hover:translate-x-1"),
@@ -131,7 +131,7 @@ export default function Sidebar() {
           title={collapsed ? "Cooper" : undefined}
           className={[
             "flex items-center text-on-surface hover:bg-white/50 rounded-xl transition-all",
-            collapsed ? "justify-center p-3" : "gap-3 px-4 py-2 hover:translate-x-1",
+            collapsed ? "justify-center p-2.5" : "gap-3 px-4 py-2 hover:translate-x-1",
           ].join(" ")}
         >
           <span className="material-symbols-outlined text-[20px] shrink-0">smart_toy</span>
@@ -142,7 +142,7 @@ export default function Sidebar() {
           title={collapsed ? "Sign out" : undefined}
           className={[
             "flex items-center text-on-surface hover:bg-white/50 rounded-xl transition-all cursor-pointer",
-            collapsed ? "justify-center p-3" : "gap-3 px-4 py-2 hover:translate-x-1",
+            collapsed ? "justify-center p-2.5" : "gap-3 px-4 py-2 hover:translate-x-1",
           ].join(" ")}
         >
           <span className="material-symbols-outlined text-[20px] shrink-0">logout</span>

@@ -372,7 +372,7 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
         retirementAge,
       });
 
-      const targetAmount = incomeMode === "fixed" ? Number(fixedAmount) : portfolioTodayDollars;
+      const targetAmount = incomeMode === "fixed" ? Number(fixedAmount) : inflationAdjustedTarget;
       await apiClient.put<RetirementTarget>("/api/retirement-target", {
         mode: incomeMode === "fixed" ? "fixed" : "income_replacement",
         targetAmount,

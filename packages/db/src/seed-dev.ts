@@ -50,6 +50,9 @@ const CAT_CHECKING    = "00000000-0000-0000-0004-000000000001";
 const CAT_EMERGENCY   = "00000000-0000-0000-0004-000000000002";
 const CAT_CASH        = "00000000-0000-0000-0004-000000000003";
 const CAT_401K        = "00000000-0000-0000-0004-000000000004";
+const CAT_MORTGAGE    = "00000000-0000-0000-0004-000000000005";
+const CAT_AUTO        = "00000000-0000-0000-0004-000000000006";
+const CAT_PERSONAL    = "00000000-0000-0000-0004-000000000007";
 
 // ─── Monthly Values for Net Worth Tracker ────────────────────────────────
 // Keyed as [categoryId][year][month] = value. Months are 1-indexed.
@@ -70,6 +73,18 @@ const MONTHLY: Record<string, Record<number, Record<number, number>>> = {
   [CAT_401K]: {
     2025: { 1: 45000, 2: 46800, 3: 48200, 4: 47500, 5: 50100, 6: 51800, 7: 53500, 8: 52900, 9: 55200, 10: 57000, 11: 59100, 12: 61500 },
     2026: { 1: 63200, 2: 65800, 3: 67500 },
+  },
+  [CAT_MORTGAGE]: {
+    2025: { 1: 291000, 2: 290200, 3: 289400, 4: 288700, 5: 288000, 6: 287300, 7: 286600, 8: 285900, 9: 285200, 10: 284500, 11: 283800, 12: 283100 },
+    2026: { 1: 282400, 2: 281700, 3: 281000 },
+  },
+  [CAT_AUTO]: {
+    2025: { 1: 21000, 2: 20550, 3: 20100, 4: 19650, 5: 19200, 6: 18750, 7: 18300, 8: 17850, 9: 17400, 10: 16950, 11: 16500, 12: 16050 },
+    2026: { 1: 15600, 2: 15150, 3: 14700 },
+  },
+  [CAT_PERSONAL]: {
+    2025: { 1: 8500, 2: 8100, 3: 7700, 4: 7300, 5: 6900, 6: 6500, 7: 6100, 8: 5700, 9: 5300, 10: 4900, 11: 4500, 12: 4100 },
+    2026: { 1: 3700, 2: 3300, 3: 2900 },
   },
 };
 
@@ -463,6 +478,9 @@ async function seed() {
     { id: CAT_EMERGENCY, householdId: HOUSEHOLD_ID, name: "Emergency Fund", type: "asset" as const, sortOrder: 1 },
     { id: CAT_CASH, householdId: HOUSEHOLD_ID, name: "Cash Reserve", type: "asset" as const, sortOrder: 2 },
     { id: CAT_401K, householdId: HOUSEHOLD_ID, name: "Vanguard 401(k)", type: "asset" as const, sortOrder: 3 },
+    { id: CAT_MORTGAGE, householdId: HOUSEHOLD_ID, name: "Home Mortgage", type: "liability" as const, sortOrder: 0 },
+    { id: CAT_AUTO, householdId: HOUSEHOLD_ID, name: "Auto Loan", type: "liability" as const, sortOrder: 1 },
+    { id: CAT_PERSONAL, householdId: HOUSEHOLD_ID, name: "Personal Loan", type: "liability" as const, sortOrder: 2 },
   ];
 
   for (const row of categoryRows) {

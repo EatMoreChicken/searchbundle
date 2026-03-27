@@ -171,6 +171,7 @@ The AI companion is named **Cooper** (inspired by Interstellar; Cooper knows wha
 - **Drizzle ORM 0.45**: lightweight, type-safe, closer to raw SQL than Prisma
 - **drizzle-kit 0.31**: migration tool; config at `packages/db/drizzle.config.ts`
 - Schema lives in `packages/db/src/schema.ts`; migrations in `packages/db/migrations/`
+- **Migration best practice**: When adding a new `.sql` migration file, you MUST also add a corresponding entry to `packages/db/migrations/meta/_journal.json`. drizzle-kit silently skips any migration file not listed in the journal (exits with code 0, no warning). Missing journal entries cause runtime errors like "column X does not exist" even though `db:migrate` appeared to succeed.
 
 ### Deployment (self-hosted)
 - **Docker**: containerize the app
