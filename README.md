@@ -218,6 +218,7 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 
 #### Planned enhancements (future phases)
 
+- [ ] The dashboard says that there are $0 in liability reduction since last month, but that is not true, so the math is off. 
 - [ ] Allow user to track income to compare it with savings. (As well as track how their incomes are changing over time)
 - [ ] Allow the user to arrow-key or click a different reference cell after typing an operator.
 - [ ] Support chained operations (e.g. `+100 +50`).
