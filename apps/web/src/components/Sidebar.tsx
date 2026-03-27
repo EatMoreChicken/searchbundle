@@ -142,10 +142,9 @@ export default function Sidebar() {
         </button>
       )}
 
-      {/* Welcome — only shown when expanded */}
-      {!collapsed && (
-        <div className="mb-10 px-4">
-          <h2 className="text-lg font-bold text-primary">{displayName}</h2>
+      {/* Welcome */}
+      <div className={`px-4 overflow-hidden transition-all duration-300 ${collapsed ? "h-0 mb-0 opacity-0 pointer-events-none" : "mb-10 opacity-100"}`}>
+          <h2 className="text-lg font-bold text-primary whitespace-nowrap overflow-hidden">{displayName}</h2>
 
           {/* Household switcher */}
           {mounted && activeHouseholdName && (
@@ -157,10 +156,10 @@ export default function Sidebar() {
                   households.length > 1 ? "hover:text-on-surface cursor-pointer" : "cursor-default",
                 ].join(" ")}
               >
-                <span className="material-symbols-outlined text-[14px]">group</span>
-                <span>{switching ? "Switching…" : activeHouseholdName}</span>
+                <span className="material-symbols-outlined text-[14px] shrink-0">group</span>
+                <span className="whitespace-nowrap overflow-hidden">{switching ? "Switching…" : activeHouseholdName}</span>
                 {households.length > 1 && (
-                  <span className={`material-symbols-outlined text-[14px] transition-transform ${dropdownOpen ? "rotate-180" : ""}`}>
+                  <span className={`material-symbols-outlined text-[14px] shrink-0 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}>
                     expand_more
                   </span>
                 )}
@@ -179,8 +178,8 @@ export default function Sidebar() {
                           : "text-on-surface hover:bg-surface-container font-medium",
                       ].join(" ")}
                     >
-                      <span className="flex-1">{h.householdName}</span>
-                      <span className="text-[10px] text-on-surface-variant opacity-60">{h.role}</span>
+                      <span className="flex-1 whitespace-nowrap overflow-hidden">{h.householdName}</span>
+                      <span className="text-[10px] text-on-surface-variant opacity-60 shrink-0">{h.role}</span>
                     </button>
                   ))}
                 </div>
@@ -188,8 +187,7 @@ export default function Sidebar() {
             </div>
           )}
 
-        </div>
-      )}
+      </div>
 
       {/* Nav */}
       <nav className="flex-1 flex flex-col gap-2">
@@ -199,15 +197,17 @@ export default function Sidebar() {
             href={item.href}
             title={collapsed ? item.label : undefined}
             className={[
-              "flex items-center transition-all rounded-full",
+              "flex items-center transition-all rounded-xl",
               collapsed ? "justify-center p-3" : "gap-3 px-4 py-3 text-sm font-medium",
               isActive(item.href)
                 ? "bg-surface-container-lowest text-primary shadow-sm"
                 : "text-on-surface hover:bg-white/50" + (collapsed ? "" : " hover:translate-x-1"),
             ].join(" ")}
           >
-            <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-            {!collapsed && item.label}
+            <span className="material-symbols-outlined text-[20px] shrink-0">{item.icon}</span>
+            <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "opacity-100"}`}>
+              {item.label}
+            </span>
           </Link>
         ))}
       </nav>
@@ -218,37 +218,37 @@ export default function Sidebar() {
           href="/settings"
           title={collapsed ? "Settings" : undefined}
           className={[
-            "flex items-center transition-all rounded-full",
+            "flex items-center transition-all rounded-xl",
             collapsed ? "justify-center p-3" : "gap-3 px-4 py-2 text-sm",
             isActive("/settings")
               ? "bg-surface-container-lowest text-primary shadow-sm"
               : "text-on-surface hover:bg-white/50" + (collapsed ? "" : " hover:translate-x-1"),
           ].join(" ")}
         >
-          <span className="material-symbols-outlined text-[20px]">manage_accounts</span>
-          {!collapsed && <span>Settings</span>}
+          <span className="material-symbols-outlined text-[20px] shrink-0">manage_accounts</span>
+          <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "opacity-100"}`}>Settings</span>
         </Link>
         <Link
           href="/cooper"
           title={collapsed ? "Cooper" : undefined}
           className={[
-            "flex items-center text-on-surface hover:bg-white/50 rounded-full transition-all",
+            "flex items-center text-on-surface hover:bg-white/50 rounded-xl transition-all",
             collapsed ? "justify-center p-3" : "gap-3 px-4 py-2 hover:translate-x-1",
           ].join(" ")}
         >
-          <span className="material-symbols-outlined text-[20px]">smart_toy</span>
-          {!collapsed && <span className="text-sm">Cooper</span>}
+          <span className="material-symbols-outlined text-[20px] shrink-0">smart_toy</span>
+          <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-sm ${collapsed ? "w-0 opacity-0" : "opacity-100"}`}>Cooper</span>
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/sign-in" })}
           title={collapsed ? "Sign out" : undefined}
           className={[
-            "flex items-center text-on-surface hover:bg-white/50 rounded-full transition-all cursor-pointer",
+            "flex items-center text-on-surface hover:bg-white/50 rounded-xl transition-all cursor-pointer",
             collapsed ? "justify-center p-3" : "gap-3 px-4 py-2 hover:translate-x-1",
           ].join(" ")}
         >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
-          {!collapsed && <span className="text-sm">Sign out</span>}
+          <span className="material-symbols-outlined text-[20px] shrink-0">logout</span>
+          <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 text-sm ${collapsed ? "w-0 opacity-0" : "opacity-100"}`}>Sign out</span>
         </button>
       </div>
     </aside>
