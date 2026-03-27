@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
-import type { User, RetirementTarget, TargetMode, Asset, BalanceUpdate, AccountContribution, Debt } from "@/types";
+import type { User, RetirementTarget, TargetMode, Asset, BalanceUpdate, AccountContribution, Debt, DebtBalanceUpdate } from "@/types";
 import type { SavingsStrategy, StrategyParams } from "@/lib/retirement-strategies";
 import {
   getExtendedSchedule,
@@ -210,10 +210,21 @@ async function fetchAssetDetails(assets: Asset[]): Promise<AssetWithDetails[]> {
   return results;
 }
 
+async function fetchDebtDetails(debtList: Debt[]): Promise<DebtWithDetails[]> {
+  const results = await Promise.all(
+    debtList.map(async (debt) => {
+      const history = await apiClient.get<DebtBalanceUpdate[]>(`/api/liabilities/${debt.id}/history`);
+      return { debt, history };
+    }),
+  );
+  return results;
+}
+
 // ─── Liability Data Fetching ─────────────────────────────────────────────────
 
 interface DebtWithDetails {
   debt: Debt;
+  history: DebtBalanceUpdate[];
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -276,9 +287,10 @@ export default function DashboardPage() {
         setAssets(details);
       }
 
-      // Set liability data
+      // Set liability data with history
       if (debtList.length > 0) {
-        setDebts(debtList.map((debt) => ({ debt })));
+        const details = await fetchDebtDetails(debtList);
+        setDebts(details);
       }
     } catch {
       /* ignore */
@@ -312,6 +324,81 @@ export default function DashboardPage() {
   );
 
   const netWorth = totalAssets - totalLiabilities;
+
+  // ─── Month-over-Month Calculations ─────────────────────────────────────────
+
+  const momData = useMemo(() => {
+    const now = new Date();
+    const curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+
+    function sumChangesInRange(
+      updates: { changeAmount: number; createdAt: string }[],
+      from: Date,
+      to: Date,
+    ): number {
+      return updates
+        .filter((u) => {
+          const d = new Date(u.createdAt);
+          return d >= from && d < to;
+        })
+        .reduce((s, u) => s + u.changeAmount, 0);
+    }
+
+    // Per-asset MoM
+    const assetChanges = assets.map(({ asset, history }) => {
+      const curChange = sumChangesInRange(history, curMonthStart, now);
+      const prevChange = sumChangesInRange(history, prevMonthStart, curMonthStart);
+      return { name: asset.name, id: asset.id, type: asset.type, balance: asset.balance, curChange, prevChange };
+    });
+
+    // Per-debt MoM (negative changeAmount = balance went down = good)
+    const debtChanges = debts.map(({ debt, history }) => {
+      const curChange = sumChangesInRange(history, curMonthStart, now);
+      const prevChange = sumChangesInRange(history, prevMonthStart, curMonthStart);
+      // Reduction is the negative of change (positive means balance went down)
+      return { name: debt.name, id: debt.id, type: debt.type, balance: debt.balance, originalBalance: debt.originalBalance, curReduction: -curChange, prevReduction: -prevChange };
+    });
+
+    const totalAssetGrowth = assetChanges.reduce((s, a) => s + a.curChange, 0);
+    const totalDebtReduction = debtChanges.reduce((s, d) => s + d.curReduction, 0);
+    const totalMomentum = totalAssetGrowth + totalDebtReduction;
+
+    const prevAssetGrowth = assetChanges.reduce((s, a) => s + a.prevChange, 0);
+    const prevDebtReduction = debtChanges.reduce((s, d) => s + d.prevReduction, 0);
+    const prevMomentum = prevAssetGrowth + prevDebtReduction;
+
+    // Net worth MoM: total changes in assets minus total changes in debts
+    const netWorthChange = totalAssetGrowth - debtChanges.reduce((s, d) => s + (-d.curReduction), 0);
+
+    // Year-to-date: sum all changes from Jan 1 of current year
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const ytdAssets = assets.reduce((s, { history }) => s + sumChangesInRange(history, yearStart, now), 0);
+    const ytdDebts = debts.reduce((s, { history }) => s + sumChangesInRange(history, yearStart, now), 0);
+    const ytdTotal = ytdAssets - ytdDebts;
+
+    // Simple streak: check if current and previous months are positive
+    let streak = 0;
+    if (totalMomentum > 0) streak++;
+    if (prevMomentum > 0) streak++;
+    // Check month before previous
+    const twoMonthsAgoAssetGrowth = assets.reduce((s, { history }) => s + sumChangesInRange(history, twoMonthsAgo, prevMonthStart), 0);
+    const twoMonthsAgoDebtReduction = debts.reduce((s, { history }) => s - sumChangesInRange(history, twoMonthsAgo, prevMonthStart), 0);
+    if (streak === 2 && (twoMonthsAgoAssetGrowth + twoMonthsAgoDebtReduction) > 0) streak++;
+
+    return {
+      assetChanges,
+      debtChanges,
+      totalAssetGrowth,
+      totalDebtReduction,
+      totalMomentum,
+      prevMomentum,
+      netWorthChange,
+      ytdTotal,
+      streak,
+    };
+  }, [assets, debts]);
 
   // ─── Edit Mode Calculations ────────────────────────────────────────────────
 
@@ -681,80 +768,154 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* ── Key Metrics Strip ──────────────────────────────────────────── */}
-      {savedSummary && !editing && (
-        <div className="space-y-4">
-          {/* Primary row: plan metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.targetAmount)}</p>
+      {/* ── Monthly Momentum Hero ──────────────────────────────────────── */}
+      {!editing && (assets.length > 0 || debts.length > 0) && (
+        <section className="bg-surface-container-lowest rounded-2xl p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-[20px]">trending_up</span>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{target?.targetAge}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
-            </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
-            </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+            <div>
+              <h2 className="text-title-md font-bold text-on-surface">Monthly Momentum</h2>
+              <p className="text-xs text-on-surface-variant">Your progress this month</p>
             </div>
           </div>
 
-          {/* Secondary row: current position */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
-              <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
-                {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 mb-6">
+            <div>
+              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Progress</p>
+              <p className={`text-display-lg font-extrabold tracking-tight ${momData.totalMomentum >= 0 ? "text-secondary" : "text-error"}`}>
+                {momData.totalMomentum >= 0 ? "+" : "-"}{formatCurrency(Math.abs(momData.totalMomentum))}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">assets minus liabilities</p>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Assets</p>
-              <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
+            <div className="flex items-center gap-4 pb-2">
+              {momData.prevMomentum !== 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className={`material-symbols-outlined text-[16px] ${momData.totalMomentum >= momData.prevMomentum ? "text-secondary" : "text-error"}`}>
+                    {momData.totalMomentum >= momData.prevMomentum ? "arrow_upward" : "arrow_downward"}
+                  </span>
+                  <span className="text-xs text-on-surface-variant">vs last month</span>
+                </div>
+              )}
+              {momData.streak > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-tertiary-fixed rounded-full">
+                  <span className="material-symbols-outlined text-[14px] text-on-tertiary-fixed-variant">local_fire_department</span>
+                  <span className="text-xs font-semibold text-on-tertiary-fixed-variant">{momData.streak} month streak</span>
+                </div>
+              )}
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Liabilities</p>
-              <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-on-surface"}`}>
-                {totalLiabilities > 0 ? formatCurrency(totalLiabilities) : "$0"}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-surface-container-low rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-[16px] text-secondary">savings</span>
+                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Asset Growth</p>
+              </div>
+              <p className={`text-xl font-extrabold tracking-tight ${momData.totalAssetGrowth >= 0 ? "text-secondary" : "text-error"}`}>
+                {momData.totalAssetGrowth >= 0 ? "+" : ""}{formatFullCurrency(momData.totalAssetGrowth)}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
             </div>
+            <div className="bg-surface-container-low rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-[16px] text-primary">trending_down</span>
+                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Liability Reduction</p>
+              </div>
+              <p className={`text-xl font-extrabold tracking-tight ${momData.totalDebtReduction >= 0 ? "text-secondary" : "text-error"}`}>
+                {momData.totalDebtReduction >= 0 ? "+" : ""}{formatFullCurrency(momData.totalDebtReduction)}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Key Metrics Strip ──────────────────────────────────────────── */}
+      {savedSummary && !editing && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
+            <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
+              {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
+            </p>
+            <p className={`text-xs mt-0.5 ${momData.netWorthChange >= 0 ? "text-secondary" : "text-error"}`}>
+              {momData.netWorthChange >= 0 ? "+" : ""}{formatFullCurrency(momData.netWorthChange)} this month
+            </p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">This Year</p>
+            <p className={`text-xl font-extrabold tracking-tight ${momData.ytdTotal >= 0 ? "text-secondary" : "text-error"}`}>
+              {momData.ytdTotal >= 0 ? "+" : ""}{formatFullCurrency(momData.ytdTotal)}
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">year to date</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual Target</p>
+            <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">savings needed/yr</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
+            <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.targetAmount)}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">by age {target?.targetAge}</p>
           </div>
         </div>
       )}
 
       {/* ── Position Summary (shows without target too) ────────────────── */}
       {!editing && (assets.length > 0 || debts.length > 0) && !savedSummary && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="bg-surface-container-lowest rounded-2xl p-5">
             <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
             <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
               {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
             </p>
-            <p className="text-xs text-on-surface-variant mt-0.5">assets minus liabilities</p>
-          </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Assets</p>
-            <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
-          </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Liabilities</p>
-            <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-on-surface"}`}>
-              {totalLiabilities > 0 ? formatCurrency(totalLiabilities) : "$0"}
+            <p className={`text-xs mt-0.5 ${momData.netWorthChange >= 0 ? "text-secondary" : "text-error"}`}>
+              {momData.netWorthChange >= 0 ? "+" : ""}{formatFullCurrency(momData.netWorthChange)} this month
             </p>
-            <p className="text-xs text-on-surface-variant mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-2xl p-5">
+            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">This Year</p>
+            <p className={`text-xl font-extrabold tracking-tight ${momData.ytdTotal >= 0 ? "text-secondary" : "text-error"}`}>
+              {momData.ytdTotal >= 0 ? "+" : ""}{formatFullCurrency(momData.ytdTotal)}
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">year to date</p>
           </div>
         </div>
+      )}
+
+      {/* ── Goal Progress Bar ──────────────────────────────────────────── */}
+      {savedSummary && !editing && (
+        <section className="bg-surface-container-lowest rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center">
+                <span className="material-symbols-outlined text-[16px] text-on-tertiary-fixed-variant">flag</span>
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-on-surface">Goal Progress</h2>
+                <p className="text-xs text-on-surface-variant">{formatCurrency(savedSummary.targetAmount)} by age {target?.targetAge}</p>
+              </div>
+            </div>
+            <OnTrackBadge info={onTrackInfo} />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant">
+              <span>{formatCurrency(Math.max(0, netWorth))} saved</span>
+              <span>{formatCurrency(savedSummary.targetAmount)}</span>
+            </div>
+            <div className="h-3 bg-surface-container-highest rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary-container rounded-full transition-all"
+                style={{ width: `${Math.min(100, Math.max(0, (netWorth / savedSummary.targetAmount) * 100))}%` }}
+              />
+            </div>
+            <p className="text-xs text-on-surface-variant text-right">
+              {((Math.max(0, netWorth) / savedSummary.targetAmount) * 100).toFixed(1)}% complete
+              {savedSummary.years > 0 && ` · ${savedSummary.years} years remaining`}
+            </p>
+          </div>
+        </section>
       )}
 
       {/* ── Hero Chart ─────────────────────────────────────────────────── */}
@@ -1108,7 +1269,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* ── Asset Cards ────────────────────────────────────────────────── */}
+      {/* ── Asset Breakdown (MoM) ─────────────────────────────────────── */}
       {!editing && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -1116,7 +1277,8 @@ export default function DashboardPage() {
               <div className="w-7 h-7 rounded-full bg-primary-fixed/60 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[14px] text-primary">account_balance</span>
               </div>
-              Your Assets
+              Assets
+              <span className="text-xs font-normal text-on-surface-variant ml-1">{formatCurrency(totalAssets)}</span>
             </h2>
             <Link
               href="/assets"
@@ -1138,34 +1300,34 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {assets.map(({ asset }) => {
-                const isInvestment = asset.type === "investment";
+            <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-3">
+              {momData.assetChanges.map((a) => {
+                const isInvestment = a.type === "investment";
                 return (
                   <Link
-                    key={asset.id}
-                    href={`/assets/${asset.id}`}
-                    className="group bg-surface-container-lowest rounded-2xl p-5 hover:bg-surface-container-low transition-all"
+                    key={a.id}
+                    href={`/assets/${a.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container-low transition-all group"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isInvestment ? "bg-primary-fixed" : "bg-surface-container-high"}`}>
-                        <span className={`material-symbols-outlined text-[16px] ${isInvestment ? "text-primary" : "text-on-surface-variant"}`}>
-                          {isInvestment ? "trending_up" : "account_balance_wallet"}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-semibold tracking-widest uppercase text-on-surface-variant">
-                        {isInvestment ? "Investment" : "Simple"}
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isInvestment ? "bg-primary-fixed" : "bg-surface-container-high"}`}>
+                      <span className={`material-symbols-outlined text-[16px] ${isInvestment ? "text-primary" : "text-on-surface-variant"}`}>
+                        {isInvestment ? "trending_up" : "account_balance_wallet"}
                       </span>
                     </div>
-                    <p className="text-sm font-bold text-on-surface truncate">{asset.name}</p>
-                    <p className="text-lg font-extrabold text-on-surface tracking-tight mt-0.5">
-                      {formatCurrency(asset.balance)}
-                    </p>
-                    {isInvestment && asset.returnRate != null && (
-                      <p className="text-xs text-on-surface-variant mt-1">
-                        {asset.returnRate}% expected return
-                      </p>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-on-surface truncate">{a.name}</p>
+                      <p className="text-xs text-on-surface-variant">{formatCurrency(a.balance)}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {a.curChange !== 0 ? (
+                        <p className={`text-sm font-bold ${a.curChange > 0 ? "text-secondary" : "text-error"}`}>
+                          {a.curChange > 0 ? "+" : ""}{formatFullCurrency(a.curChange)}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-on-surface-variant">-</p>
+                      )}
+                      <p className="text-[10px] text-on-surface-variant">this month</p>
+                    </div>
                   </Link>
                 );
               })}
@@ -1174,7 +1336,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* ── Liability Cards ────────────────────────────────────────────── */}
+      {/* ── Debt Paydown Progress ──────────────────────────────────────── */}
       {!editing && debts.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -1182,7 +1344,8 @@ export default function DashboardPage() {
               <div className="w-7 h-7 rounded-full bg-error-container/60 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[14px] text-on-error-container">credit_card</span>
               </div>
-              Your Liabilities
+              Liabilities
+              <span className="text-xs font-normal text-on-surface-variant ml-1">{formatCurrency(totalLiabilities)}</span>
             </h2>
             <Link
               href="/liabilities"
@@ -1192,44 +1355,59 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {debts.map(({ debt }) => {
+          <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
+            {momData.debtChanges.map((d) => {
               const typeConfig: Record<string, { icon: string; label: string }> = {
-                simple: { icon: "receipt_long", label: "Simple Debt" },
+                simple: { icon: "receipt_long", label: "Simple" },
                 mortgage: { icon: "home", label: "Mortgage" },
-                auto: { icon: "directions_car", label: "Auto Loan" },
+                auto: { icon: "directions_car", label: "Auto" },
                 loan: { icon: "account_balance", label: "Loan" },
-                student_loan: { icon: "school", label: "Student Loan" },
-                credit_card: { icon: "credit_card", label: "Credit Card" },
+                student_loan: { icon: "school", label: "Student" },
+                credit_card: { icon: "credit_card", label: "Credit" },
                 other: { icon: "receipt", label: "Other" },
               };
-              const config = typeConfig[debt.type] ?? typeConfig.other;
+              const config = typeConfig[d.type] ?? typeConfig.other;
+              const paidPercent = d.originalBalance && d.originalBalance > 0
+                ? Math.max(0, Math.min(100, ((d.originalBalance - d.balance) / d.originalBalance) * 100))
+                : null;
 
               return (
                 <Link
-                  key={debt.id}
-                  href={`/liabilities/${debt.id}`}
-                  className="group bg-surface-container-lowest rounded-2xl p-5 hover:bg-surface-container-low transition-all"
+                  key={d.id}
+                  href={`/liabilities/${d.id}`}
+                  className="block p-3 rounded-xl hover:bg-surface-container-low transition-all group"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-error-container">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-error-container flex-shrink-0">
                       <span className="material-symbols-outlined text-[16px] text-on-error-container">
                         {config.icon}
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold tracking-widest uppercase text-on-surface-variant">
-                      {config.label}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-on-surface truncate">{d.name}</p>
+                      <p className="text-xs text-on-surface-variant">{formatCurrency(d.balance)} remaining</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {d.curReduction > 0 ? (
+                        <p className="text-sm font-bold text-secondary">-{formatFullCurrency(d.curReduction)}</p>
+                      ) : d.curReduction < 0 ? (
+                        <p className="text-sm font-bold text-error">+{formatFullCurrency(Math.abs(d.curReduction))}</p>
+                      ) : (
+                        <p className="text-sm text-on-surface-variant">-</p>
+                      )}
+                      <p className="text-[10px] text-on-surface-variant">paid this month</p>
+                    </div>
                   </div>
-                  <p className="text-sm font-bold text-on-surface truncate">{debt.name}</p>
-                  <p className="text-lg font-extrabold text-on-surface tracking-tight mt-0.5">
-                    {formatCurrency(debt.balance)}
-                  </p>
-                  {debt.interestRate != null && debt.interestRate > 0 && (
-                    <p className="text-xs text-on-surface-variant mt-1">
-                      {debt.interestRate}% interest
-                      {debt.minimumPayment ? ` \u00b7 ${formatFullCurrency(debt.minimumPayment)}/mo` : ""}
-                    </p>
+                  {paidPercent !== null && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${paidPercent}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-semibold text-on-surface-variant w-10 text-right">{paidPercent.toFixed(0)}%</span>
+                    </div>
                   )}
                 </Link>
               );

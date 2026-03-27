@@ -218,6 +218,7 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 
 #### Planned enhancements (future phases)
 
+- [ ] Allow user to track income to compare it with savings. (As well as track how their incomes are changing over time)
 - [ ] Allow the user to arrow-key or click a different reference cell after typing an operator.
 - [ ] Support chained operations (e.g. `+100 +50`).
 - [ ] Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).
