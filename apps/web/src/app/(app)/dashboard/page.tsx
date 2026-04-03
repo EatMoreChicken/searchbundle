@@ -770,7 +770,7 @@ export default function DashboardPage() {
               <div className="flex items-center bg-surface-container rounded-full p-0.5">
                 <button
                   onClick={() => setChartMode("summary")}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     chartMode === "summary"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -780,7 +780,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   onClick={() => setChartMode("detailed")}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     chartMode === "detailed"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -794,7 +794,7 @@ export default function DashboardPage() {
               <div className="flex items-center bg-surface-container rounded-full p-0.5">
                 <button
                   onClick={() => setTimeWindow("focused")}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     timeWindow === "focused"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
@@ -802,56 +802,53 @@ export default function DashboardPage() {
                 >
                   Focused
                 </button>
-                <div className="relative">
-                  {/* Split button: label selects, chevron opens dropdown */}
-                  <div className={`flex items-center rounded-full text-xs font-semibold transition-all ${
-                    timeWindow === "custom"
-                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
-                      : "text-on-surface-variant"
-                  }`}>
-                    <button
-                      onClick={() => setTimeWindow("custom")}
-                      className="pl-4 pr-1 py-1.5 hover:text-on-surface transition-colors"
-                    >
-                      {customYears} Years
-                    </button>
-                    <button
-                      onClick={() => setShowYearMenu((v) => !v)}
-                      className="pr-3 py-1.5 hover:text-on-surface transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[13px] leading-none">
-                        {showYearMenu ? "expand_less" : "expand_more"}
-                      </span>
-                    </button>
-                  </div>
+                <div className={`relative flex items-center min-w-[80px] rounded-full text-xs font-semibold transition-all ${
+                  timeWindow === "custom"
+                    ? "bg-surface-container-lowest text-on-surface shadow-sm"
+                    : "text-on-surface-variant"
+                }`}>
+                  <button
+                    onClick={() => setTimeWindow("custom")}
+                    className="flex-1 text-center pl-3 pr-1 py-1.5 hover:text-on-surface transition-colors"
+                  >
+                    {customYears} Years
+                  </button>
+                  <button
+                    onClick={() => setShowYearMenu((v) => !v)}
+                    className="pr-3 py-1.5 hover:text-on-surface transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[13px] leading-none">
+                      {showYearMenu ? "expand_less" : "expand_more"}
+                    </span>
+                  </button>
                   {showYearMenu && (
                     <>
                       <div className="fixed inset-0 z-20" onClick={() => setShowYearMenu(false)} />
                       <div className="absolute top-full right-0 mt-1 z-30 bg-surface-container-lowest rounded-xl shadow-lg overflow-hidden border border-outline-variant/20 min-w-[110px]">
-                      {YEAR_RANGE_OPTIONS.map((yr) => (
-                        <button
-                          key={yr}
-                          onClick={() => {
-                            setCustomYears(yr);
-                            setTimeWindow("custom");
-                            setShowYearMenu(false);
-                          }}
-                          className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors ${
-                            customYears === yr && timeWindow === "custom"
-                              ? "bg-primary-fixed text-primary"
-                              : "text-on-surface hover:bg-surface-container"
-                          }`}
-                        >
-                          {yr} Years
-                        </button>
-                      ))}
-                    </div>
+                        {YEAR_RANGE_OPTIONS.map((yr) => (
+                          <button
+                            key={yr}
+                            onClick={() => {
+                              setCustomYears(yr);
+                              setTimeWindow("custom");
+                              setShowYearMenu(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors ${
+                              customYears === yr && timeWindow === "custom"
+                                ? "bg-primary-fixed text-primary"
+                                : "text-on-surface hover:bg-surface-container"
+                            }`}
+                          >
+                            {yr} Years
+                          </button>
+                        ))}
+                      </div>
                     </>
                   )}
                 </div>
                 <button
                   onClick={() => setTimeWindow("all")}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     timeWindow === "all"
                       ? "bg-surface-container-lowest text-on-surface shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface"
