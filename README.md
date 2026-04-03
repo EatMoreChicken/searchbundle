@@ -218,6 +218,7 @@ The reference cell is highlighted in amber while you type so you can confirm whi
 
 #### Planned enhancements (future phases)
 
+- [ ] Figure out logo using logo-concepts.html file (4 Abstract Mark + Wordmark)
 - [ ] Allow the user to arrow-key or click a different reference cell after typing an operator.
 - [ ] Support chained operations (e.g. `+100 +50`).
 - [ ] Add a percentage shorthand (e.g. `*7%` → multiply by 1.07).

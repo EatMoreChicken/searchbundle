@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logo Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #e8e8e4;
+    padding: 40px 24px;
+    font-family: 'Manrope', sans-serif;
+    color: #111;
+  }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #999;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: #777;
+    text-align: center;
+    margin-bottom: 36px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  .divider {
+    max-width: 1000px;
+    margin: 48px auto;
+    height: 1px;
+    background: #d5d5d0;
+  }
+
+  .logo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .logo-card {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .logo-card-header {
+    background: #eeeee9;
+    padding: 14px 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: #111;
+    padding: 3px 10px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+
+  .logo-card-name {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .logo-card-sub {
+    font-size: 11px;
+    color: #999;
+    margin-left: auto;
+  }
+
+  /* Logo display areas */
+  .logo-display {
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .logo-row-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #bbb;
+    font-weight: 600;
+    width: 60px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .logo-render {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-render.large { transform: scale(1); }
+  .logo-render.small { transform: scale(0.6); transform-origin: left center; }
+
+  /* In-context nav bar preview */
+  .nav-preview {
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-items {
+    display: flex;
+    gap: 14px;
+    margin-left: auto;
+  }
+
+  .nav-item {
+    font-size: 12px;
+    font-weight: 500;
+    color: #999;
+  }
+
+  .nav-item.active {
+    color: #0d9488;
+    font-weight: 700;
+  }
+
+  .context-label {
+    font-size: 9px;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  /* Light bg display */
+  .on-light {
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dark bg display */
+  .on-dark {
+    background: #1a1a1a;
+    border-radius: 10px;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bg-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* ========== LOGO STYLES ========== */
+
+  /* 1: Wordmark only */
+  .wordmark {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  /* 2: Lettermark SB */
+  .lettermark-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+  }
+
+  /* Favicon preview */
+  .favicon-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="section-label">Logo Concepts</div>
+<div class="section-desc">Each concept shown at full size, in the nav bar, on light and dark backgrounds, and as a favicon. All use Manrope 800.</div>
+
+<div class="logo-grid">
+
+  <!-- 1: Wordmark, all black -->
+  <div class="logo-card">
+    <div class="logo-card-header">
+      <span class="badge">1</span>
+      <span class="logo-card-name">Wordmark / Monochrome</span>
+      <span class="logo-card-sub">Clean, no icon</span>
+    </div>
+    <div class="logo-display" style="background: #fff;">
+      <div>
+        <div class="context-label">Full size</div>
+        <div class="on-light">
+          <span class="wordmark" style="font-size: 28px; color: #111;">SearchBundle</span>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">In nav bar</div>
+        <div class="nav-preview">
+          <span class="wordmark" style="font-size: 15px; color: #111;">SearchBundle</span>
+          <div class="nav-items">
+            <span class="nav-item active">Dashboard</span>
+            <span class="nav-item">Accounts</span>
+            <span class="nav-item">Debts</span>
+            <span class="nav-item">Cooper</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-row">
+        <div>
+          <div class="context-label">On light</div>
+          <div class="on-light">
+            <span class="wordmark" style="font-size: 20px; color: #111;">SearchBundle</span>
+          </div>
+        </div>
+        <div>
+          <div class="context-label">On dark</div>
+          <div class="on-dark">
+            <span class="wordmark" style="font-size: 20px; color: #fff;">SearchBundle</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">Favicon</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="favicon-preview" style="background: #111; color: #fff;">S</div>
+          <div class="favicon-preview" style="background: #0d9488; color: #fff;">S</div>
+          <span style="font-size:11px;color:#aaa;margin-left:4px;">Favicon options</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2: Wordmark, teal accent -->
+  <div class="logo-card">
+    <div class="logo-card-header">
+      <span class="badge">2</span>
+      <span class="logo-card-name">Wordmark / Teal Accent</span>
+      <span class="logo-card-sub">Color on "Bundle"</span>
+    </div>
+    <div class="logo-display" style="background: #fff;">
+      <div>
+        <div class="context-label">Full size</div>
+        <div class="on-light">
+          <span class="wordmark" style="font-size: 28px;"><span style="color:#111;">Search</span><span style="color:#0d9488;">Bundle</span></span>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">In nav bar</div>
+        <div class="nav-preview">
+          <span class="wordmark" style="font-size: 15px;"><span style="color:#111;">Search</span><span style="color:#0d9488;">Bundle</span></span>
+          <div class="nav-items">
+            <span class="nav-item active">Dashboard</span>
+            <span class="nav-item">Accounts</span>
+            <span class="nav-item">Debts</span>
+            <span class="nav-item">Cooper</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-row">
+        <div>
+          <div class="context-label">On light</div>
+          <div class="on-light">
+            <span class="wordmark" style="font-size: 20px;"><span style="color:#111;">Search</span><span style="color:#0d9488;">Bundle</span></span>
+          </div>
+        </div>
+        <div>
+          <div class="context-label">On dark</div>
+          <div class="on-dark">
+            <span class="wordmark" style="font-size: 20px;"><span style="color:#fff;">Search</span><span style="color:#5eead4;">Bundle</span></span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">Favicon</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="favicon-preview" style="background: #0d9488; color: #fff;">SB</div>
+          <div class="favicon-preview" style="background: #111; color: #0d9488;">SB</div>
+          <span style="font-size:11px;color:#aaa;margin-left:4px;">Favicon options</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3: Lettermark SB -->
+  <div class="logo-card">
+    <div class="logo-card-header">
+      <span class="badge">3</span>
+      <span class="logo-card-name">Lettermark "SB"</span>
+      <span class="logo-card-sub">Icon + text combo</span>
+    </div>
+    <div class="logo-display" style="background: #fff;">
+      <div>
+        <div class="context-label">Full size</div>
+        <div class="on-light" style="gap: 16px;">
+          <div class="lettermark-box" style="width:44px;height:44px;background:#0d9488;color:#fff;font-size:18px;">SB</div>
+          <span class="wordmark" style="font-size: 24px; color: #111;">SearchBundle</span>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">In nav bar</div>
+        <div class="nav-preview">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="lettermark-box" style="width:28px;height:28px;background:#0d9488;color:#fff;font-size:11px;border-radius:6px;">SB</div>
+            <span class="wordmark" style="font-size: 14px; color: #111;">SearchBundle</span>
+          </div>
+          <div class="nav-items">
+            <span class="nav-item active">Dashboard</span>
+            <span class="nav-item">Accounts</span>
+            <span class="nav-item">Debts</span>
+            <span class="nav-item">Cooper</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-row">
+        <div>
+          <div class="context-label">On light</div>
+          <div class="on-light" style="gap:10px;">
+            <div class="lettermark-box" style="width:32px;height:32px;background:#0d9488;color:#fff;font-size:13px;">SB</div>
+            <span class="wordmark" style="font-size: 18px; color: #111;">SearchBundle</span>
+          </div>
+        </div>
+        <div>
+          <div class="context-label">On dark</div>
+          <div class="on-dark" style="gap:10px;">
+            <div class="lettermark-box" style="width:32px;height:32px;background:#0d9488;color:#fff;font-size:13px;">SB</div>
+            <span class="wordmark" style="font-size: 18px; color: #fff;">SearchBundle</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">Favicon / Icon only</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="favicon-preview" style="background: #0d9488; color: #fff;">SB</div>
+          <div class="favicon-preview" style="background: #111; color: #0d9488;">SB</div>
+          <div class="favicon-preview" style="background: #fff; color: #0d9488; border: 1.5px solid #e0e0e0;">SB</div>
+          <span style="font-size:11px;color:#aaa;margin-left:4px;">Works standalone</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4: Abstract mark -->
+  <div class="logo-card">
+    <div class="logo-card-header">
+      <span class="badge">4</span>
+      <span class="logo-card-name">Abstract Mark + Wordmark</span>
+      <span class="logo-card-sub">Overlapping layers = "bundle"</span>
+    </div>
+    <div class="logo-display" style="background: #fff;">
+      <div>
+        <div class="context-label">Full size</div>
+        <div class="on-light" style="gap: 14px;">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <rect x="4" y="10" width="24" height="24" rx="6" fill="#0d9488" opacity="0.3"/>
+            <rect x="12" y="6" width="24" height="24" rx="6" fill="#0d9488" opacity="0.5"/>
+            <rect x="16" y="14" width="24" height="24" rx="6" fill="#0d9488"/>
+          </svg>
+          <span class="wordmark" style="font-size: 24px; color: #111;">SearchBundle</span>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">In nav bar</div>
+        <div class="nav-preview">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="26" height="26" viewBox="0 0 44 44" fill="none">
+              <rect x="4" y="10" width="24" height="24" rx="6" fill="#0d9488" opacity="0.3"/>
+              <rect x="12" y="6" width="24" height="24" rx="6" fill="#0d9488" opacity="0.5"/>
+              <rect x="16" y="14" width="24" height="24" rx="6" fill="#0d9488"/>
+            </svg>
+            <span class="wordmark" style="font-size: 14px; color: #111;">SearchBundle</span>
+          </div>
+          <div class="nav-items">
+            <span class="nav-item active">Dashboard</span>
+            <span class="nav-item">Accounts</span>
+            <span class="nav-item">Debts</span>
+            <span class="nav-item">Cooper</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-row">
+        <div>
+          <div class="context-label">On light</div>
+          <div class="on-light" style="gap:10px;">
+            <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
+              <rect x="4" y="10" width="24" height="24" rx="6" fill="#0d9488" opacity="0.3"/>
+              <rect x="12" y="6" width="24" height="24" rx="6" fill="#0d9488" opacity="0.5"/>
+              <rect x="16" y="14" width="24" height="24" rx="6" fill="#0d9488"/>
+            </svg>
+            <span class="wordmark" style="font-size: 18px; color: #111;">SearchBundle</span>
+          </div>
+        </div>
+        <div>
+          <div class="context-label">On dark</div>
+          <div class="on-dark" style="gap:10px;">
+            <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
+              <rect x="4" y="10" width="24" height="24" rx="6" fill="#5eead4" opacity="0.3"/>
+              <rect x="12" y="6" width="24" height="24" rx="6" fill="#5eead4" opacity="0.5"/>
+              <rect x="16" y="14" width="24" height="24" rx="6" fill="#5eead4"/>
+            </svg>
+            <span class="wordmark" style="font-size: 18px; color: #fff;">SearchBundle</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">Favicon / Icon only</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="favicon-preview" style="background: #fff; padding: 4px; border: 1.5px solid #e0e0e0;">
+            <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
+              <rect x="4" y="10" width="24" height="24" rx="6" fill="#0d9488" opacity="0.3"/>
+              <rect x="12" y="6" width="24" height="24" rx="6" fill="#0d9488" opacity="0.5"/>
+              <rect x="16" y="14" width="24" height="24" rx="6" fill="#0d9488"/>
+            </svg>
+          </div>
+          <div class="favicon-preview" style="background: #0d9488; padding: 4px;">
+            <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
+              <rect x="4" y="10" width="24" height="24" rx="6" fill="#fff" opacity="0.3"/>
+              <rect x="12" y="6" width="24" height="24" rx="6" fill="#fff" opacity="0.5"/>
+              <rect x="16" y="14" width="24" height="24" rx="6" fill="#fff"/>
+            </svg>
+          </div>
+          <div class="favicon-preview" style="background: #111; padding: 4px;">
+            <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
+              <rect x="4" y="10" width="24" height="24" rx="6" fill="#0d9488" opacity="0.3"/>
+              <rect x="12" y="6" width="24" height="24" rx="6" fill="#0d9488" opacity="0.5"/>
+              <rect x="16" y="14" width="24" height="24" rx="6" fill="#0d9488"/>
+            </svg>
+          </div>
+          <span style="font-size:11px;color:#aaa;margin-left:4px;">Distinctive at small sizes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5: Compass/path mark -->
+  <div class="logo-card">
+    <div class="logo-card-header">
+      <span class="badge">5</span>
+      <span class="logo-card-name">Path Mark + Wordmark</span>
+      <span class="logo-card-sub">Upward path = financial growth</span>
+    </div>
+    <div class="logo-display" style="background: #fff;">
+      <div>
+        <div class="context-label">Full size</div>
+        <div class="on-light" style="gap: 14px;">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+            <path d="M12 28 L18 18 L24 22 L30 10" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="30" cy="10" r="2.5" fill="#0d9488"/>
+          </svg>
+          <span class="wordmark" style="font-size: 24px; color: #111;">SearchBundle</span>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">In nav bar</div>
+        <div class="nav-preview">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+              <path d="M12 28 L18 18 L24 22 L30 10" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="30" cy="10" r="2.5" fill="#0d9488"/>
+            </svg>
+            <span class="wordmark" style="font-size: 14px; color: #111;">SearchBundle</span>
+          </div>
+          <div class="nav-items">
+            <span class="nav-item active">Dashboard</span>
+            <span class="nav-item">Accounts</span>
+            <span class="nav-item">Debts</span>
+            <span class="nav-item">Cooper</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-row">
+        <div>
+          <div class="context-label">On light</div>
+          <div class="on-light" style="gap:10px;">
+            <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+              <path d="M12 28 L18 18 L24 22 L30 10" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="30" cy="10" r="2.5" fill="#0d9488"/>
+            </svg>
+            <span class="wordmark" style="font-size: 18px; color: #111;">SearchBundle</span>
+          </div>
+        </div>
+        <div>
+          <div class="context-label">On dark</div>
+          <div class="on-dark" style="gap:10px;">
+            <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="#5eead4" stroke-width="2.5" fill="none"/>
+              <path d="M12 28 L18 18 L24 22 L30 10" stroke="#5eead4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="30" cy="10" r="2.5" fill="#5eead4"/>
+            </svg>
+            <span class="wordmark" style="font-size: 18px; color: #fff;">SearchBundle</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">Favicon / Icon only</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="favicon-preview" style="background: #fff; border: 1.5px solid #e0e0e0; padding: 3px;">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+              <path d="M12 28 L18 18 L24 22 L30 10" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="30" cy="10" r="2.5" fill="#0d9488"/>
+            </svg>
+          </div>
+          <div class="favicon-preview" style="background: #0d9488; padding: 3px;">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="#fff" stroke-width="2.5" fill="none"/>
+              <path d="M12 28 L18 18 L24 22 L30 10" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="30" cy="10" r="2.5" fill="#fff"/>
+            </svg>
+          </div>
+          <div class="favicon-preview" style="background: #111; padding: 3px;">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="18" stroke="#0d9488" stroke-width="2.5" fill="none"/>
+              <path d="M12 28 L18 18 L24 22 L30 10" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="30" cy="10" r="2.5" fill="#0d9488"/>
+            </svg>
+          </div>
+          <span style="font-size:11px;color:#aaa;margin-left:4px;">Reads as finance at any size</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6: Dot cluster -->
+  <div class="logo-card">
+    <div class="logo-card-header">
+      <span class="badge">6</span>
+      <span class="logo-card-name">Dot Grid + Wordmark</span>
+      <span class="logo-card-sub">Clustered dots = "bundle"</span>
+    </div>
+    <div class="logo-display" style="background: #fff;">
+      <div>
+        <div class="context-label">Full size</div>
+        <div class="on-light" style="gap: 14px;">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="12" cy="12" r="5" fill="#0d9488" opacity="0.4"/>
+            <circle cx="26" cy="10" r="6" fill="#0d9488" opacity="0.6"/>
+            <circle cx="10" cy="26" r="4" fill="#0d9488" opacity="0.5"/>
+            <circle cx="24" cy="28" r="7" fill="#0d9488"/>
+            <circle cx="34" cy="20" r="4" fill="#0d9488" opacity="0.7"/>
+            <circle cx="18" cy="20" r="3" fill="#0d9488" opacity="0.35"/>
+          </svg>
+          <span class="wordmark" style="font-size: 24px; color: #111;">SearchBundle</span>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">In nav bar</div>
+        <div class="nav-preview">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+              <circle cx="12" cy="12" r="5" fill="#0d9488" opacity="0.4"/>
+              <circle cx="26" cy="10" r="6" fill="#0d9488" opacity="0.6"/>
+              <circle cx="10" cy="26" r="4" fill="#0d9488" opacity="0.5"/>
+              <circle cx="24" cy="28" r="7" fill="#0d9488"/>
+              <circle cx="34" cy="20" r="4" fill="#0d9488" opacity="0.7"/>
+              <circle cx="18" cy="20" r="3" fill="#0d9488" opacity="0.35"/>
+            </svg>
+            <span class="wordmark" style="font-size: 14px; color: #111;">SearchBundle</span>
+          </div>
+          <div class="nav-items">
+            <span class="nav-item active">Dashboard</span>
+            <span class="nav-item">Accounts</span>
+            <span class="nav-item">Debts</span>
+            <span class="nav-item">Cooper</span>
+          </div>
+        </div>
+      </div>
+      <div class="bg-row">
+        <div>
+          <div class="context-label">On light</div>
+          <div class="on-light" style="gap:10px;">
+            <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+              <circle cx="12" cy="12" r="5" fill="#0d9488" opacity="0.4"/>
+              <circle cx="26" cy="10" r="6" fill="#0d9488" opacity="0.6"/>
+              <circle cx="10" cy="26" r="4" fill="#0d9488" opacity="0.5"/>
+              <circle cx="24" cy="28" r="7" fill="#0d9488"/>
+              <circle cx="34" cy="20" r="4" fill="#0d9488" opacity="0.7"/>
+              <circle cx="18" cy="20" r="3" fill="#0d9488" opacity="0.35"/>
+            </svg>
+            <span class="wordmark" style="font-size: 18px; color: #111;">SearchBundle</span>
+          </div>
+        </div>
+        <div>
+          <div class="context-label">On dark</div>
+          <div class="on-dark" style="gap:10px;">
+            <svg width="30" height="30" viewBox="0 0 40 40" fill="none">
+              <circle cx="12" cy="12" r="5" fill="#5eead4" opacity="0.4"/>
+              <circle cx="26" cy="10" r="6" fill="#5eead4" opacity="0.6"/>
+              <circle cx="10" cy="26" r="4" fill="#5eead4" opacity="0.5"/>
+              <circle cx="24" cy="28" r="7" fill="#5eead4"/>
+              <circle cx="34" cy="20" r="4" fill="#5eead4" opacity="0.7"/>
+              <circle cx="18" cy="20" r="3" fill="#5eead4" opacity="0.35"/>
+            </svg>
+            <span class="wordmark" style="font-size: 18px; color: #fff;">SearchBundle</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="context-label">Favicon / Icon only</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="favicon-preview" style="background: #fff; border: 1.5px solid #e0e0e0; padding: 3px;">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <circle cx="12" cy="12" r="5" fill="#0d9488" opacity="0.4"/>
+              <circle cx="26" cy="10" r="6" fill="#0d9488" opacity="0.6"/>
+              <circle cx="10" cy="26" r="4" fill="#0d9488" opacity="0.5"/>
+              <circle cx="24" cy="28" r="7" fill="#0d9488"/>
+              <circle cx="34" cy="20" r="4" fill="#0d9488" opacity="0.7"/>
+              <circle cx="18" cy="20" r="3" fill="#0d9488" opacity="0.35"/>
+            </svg>
+          </div>
+          <div class="favicon-preview" style="background: #0d9488; padding: 3px;">
+            <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
+              <circle cx="12" cy="12" r="5" fill="#fff" opacity="0.4"/>
+              <circle cx="26" cy="10" r="6" fill="#fff" opacity="0.6"/>
+              <circle cx="10" cy="26" r="4" fill="#fff" opacity="0.5"/>
+              <circle cx="24" cy="28" r="7" fill="#fff"/>
+              <circle cx="34" cy="20" r="4" fill="#fff" opacity="0.7"/>
+              <circle cx="18" cy="20" r="3" fill="#fff" opacity="0.35"/>
+            </svg>
+          </div>
+          <span style="font-size:11px;color:#aaa;margin-left:4px;">Organic, playful</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
