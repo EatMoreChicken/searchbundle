@@ -45,7 +45,7 @@ export default function GettingStartedPage() {
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <span className="material-symbols-outlined text-primary animate-spin text-[32px]">progress_activity</span>
+        <i className="fa-solid fa-spinner fa-spin text-accent  text-[32px]" />
       </div>
     );
   }

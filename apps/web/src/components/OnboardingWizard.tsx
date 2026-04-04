@@ -68,8 +68,8 @@ function daysInMonth(year: number, month: number): number {
 function InfoTooltip({ children }: { children: string }) {
   return (
     <span className="relative group inline-flex items-center ml-1 align-middle cursor-help">
-      <span className="material-symbols-outlined text-[14px] text-on-surface-variant">info</span>
-      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 w-64 rounded-xl bg-on-surface px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+      <i className="fa-solid fa-circle-info text-[14px] text-text-secondary" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 w-64 rounded-xl bg-text-primary px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
         {children}
       </span>
     </span>
@@ -77,7 +77,7 @@ function InfoTooltip({ children }: { children: string }) {
 }
 
 function FieldHint({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">{children}</p>;
+  return <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">{children}</p>;
 }
 
 function NumericInput({
@@ -113,18 +113,18 @@ function NumericInput({
 function PrefixedInput({ prefix, suffix, children }: { prefix?: string; suffix?: string; children: React.ReactNode }) {
   return (
     <div className="relative flex items-center">
-      {prefix && <span className="pointer-events-none absolute left-4 text-sm font-medium text-on-surface-variant select-none">{prefix}</span>}
+      {prefix && <span className="pointer-events-none absolute left-4 text-sm font-medium text-text-secondary select-none">{prefix}</span>}
       <div className={["w-full", prefix ? "[&_input]:pl-8" : "", suffix ? "[&_input]:pr-10" : ""].join(" ")}>{children}</div>
-      {suffix && <span className="pointer-events-none absolute right-4 text-sm font-medium text-on-surface-variant select-none">{suffix}</span>}
+      {suffix && <span className="pointer-events-none absolute right-4 text-sm font-medium text-text-secondary select-none">{suffix}</span>}
     </div>
   );
 }
 
 const INPUT_CLASS =
-  "w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all";
+  "w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all";
 
 const SELECT_CLASS =
-  "w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all appearance-none cursor-pointer";
+  "w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all appearance-none cursor-pointer";
 
 // ─── Step Indicator ─────────────────────────────────────────────────────────
 
@@ -136,14 +136,14 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
           <div
             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
               i < current
-                ? "bg-primary text-on-primary"
+                ? "bg-accent text-white"
                 : i === current
-                ? "bg-primary-fixed text-primary"
-                : "bg-surface-container-high text-on-surface-variant"
+                ? "bg-accent-light text-accent"
+                : "bg-surface-alt text-text-secondary"
             }`}
           >
             {i < current ? (
-              <span className="material-symbols-outlined text-[16px]">check</span>
+              <i className="fa-solid fa-check text-[16px]" />
             ) : (
               i + 1
             )}
@@ -151,7 +151,7 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
           {i < total - 1 && (
             <div
               className={`w-12 h-0.5 rounded-full transition-all ${
-                i < current ? "bg-primary" : "bg-surface-container-high"
+                i < current ? "bg-accent" : "bg-surface-alt"
               }`}
             />
           )}
@@ -405,10 +405,10 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase mb-1">
+          <p className="text-label-sm font-semibold text-text-secondary tracking-widest uppercase mb-1">
             Getting Started
           </p>
-          <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
+          <h1 className="text-headline-lg font-extrabold text-text-primary tracking-tight">
             {step === 0 && "Let\u2019s start with your age"}
             {step === 1 && "Plan your retirement income"}
             {step === 2 && "Choose your savings path"}
@@ -503,8 +503,8 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
             onBack={() => setStep(2)}
           />
           {error && (
-            <div className="bg-error-container rounded-xl p-4">
-              <p className="text-sm text-on-error-container">{error}</p>
+            <div className="bg-error-light rounded-xl p-4">
+              <p className="text-sm text-error">{error}</p>
             </div>
           )}
         </>
@@ -516,10 +516,10 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
           <button
             type="button"
             onClick={goBack}
-            className="px-5 py-2.5 rounded-full text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-all"
+            className="px-5 py-2.5 rounded-full text-sm font-medium text-text-secondary hover:bg-surface-alt transition-all"
           >
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <i className="fa-solid fa-arrow-left text-[16px]" />
               Back
             </span>
           </button>
@@ -530,11 +530,11 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
             type="button"
             onClick={goNext}
             disabled={step === 0 ? !canAdvanceStep1 : !canAdvanceStep2}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
             <span className="flex items-center gap-1">
               Continue
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <i className="fa-solid fa-arrow-right text-[16px]" />
             </span>
           </button>
         )}
@@ -543,11 +543,11 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
             type="button"
             onClick={goNext}
             disabled={!selectedStrategy}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
             <span className="flex items-center gap-1">
               Customize
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <i className="fa-solid fa-arrow-right text-[16px]" />
             </span>
           </button>
         )}
@@ -556,16 +556,16 @@ export default function OnboardingWizard({ user, onComplete }: OnboardingWizardP
             type="button"
             onClick={handleComplete}
             disabled={saving}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
           >
             {saving ? (
               <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                <i className="fa-solid fa-spinner fa-spin text-[16px]" />
                 Saving...
               </span>
             ) : (
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+                <i className="fa-solid fa-rocket text-[16px]" />
                 Get Started
               </span>
             )}
@@ -603,14 +603,14 @@ function StepAge({
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Left: Form */}
       <div className="lg:col-span-3 space-y-6">
-        <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+        <section className="bg-surface rounded-xl p-8 space-y-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[20px]">cake</span>
+            <div className="w-10 h-10 rounded-full bg-warning-light flex items-center justify-center">
+              <i className="fa-solid fa-cake-candles text-warning text-[20px]" />
             </div>
             <div>
-              <h2 className="text-title-md font-bold text-on-surface">When were you born?</h2>
-              <p className="text-sm text-on-surface-variant">
+              <h2 className="text-title-md font-bold text-text-primary">When were you born?</h2>
+              <p className="text-sm text-text-secondary">
                 We use your age to calculate how many years you have to reach your goals. Never shared.
               </p>
             </div>
@@ -619,7 +619,7 @@ function StepAge({
           {/* Date selectors */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5 tracking-wide uppercase">Year</label>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 tracking-wide uppercase">Year</label>
               <select
                 value={birthYear}
                 onChange={(e) => setBirthYear(e.target.value)}
@@ -631,7 +631,7 @@ function StepAge({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5 tracking-wide uppercase">Month</label>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 tracking-wide uppercase">Month</label>
               <select
                 value={birthMonth}
                 onChange={(e) => setBirthMonth(e.target.value)}
@@ -643,7 +643,7 @@ function StepAge({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-on-surface-variant mb-1.5 tracking-wide uppercase">Day</label>
+              <label className="block text-xs font-semibold text-text-secondary mb-1.5 tracking-wide uppercase">Day</label>
               <select
                 value={birthDay}
                 onChange={(e) => setBirthDay(e.target.value)}
@@ -657,14 +657,14 @@ function StepAge({
           </div>
         </section>
 
-        <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-5">
+        <section className="bg-surface rounded-xl p-8 space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-[20px]">beach_access</span>
+            <div className="w-10 h-10 rounded-full bg-accent-light flex items-center justify-center">
+              <i className="fa-solid fa-umbrella-beach text-accent text-[20px]" />
             </div>
             <div>
-              <h2 className="text-title-md font-bold text-on-surface">When do you want to be financially free?</h2>
-              <p className="text-sm text-on-surface-variant">
+              <h2 className="text-title-md font-bold text-text-primary">When do you want to be financially free?</h2>
+              <p className="text-sm text-text-secondary">
                 This is the age you want the option to stop working. You can always keep going.
               </p>
             </div>
@@ -679,7 +679,7 @@ function StepAge({
                 max={85}
                 value={retirementAge}
                 onChange={(e) => setRetirementAge(Number(e.target.value))}
-                className="flex-1 h-2 rounded-full appearance-none bg-surface-container-highest cursor-pointer accent-primary"
+                className="flex-1 h-2 rounded-full appearance-none bg-surface-altest cursor-pointer accent-primary"
               />
               <div className="relative w-20">
                 <input
@@ -691,9 +691,9 @@ function StepAge({
                     const v = Number(e.target.value);
                     if (v >= 1 && v <= 120) setRetirementAge(v);
                   }}
-                  className="w-full bg-surface-container-high rounded-xl px-3 py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full bg-surface-alt rounded-xl px-3 py-2 text-center text-sm font-bold text-text-primary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant pointer-events-none">yrs</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-secondary pointer-events-none">yrs</span>
               </div>
             </div>
             <FieldHint>
@@ -705,24 +705,24 @@ function StepAge({
 
       {/* Right: Live Sidebar */}
       <div className="lg:col-span-2 space-y-4">
-        <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-5 sticky top-6">
-          <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">
+        <div className="bg-surface rounded-xl p-6 space-y-5 sticky top-6">
+          <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase">
             Your Timeline
           </p>
 
           {/* Age display */}
           <div className="text-center space-y-1">
-            <p className="text-5xl font-extrabold text-on-surface tracking-tight">
+            <p className="text-5xl font-extrabold text-text-primary tracking-tight">
               {currentAge != null ? currentAge : "--"}
             </p>
-            <p className="text-sm text-on-surface-variant">years old today</p>
+            <p className="text-sm text-text-secondary">years old today</p>
           </div>
 
           {/* Life timeline bar */}
           <div className="space-y-2">
-            <div className="relative h-4 bg-surface-container-highest rounded-full overflow-hidden">
+            <div className="relative h-4 bg-surface-altest rounded-full overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary-container rounded-full transition-all duration-500"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-accent-hover rounded-full transition-all duration-500"
                 style={{ width: `${lifePercent}%` }}
               />
               {/* Target marker */}
@@ -731,10 +731,10 @@ function StepAge({
                 style={{ left: `${Math.min(100, (retirementAge / 100) * 100)}%` }}
               />
             </div>
-            <div className="relative flex justify-between text-xs text-on-surface-variant">
+            <div className="relative flex justify-between text-xs text-text-secondary">
               <span>Born</span>
               <span
-                className="absolute font-semibold text-tertiary -translate-x-1/2"
+                className="absolute font-semibold text-warning -translate-x-1/2"
                 style={{ left: `${Math.min(98, Math.max(2, retirementAge))}%` }}
               >
                 Retire at {retirementAge}
@@ -745,20 +745,20 @@ function StepAge({
 
           {/* Key metrics */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-container-low rounded-xl p-4 text-center">
-              <p className="text-2xl font-extrabold text-primary tracking-tight">
+            <div className="bg-surface-alt rounded-xl p-4 text-center">
+              <p className="text-2xl font-extrabold text-accent tracking-tight">
                 {yearsRemaining != null && yearsRemaining > 0 ? yearsRemaining : "--"}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">years to go</p>
+              <p className="text-xs text-text-secondary mt-0.5">years to go</p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4 text-center">
-              <p className="text-2xl font-extrabold text-on-surface tracking-tight">{retirementAge}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">target age</p>
+            <div className="bg-surface-alt rounded-xl p-4 text-center">
+              <p className="text-2xl font-extrabold text-text-primary tracking-tight">{retirementAge}</p>
+              <p className="text-xs text-text-secondary mt-0.5">target age</p>
             </div>
           </div>
 
           {currentAge != null && yearsRemaining != null && yearsRemaining > 0 && (
-            <p className="text-xs text-on-surface-variant leading-relaxed">
+            <p className="text-xs text-text-secondary leading-relaxed">
               You&apos;re {currentAge} today. That gives you <strong>{yearsRemaining} years</strong> to build toward financial independence by age {retirementAge}.
             </p>
           )}
@@ -832,13 +832,13 @@ function StepIncome({
           {([
             {
               id: "help" as const,
-              icon: "calculate",
+              icon: "fa-calculator",
               title: "Help me figure it out",
               desc: "Enter your desired annual spending and we'll calculate everything for you.",
             },
             {
               id: "fixed" as const,
-              icon: "savings",
+              icon: "fa-piggy-bank",
               title: "I already have a number",
               desc: "You know your total retirement savings target. Just type it in.",
             },
@@ -847,29 +847,27 @@ function StepIncome({
               key={opt.id}
               type="button"
               onClick={() => setIncomeMode(opt.id)}
-              className={`text-left p-5 rounded-2xl transition-all ${
+              className={`text-left p-5 rounded-xl transition-all ${
                 incomeMode === opt.id
-                  ? "bg-primary-fixed"
-                  : "bg-surface-container-lowest hover:bg-surface-container"
+                  ? "bg-accent-light"
+                  : "bg-surface hover:bg-surface-alt"
               }`}
             >
               <div className="flex items-center gap-2 mb-1.5">
-                <span className={`material-symbols-outlined text-[18px] ${incomeMode === opt.id ? "text-primary" : "text-on-surface-variant"}`}>
-                  {opt.icon}
-                </span>
-                <span className={`text-sm font-bold ${incomeMode === opt.id ? "text-primary" : "text-on-surface"}`}>
+                <i className={`fa-solid ${opt.icon} text-[18px] ${incomeMode === opt.id ? "text-accent" : "text-text-secondary"}`} />
+                <span className={`text-sm font-bold ${incomeMode === opt.id ? "text-accent" : "text-text-primary"}`}>
                   {opt.title}
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant leading-relaxed">{opt.desc}</p>
+              <p className="text-xs text-text-secondary leading-relaxed">{opt.desc}</p>
             </button>
           ))}
         </div>
 
         {incomeMode === "fixed" ? (
-          <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-4">
+          <section className="bg-surface rounded-xl p-8 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">
+              <label className="block text-sm font-semibold text-text-primary mb-2">
                 What is your total savings target?
               </label>
               <PrefixedInput prefix="$">
@@ -887,14 +885,14 @@ function StepIncome({
 
             {/* Inflation-adjusted preview */}
             {(Number(fixedAmount) || 0) > 0 && yearsRemaining != null && yearsRemaining > 0 && (
-              <div className="bg-tertiary-fixed/30 rounded-xl p-4 space-y-1">
-                <div className="flex items-center gap-2 text-sm font-semibold text-on-tertiary-fixed-variant">
-                  <span className="material-symbols-outlined text-[16px]">trending_up</span>
+              <div className="bg-warning-light/30 rounded-xl p-4 space-y-1">
+                <div className="flex items-center gap-2 text-sm font-semibold text-warning">
+                  <i className="fa-solid fa-arrow-trend-up text-[16px]" />
                   Inflation adjusted
                 </div>
-                <p className="text-xs text-on-surface-variant">
+                <p className="text-xs text-text-secondary">
                   {formatFullCurrency(Number(fixedAmount))} today will need to be approximately{" "}
-                  <strong className="text-on-tertiary-fixed-variant">
+                  <strong className="text-warning">
                     {formatFullCurrency(inflationAdjustedTarget)}
                   </strong>{" "}
                   in {yearsRemaining} years at {inflationRate}% annual inflation.
@@ -905,14 +903,14 @@ function StepIncome({
         ) : (
           <div className="space-y-6">
             {/* Annual income input */}
-            <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-4">
+            <section className="bg-surface rounded-xl p-8 space-y-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 rounded-xl bg-primary-fixed flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary text-[18px]">payments</span>
+                <div className="w-9 h-9 rounded-xl bg-accent-light flex items-center justify-center">
+                  <i className="fa-solid fa-credit-card text-accent text-[18px]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-on-surface">How much per year do you want in retirement?</h3>
-                  <p className="text-xs text-on-surface-variant">In today&apos;s dollars. A rough estimate is fine, you can refine this later.</p>
+                  <h3 className="text-sm font-bold text-text-primary">How much per year do you want in retirement?</h3>
+                  <p className="text-xs text-text-secondary">In today&apos;s dollars. A rough estimate is fine, you can refine this later.</p>
                 </div>
               </div>
 
@@ -927,14 +925,14 @@ function StepIncome({
 
               {/* Inflation preview */}
               {annualIncomeToday > 0 && yearsRemaining != null && yearsRemaining > 0 && (
-                <div className="bg-tertiary-fixed/30 rounded-xl p-4 space-y-1">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-on-tertiary-fixed-variant">
-                    <span className="material-symbols-outlined text-[16px]">trending_up</span>
+                <div className="bg-warning-light/30 rounded-xl p-4 space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-warning">
+                    <i className="fa-solid fa-arrow-trend-up text-[16px]" />
                     Inflation adjusted
                   </div>
-                  <p className="text-xs text-on-surface-variant">
+                  <p className="text-xs text-text-secondary">
                     {formatFullCurrency(annualIncomeToday)}/yr today will be approximately{" "}
-                    <strong className="text-on-tertiary-fixed-variant">
+                    <strong className="text-warning">
                       {formatFullCurrency(annualIncomeFuture)}/yr
                     </strong>{" "}
                     in {yearsRemaining} years at {inflationRate}% inflation.
@@ -944,38 +942,36 @@ function StepIncome({
 
               <FieldHint>
                 <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[12px]">lightbulb</span>
+                  <i className="fa-solid fa-lightbulb text-[12px]" />
                   Don&apos;t overthink this. A rough number works great as a starting point. You can always adjust later.
                 </span>
               </FieldHint>
             </section>
 
             {/* Expandable expense calculator */}
-            <section className="bg-surface-container-lowest rounded-2xl overflow-hidden">
+            <section className="bg-surface rounded-xl overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowExpenseCalc(!showExpenseCalc)}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-container transition-colors"
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-alt transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center">
-                    <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[18px]">receipt_long</span>
+                  <div className="w-9 h-9 rounded-xl bg-warning-light flex items-center justify-center">
+                    <i className="fa-solid fa-receipt text-warning text-[18px]" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-bold text-on-surface">Not sure? Calculate from monthly expenses</p>
-                    <p className="text-xs text-on-surface-variant">Add up your expected monthly costs to figure out your yearly need</p>
+                    <p className="text-sm font-bold text-text-primary">Not sure? Calculate from monthly expenses</p>
+                    <p className="text-xs text-text-secondary">Add up your expected monthly costs to figure out your yearly need</p>
                   </div>
                 </div>
-                <span className={`material-symbols-outlined text-on-surface-variant text-[20px] transition-transform ${showExpenseCalc ? "rotate-180" : ""}`}>
-                  expand_more
-                </span>
+                <i className={`fa-solid fa-chevron-down text-text-secondary text-[20px] transition-transform ${showExpenseCalc ? "rotate-180" : ""}`} />
               </button>
 
               {showExpenseCalc && (
                 <div className="px-6 pb-6 space-y-4">
-                  <div className="bg-surface-container rounded-xl p-3 mb-2">
-                    <p className="text-xs text-on-surface-variant flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[14px]">info</span>
+                  <div className="bg-surface-alt rounded-xl p-3 mb-2">
+                    <p className="text-xs text-text-secondary flex items-center gap-1.5">
+                      <i className="fa-solid fa-circle-info text-[14px]" />
                       Enter amounts in <strong>today&apos;s dollars</strong>. We&apos;ll estimate the future cost using the inflation rate below.
                     </p>
                   </div>
@@ -989,24 +985,24 @@ function StepIncome({
                           value={cat.name}
                           onChange={(e) => updateExpense(i, "name", e.target.value)}
                           placeholder="Category name"
-                          className="flex-1 bg-surface-container-high rounded-xl px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                          className="flex-1 bg-surface-alt rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
                         />
                         <div className="relative w-32">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">$</span>
+                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">$</span>
                           <NumericInput
                             value={cat.amount}
                             onChange={(v) => updateExpense(i, "amount", v)}
                             placeholder="0"
-                            className="w-full bg-surface-container-high rounded-xl pl-7 pr-8 py-2.5 text-sm text-on-surface text-right placeholder:text-on-surface-variant/50 focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                            className="w-full bg-surface-alt rounded-xl pl-7 pr-8 py-2.5 text-sm text-text-primary text-right placeholder:text-text-secondary/50 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
                           />
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">/mo</span>
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-secondary">/mo</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeExpense(i)}
-                          className="w-8 h-8 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-all"
+                          className="w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:bg-error-light hover:text-error transition-all"
                         >
-                          <span className="material-symbols-outlined text-[16px]">close</span>
+                          <i className="fa-solid fa-xmark text-[16px]" />
                         </button>
                       </div>
                     ))}
@@ -1015,37 +1011,37 @@ function StepIncome({
                   <button
                     type="button"
                     onClick={addExpense}
-                    className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-container transition-colors"
+                    className="flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-container transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[16px]">add</span>
+                    <i className="fa-solid fa-plus text-[16px]" />
                     Add expense
                   </button>
 
                   {/* Expense totals */}
                   {monthlyExpenseTotal > 0 && (
-                    <div className="bg-surface-container rounded-xl p-4 space-y-3">
+                    <div className="bg-surface-alt rounded-xl p-4 space-y-3">
                       <div className="grid grid-cols-3 gap-3 text-center">
                         <div>
-                          <p className="text-xs text-on-surface-variant mb-0.5">Monthly total</p>
-                          <p className="text-lg font-bold text-on-surface">{formatFullCurrency(monthlyExpenseTotal)}</p>
-                          <p className="text-xs text-on-surface-variant">today</p>
+                          <p className="text-xs text-text-secondary mb-0.5">Monthly total</p>
+                          <p className="text-lg font-bold text-text-primary">{formatFullCurrency(monthlyExpenseTotal)}</p>
+                          <p className="text-xs text-text-secondary">today</p>
                         </div>
                         <div>
-                          <p className="text-xs text-on-surface-variant mb-0.5">Yearly total</p>
-                          <p className="text-lg font-bold text-on-surface">{formatFullCurrency(yearlyExpenseTotal)}</p>
-                          <p className="text-xs text-on-surface-variant">today</p>
+                          <p className="text-xs text-text-secondary mb-0.5">Yearly total</p>
+                          <p className="text-lg font-bold text-text-primary">{formatFullCurrency(yearlyExpenseTotal)}</p>
+                          <p className="text-xs text-text-secondary">today</p>
                         </div>
                         <div>
-                          <p className="text-xs text-on-surface-variant mb-0.5">Yearly at retirement</p>
-                          <p className="text-lg font-bold text-tertiary">{formatFullCurrency(yearlyExpenseFuture)}</p>
-                          <p className="text-xs text-on-surface-variant">inflation-adjusted</p>
+                          <p className="text-xs text-text-secondary mb-0.5">Yearly at retirement</p>
+                          <p className="text-lg font-bold text-warning">{formatFullCurrency(yearlyExpenseFuture)}</p>
+                          <p className="text-xs text-text-secondary">inflation-adjusted</p>
                         </div>
                       </div>
 
                       <button
                         type="button"
                         onClick={applyExpensesToAnnual}
-                        className="w-full py-2.5 rounded-full text-sm font-semibold text-primary bg-primary-fixed/50 hover:bg-primary-fixed transition-colors"
+                        className="w-full py-2.5 rounded-full text-sm font-semibold text-accent bg-accent-light/50 hover:bg-accent-light transition-colors"
                       >
                         Use {formatFullCurrency(yearlyExpenseTotal)}/yr as my retirement income
                       </button>
@@ -1056,16 +1052,16 @@ function StepIncome({
             </section>
 
             {/* Advanced parameters */}
-            <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-5">
+            <section className="bg-surface rounded-xl p-8 space-y-5">
               <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">tune</span>
-                <h3 className="text-sm font-bold text-on-surface">Assumptions</h3>
-                <span className="text-xs text-on-surface-variant">(defaults work well for most people)</span>
+                <i className="fa-solid fa-sliders text-text-secondary text-[18px]" />
+                <h3 className="text-sm font-bold text-text-primary">Assumptions</h3>
+                <span className="text-xs text-text-secondary">(defaults work well for most people)</span>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant mb-1.5 flex items-center">
+                  <label className="block text-xs font-semibold text-text-secondary mb-1.5 flex items-center">
                     Inflation rate
                     <InfoTooltip>
                       Average annual price increase. Historically about 3% in the US. This adjusts your target so it reflects real future costs.
@@ -1082,10 +1078,10 @@ function StepIncome({
                       className={INPUT_CLASS}
                     />
                   </PrefixedInput>
-                  <p className="text-xs text-on-surface-variant mt-1">Default: 3%. Most people keep this as-is.</p>
+                  <p className="text-xs text-text-secondary mt-1">Default: 3%. Most people keep this as-is.</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant mb-1.5 flex items-center">
+                  <label className="block text-xs font-semibold text-text-secondary mb-1.5 flex items-center">
                     Withdrawal rate
                     <InfoTooltip>
                       The percentage of your portfolio you withdraw each year. The "4% rule" means savings should last 30+ years. Lower is safer, higher means you need less saved but carries more risk.
@@ -1102,10 +1098,10 @@ function StepIncome({
                       className={INPUT_CLASS}
                     />
                   </PrefixedInput>
-                  <p className="text-xs text-on-surface-variant mt-1">Default: 4%. A widely accepted safe rate.</p>
+                  <p className="text-xs text-text-secondary mt-1">Default: 4%. A widely accepted safe rate.</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant mb-1.5 flex items-center">
+                  <label className="block text-xs font-semibold text-text-secondary mb-1.5 flex items-center">
                     Expected return
                     <InfoTooltip>
                       How much your investments grow per year on average. A diversified index fund portfolio has historically returned about 7%. Conservative: 5-6%. Optimistic: 8-9%.
@@ -1122,7 +1118,7 @@ function StepIncome({
                       className={INPUT_CLASS}
                     />
                   </PrefixedInput>
-                  <p className="text-xs text-on-surface-variant mt-1">Default: 7%. Historical stock market average.</p>
+                  <p className="text-xs text-text-secondary mt-1">Default: 7%. Historical stock market average.</p>
                 </div>
               </div>
             </section>
@@ -1132,19 +1128,19 @@ function StepIncome({
 
       {/* Right: Live Summary */}
       <div className="lg:col-span-2">
-        <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-5 sticky top-6">
-          <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">
+        <div className="bg-surface rounded-xl p-6 space-y-5 sticky top-6">
+          <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase">
             Your Plan
           </p>
 
           {/* Portfolio target: big number */}
           <div className="text-center space-y-1 py-2">
-            <p className="text-xs text-on-surface-variant uppercase tracking-wide">Portfolio target</p>
-            <p className="text-4xl font-extrabold text-on-surface tracking-tight">
+            <p className="text-xs text-text-secondary uppercase tracking-wide">Portfolio target</p>
+            <p className="text-4xl font-extrabold text-text-primary tracking-tight">
               {inflationAdjustedTarget > 0 ? formatCurrency(inflationAdjustedTarget) : "--"}
             </p>
             {inflationAdjustedTarget > 0 && portfolioTodayDollars > 0 && inflationAdjustedTarget !== portfolioTodayDollars && (
-              <p className="text-xs text-on-surface-variant">
+              <p className="text-xs text-text-secondary">
                 {formatCurrency(portfolioTodayDollars)} in today&apos;s dollars
               </p>
             )}
@@ -1152,34 +1148,34 @@ function StepIncome({
 
           {/* Metric tiles */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-container-low rounded-xl p-4 text-center">
-              <p className="text-2xl font-extrabold text-primary tracking-tight">
+            <div className="bg-surface-alt rounded-xl p-4 text-center">
+              <p className="text-2xl font-extrabold text-accent tracking-tight">
                 {monthlySavings > 0 ? formatFullCurrency(monthlySavings) : "--"}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">per month</p>
+              <p className="text-xs text-text-secondary mt-0.5">per month</p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4 text-center">
-              <p className="text-2xl font-extrabold text-primary tracking-tight">
+            <div className="bg-surface-alt rounded-xl p-4 text-center">
+              <p className="text-2xl font-extrabold text-accent tracking-tight">
                 {annualSavings > 0 ? formatFullCurrency(annualSavings) : "--"}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">per year</p>
+              <p className="text-xs text-text-secondary mt-0.5">per year</p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4 text-center">
-              <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+            <div className="bg-surface-alt rounded-xl p-4 text-center">
+              <p className="text-2xl font-extrabold text-text-primary tracking-tight">
                 {yearsRemaining != null && yearsRemaining > 0 ? yearsRemaining : "--"}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">years to go</p>
+              <p className="text-xs text-text-secondary mt-0.5">years to go</p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4 text-center">
-              <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+            <div className="bg-surface-alt rounded-xl p-4 text-center">
+              <p className="text-2xl font-extrabold text-text-primary tracking-tight">
                 {currentAge ?? "--"} → {retirementAge}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">age range</p>
+              <p className="text-xs text-text-secondary mt-0.5">age range</p>
             </div>
           </div>
 
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            <span className="material-symbols-outlined text-[12px] align-middle mr-0.5">info</span>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            <i className="fa-solid fa-circle-info text-[12px] align-middle mr-0.5" />
             Based on {expectedReturn}% annual return and {inflationRate}% inflation. These are estimates you can refine anytime.
           </p>
         </div>

@@ -121,21 +121,21 @@ function CustomTooltip({
   const timeLabel = years > 0 ? `${years}y ${months}m` : `${months}m`;
 
   return (
-    <div className="rounded-xl bg-surface-container-lowest px-4 py-3 shadow-lg text-[13px]">
-      <p className="text-[11px] uppercase tracking-[1px] text-on-surface-variant mb-2">
+    <div className="rounded-xl bg-surface px-4 py-3 shadow-lg text-[13px]">
+      <p className="text-[11px] uppercase tracking-[1px] text-text-secondary mb-2">
         Month {label} ({timeLabel})
       </p>
       {byKey["balance"] != null && (
-        <p className="font-semibold text-on-surface">Balance: <span className="text-error">{formatCurrency(byKey["balance"])}</span></p>
+        <p className="font-semibold text-text-primary">Balance: <span className="text-error">{formatCurrency(byKey["balance"])}</span></p>
       )}
       {byKey["principal"] != null && (
-        <p className="text-on-surface-variant mt-1">Principal: {formatCurrency(byKey["principal"])}</p>
+        <p className="text-text-secondary mt-1">Principal: {formatCurrency(byKey["principal"])}</p>
       )}
       {byKey["interest"] != null && (
-        <p className="text-on-surface-variant mt-1">Interest: {formatCurrency(byKey["interest"])}</p>
+        <p className="text-text-secondary mt-1">Interest: {formatCurrency(byKey["interest"])}</p>
       )}
       {byKey["cumulativeInterest"] != null && (
-        <p className="text-tertiary mt-1">Total Interest: {formatCurrency(byKey["cumulativeInterest"])}</p>
+        <p className="text-warning mt-1">Total Interest: {formatCurrency(byKey["cumulativeInterest"])}</p>
       )}
     </div>
   );
@@ -162,16 +162,16 @@ export default function AmortizationChart({ schedule, comparisonSchedule, height
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={merged} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" strokeOpacity={0.6} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-text-disabled)" strokeOpacity={0.6} />
         <XAxis
           dataKey="month"
-          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-text-secondary)" }}
           tickFormatter={(v) => `Y${Math.round(v / 12)}`}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-text-secondary)" }}
           tickFormatter={formatK}
           axisLine={false}
           tickLine={false}
@@ -181,8 +181,8 @@ export default function AmortizationChart({ schedule, comparisonSchedule, height
 
         <Area
           dataKey="cumulativeInterest"
-          fill="var(--color-tertiary-fixed)"
-          stroke="var(--color-tertiary)"
+          fill="var(--color-warning-light)"
+          stroke="var(--color-warning)"
           strokeWidth={1.5}
           fillOpacity={0.5}
           name="Total Interest"
@@ -192,7 +192,7 @@ export default function AmortizationChart({ schedule, comparisonSchedule, height
         {comparisonSchedule && (
           <Line
             dataKey="compBalance"
-            stroke="var(--color-secondary)"
+            stroke="var(--color-success)"
             strokeWidth={2}
             strokeDasharray="6 3"
             dot={false}
@@ -206,7 +206,7 @@ export default function AmortizationChart({ schedule, comparisonSchedule, height
           strokeWidth={2.5}
           dot={false}
           name="Balance"
-          activeDot={{ r: 5, fill: "var(--color-error)", stroke: "var(--color-surface-container-lowest)", strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: "var(--color-error)", stroke: "var(--color-surface)", strokeWidth: 2 }}
         />
       </ComposedChart>
     </ResponsiveContainer>

@@ -1,57 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  /* Fonts — single family */
-  --font-headline: "Manrope", sans-serif;
-  --font-body: "Manrope", sans-serif;
-  --font-label: "Manrope", sans-serif;
+  /* Font */
+  --font-sans: "Manrope", sans-serif;
 
-  /* Surface Hierarchy */
-  --color-surface: #f7faf8;
-  --color-surface-container-low: #f1f4f2;
-  --color-surface-container: #ebefed;
-  --color-surface-container-high: #e6e9e7;
-  --color-surface-container-highest: #e0e3e1;
-  --color-surface-container-lowest: #ffffff;
+  /* Base Palette */
+  --color-canvas: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-surface-alt: #ebeef2;
 
   /* Text */
-  --color-on-surface: #181c1b;
-  --color-on-surface-variant: #3e4947;
-  --color-outline-variant: #bdc9c7;
+  --color-text-primary: #111111;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-disabled: #cccccc;
 
-  /* Primary (Teal) */
-  --color-primary: #006761;
-  --color-primary-container: #15827b;
-  --color-on-primary: #ffffff;
-  --color-primary-fixed: #96f3e9;
+  /* Accent (Teal) */
+  --color-accent: #0d9488;
+  --color-accent-hover: #0f766e;
+  --color-accent-light: #f0fdfa;
+  --color-accent-border: #99f6e4;
 
-  /* Secondary (Mint) */
-  --color-secondary: #2c6956;
-  --color-secondary-container: #aeedd5;
-  --color-on-secondary-container: #316d5b;
-  --color-secondary-fixed: #b1efd8;
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+  --color-error: #dc2626;
+  --color-error-light: #fef2f2;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb;
+  --color-info: #2563eb;
+  --color-info-light: #eff6ff;
 
-  /* Tertiary (Amber) */
-  --color-tertiary: #805200;
-  --color-tertiary-container: #9d6a1b;
-  --color-tertiary-fixed: #ffddb5;
-  --color-on-tertiary-fixed-variant: #643f00;
-
-  /* Error */
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
-
-  /* Type Scale */
-  --text-display-lg: 3.5rem;
-  --text-headline-lg: 2rem;
-  --text-title-md: 1.125rem;
-  --text-body-lg: 1rem;
-  --text-label-sm: 0.75rem;
-}
-
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 html {
@@ -59,9 +38,9 @@ html {
 }
 
 body {
-  font-family: var(--font-body);
-  background-color: var(--color-surface);
-  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -72,6 +51,51 @@ select,
   cursor: pointer;
 }
 
+/* Motion: DESIGN.md transition defaults */
+button,
+a,
+[role="button"] {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+button:active,
+[role="button"]:active {
+  transform: scale(0.98);
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 200ms ease-out, background-color 200ms ease-out;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+}
+
+/* Stagger animation for list items and stat cards */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 300ms ease-out both;
+}
+
+/* Focus ring (accent-colored) */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+  border-color: var(--color-accent);
+}
+
 .glass-panel {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
@@ -80,7 +104,7 @@ select,
 
 .sb-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-outline-variant) transparent;
+  scrollbar-color: var(--color-text-disabled) transparent;
 }
 
 .sb-scrollbar::-webkit-scrollbar {
@@ -93,12 +117,12 @@ select,
 }
 
 .sb-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--color-outline-variant);
+  background-color: var(--color-text-disabled);
   border-radius: 100px;
 }
 
 .sb-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-on-surface-variant);
+  background-color: var(--color-text-secondary);
 }
 
 

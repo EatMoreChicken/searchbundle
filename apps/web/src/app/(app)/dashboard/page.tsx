@@ -79,13 +79,13 @@ const INFLATION_RATE = 0.03;
 // ─── Edit Target Form Helpers ────────────────────────────────────────────────
 
 const INPUT_CLASS =
-  "w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all";
+  "w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all";
 
 function InfoTooltip({ children }: { children: string }) {
   return (
     <span className="relative group inline-flex items-center ml-1 align-middle cursor-help">
-      <span className="material-symbols-outlined text-[14px] text-on-surface-variant">info</span>
-      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 w-64 rounded-xl bg-on-surface px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+      <i className="fa-solid fa-circle-info text-[14px] text-text-secondary" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 w-64 rounded-xl bg-text-primary px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
         {children}
       </span>
     </span>
@@ -94,7 +94,7 @@ function InfoTooltip({ children }: { children: string }) {
 
 function FieldHint({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">{children}</p>
+    <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">{children}</p>
   );
 }
 
@@ -110,7 +110,7 @@ function PrefixedInput({
   return (
     <div className="relative flex items-center">
       {prefix && (
-        <span className="pointer-events-none absolute left-4 text-sm font-medium text-on-surface-variant select-none">
+        <span className="pointer-events-none absolute left-4 text-sm font-medium text-text-secondary select-none">
           {prefix}
         </span>
       )}
@@ -118,7 +118,7 @@ function PrefixedInput({
         {children}
       </div>
       {suffix && (
-        <span className="pointer-events-none absolute right-4 text-sm font-medium text-on-surface-variant select-none">
+        <span className="pointer-events-none absolute right-4 text-sm font-medium text-text-secondary select-none">
           {suffix}
         </span>
       )}
@@ -161,17 +161,17 @@ function NumericInput({
 
 function OnTrackBadge({ info }: { info: OnTrackInfo }) {
   const config = {
-    ahead: { icon: "trending_up", bg: "bg-secondary-container", text: "text-secondary", iconColor: "text-secondary" },
-    on_track: { icon: "check_circle", bg: "bg-secondary-container", text: "text-secondary", iconColor: "text-secondary" },
-    slightly_behind: { icon: "trending_down", bg: "bg-tertiary-fixed", text: "text-on-tertiary-fixed-variant", iconColor: "text-tertiary" },
-    behind: { icon: "warning", bg: "bg-error-container", text: "text-on-error-container", iconColor: "text-error" },
-    no_data: { icon: "remove_circle_outline", bg: "bg-surface-container-high", text: "text-on-surface-variant", iconColor: "text-on-surface-variant" },
+    ahead: { icon: "fa-arrow-trend-up", bg: "bg-success-light", text: "text-success", iconColor: "text-success" },
+    on_track: { icon: "fa-circle-check", bg: "bg-success-light", text: "text-success", iconColor: "text-success" },
+    slightly_behind: { icon: "fa-arrow-trend-down", bg: "bg-warning-light", text: "text-warning", iconColor: "text-warning" },
+    behind: { icon: "fa-triangle-exclamation", bg: "bg-error-light", text: "text-error", iconColor: "text-error" },
+    no_data: { icon: "fa-circle-minus", bg: "bg-surface-alt", text: "text-text-secondary", iconColor: "text-text-secondary" },
   };
   const c = config[info.status];
 
   return (
     <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${c.bg}`}>
-      <span className={`material-symbols-outlined text-[16px] ${c.iconColor}`}>{c.icon}</span>
+      <i className={`fa-solid ${c.icon} text-[16px] ${c.iconColor}`} />
       <span className={`text-xs font-semibold ${c.text}`}>{info.label}</span>
       {info.status !== "no_data" && (
         <span className={`text-xs ${c.text} opacity-70`}>
@@ -496,7 +496,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-64">
-        <span className="material-symbols-outlined text-primary animate-spin text-[32px]">progress_activity</span>
+        <i className="fa-solid fa-spinner fa-spin text-accent  text-[32px]" />
       </div>
     );
   }
@@ -504,22 +504,22 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* ── Hero Header ────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary-fixed/40 via-surface-container-lowest to-secondary-fixed/30 rounded-2xl p-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-fixed/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-secondary-fixed/25 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-accent-light/40 via-surface to-secondary-fixed/30 rounded-xl p-8">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-accent-light/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-success-light/25 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
         <div className="relative flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase">Dashboard</p>
-            <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">
+            <p className="text-label-sm font-semibold text-text-secondary tracking-widest uppercase">Dashboard</p>
+            <h1 className="text-headline-lg font-extrabold text-text-primary tracking-tight">
               Hey {firstName}
             </h1>
           </div>
           {target && !editing && (
             <button
               onClick={startEditing}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-primary hover:bg-primary-fixed/40 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-accent hover:bg-accent-light/40 transition-all"
             >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
+              <i className="fa-solid fa-pen text-[18px]" />
               Edit Target
             </button>
           )}
@@ -528,35 +528,35 @@ export default function DashboardPage() {
 
       {/* ── Edit Target Modal ──────────────────────────────────────────── */}
       {editing && (
-        <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+        <section className="bg-surface rounded-xl p-8 space-y-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-[20px]">flag</span>
+            <div className="w-10 h-10 rounded-full bg-accent-light flex items-center justify-center">
+              <i className="fa-solid fa-flag text-accent text-[20px]" />
             </div>
-            <h2 className="text-title-md font-bold text-on-surface">Edit Financial Independence Target</h2>
+            <h2 className="text-title-md font-bold text-text-primary">Edit Financial Independence Target</h2>
           </div>
 
           <form onSubmit={saveTarget} className="space-y-6">
             {/* Mode selector */}
             <div>
-              <p className="text-sm font-semibold text-on-surface mb-1">How do you want to describe your goal?</p>
-              <p className="text-xs text-on-surface-variant mb-3">Choose the approach that feels more natural to you.</p>
+              <p className="text-sm font-semibold text-text-primary mb-1">How do you want to describe your goal?</p>
+              <p className="text-xs text-text-secondary mb-3">Choose the approach that feels more natural to you.</p>
               <div className="grid grid-cols-2 gap-3">
                 {([
-                  { id: "income_replacement" as TargetMode, icon: "paid", title: "I know my lifestyle", desc: "Tell us your desired annual spending and we'll calculate the total you need to save." },
-                  { id: "fixed" as TargetMode, icon: "savings", title: "I know my number", desc: "You already have a total portfolio target in mind and want to work backward from it." },
+                  { id: "income_replacement" as TargetMode, icon: "fa-money-bill-wave", title: "I know my lifestyle", desc: "Tell us your desired annual spending and we'll calculate the total you need to save." },
+                  { id: "fixed" as TargetMode, icon: "fa-piggy-bank", title: "I know my number", desc: "You already have a total portfolio target in mind and want to work backward from it." },
                 ] as const).map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
                     onClick={() => setMode(opt.id)}
-                    className={`text-left p-4 rounded-2xl transition-all ${mode === opt.id ? "bg-primary-fixed" : "bg-surface-container-high hover:bg-surface-container"}`}
+                    className={`text-left p-4 rounded-xl transition-all ${mode === opt.id ? "bg-accent-light" : "bg-surface-alt hover:bg-surface-alt"}`}
                   >
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`material-symbols-outlined text-[18px] ${mode === opt.id ? "text-primary" : "text-on-surface-variant"}`}>{opt.icon}</span>
-                      <span className={`text-sm font-bold ${mode === opt.id ? "text-primary" : "text-on-surface"}`}>{opt.title}</span>
+                      <i className={`fa-solid ${opt.icon} text-[18px] ${mode === opt.id ? "text-accent" : "text-text-secondary"}`} />
+                      <span className={`text-sm font-bold ${mode === opt.id ? "text-accent" : "text-text-primary"}`}>{opt.title}</span>
                     </div>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">{opt.desc}</p>
+                    <p className="text-xs text-text-secondary leading-relaxed">{opt.desc}</p>
                   </button>
                 ))}
               </div>
@@ -566,7 +566,7 @@ export default function DashboardPage() {
             <div className="space-y-5">
               {mode === "fixed" ? (
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-2">What is your total savings target?</label>
+                  <label className="block text-sm font-semibold text-text-primary mb-2">What is your total savings target?</label>
                   <PrefixedInput prefix="$">
                     <NumericInput value={fixedAmount} onChange={setFixedAmount} placeholder="2,000,000" className={INPUT_CLASS} />
                   </PrefixedInput>
@@ -575,20 +575,20 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-semibold text-on-surface mb-2">How much do you want to spend per year in retirement?</label>
+                    <label className="block text-sm font-semibold text-text-primary mb-2">How much do you want to spend per year in retirement?</label>
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
                         <PrefixedInput prefix="$">
                           <NumericInput value={annualIncome} onChange={setAnnualIncome} placeholder="80,000" className={INPUT_CLASS} />
                         </PrefixedInput>
                       </div>
-                      <div className="flex rounded-xl overflow-hidden border border-outline-variant/30 flex-shrink-0">
+                      <div className="flex rounded-xl overflow-hidden border border-text-disabled/30 flex-shrink-0">
                         {([
                           { key: "present" as const, label: "Today" },
                           { key: "future" as const, label: "Future" },
                         ]).map(({ key, label }) => (
                           <button key={key} type="button" onClick={() => setIncomeValueType(key)}
-                            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${incomeValueType === key ? "bg-primary text-white" : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container"}`}
+                            className={`px-3 py-2.5 text-xs font-semibold transition-colors ${incomeValueType === key ? "bg-accent text-white" : "bg-surface-alt text-text-secondary hover:bg-surface-alt"}`}
                           >{label}</button>
                         ))}
                       </div>
@@ -596,7 +596,7 @@ export default function DashboardPage() {
                     <FieldHint>{incomeValueType === "present" ? "In today's dollars. We'll inflate this forward automatically." : "Already adjusted for inflation."}</FieldHint>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
+                    <label className="block text-sm font-semibold text-text-primary mb-2 flex items-center">
                       Safe withdrawal rate
                       <InfoTooltip>The percentage of your portfolio you withdraw each year. The widely accepted "4% rule" means your savings should last 30+ years.</InfoTooltip>
                     </label>
@@ -610,14 +610,14 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-2">Target age</label>
+                  <label className="block text-sm font-semibold text-text-primary mb-2">Target age</label>
                   <PrefixedInput suffix="yrs">
                     <input type="number" min={1} max={120} value={targetAge} onChange={(e) => setTargetAge(e.target.value)} placeholder="65" className={INPUT_CLASS} />
                   </PrefixedInput>
                   <FieldHint>The age you want to be financially independent.</FieldHint>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-on-surface mb-2 flex items-center">
+                  <label className="block text-sm font-semibold text-text-primary mb-2 flex items-center">
                     Expected annual return
                     <InfoTooltip>How much you expect your investments to grow each year on average. 7% is the long-term historical average for diversified stock portfolios.</InfoTooltip>
                   </label>
@@ -628,38 +628,38 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-container rounded-2xl px-4 py-3">
-                <span className="material-symbols-outlined text-[14px] flex-shrink-0">info</span>
+              <div className="flex items-center gap-2 text-xs text-text-secondary bg-surface-alt rounded-xl px-4 py-3">
+                <i className="fa-solid fa-circle-info text-[14px] flex-shrink-0" />
                 <span>A 3% annual inflation rate is automatically applied.</span>
               </div>
             </div>
 
             {/* Live summary */}
-            <div className="bg-surface-container-low rounded-2xl p-6 space-y-4">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">Preview</p>
+            <div className="bg-surface-alt rounded-xl p-6 space-y-4">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase">Preview</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-on-surface-variant mb-0.5">Portfolio Target</p>
-                  <p className="text-lg font-extrabold text-on-surface tracking-tight">
-                    {inflationAdjustedTarget > 0 ? formatCurrency(inflationAdjustedTarget) : <span className="text-outline-variant">-</span>}
+                  <p className="text-xs text-text-secondary mb-0.5">Portfolio Target</p>
+                  <p className="text-lg font-extrabold text-text-primary tracking-tight">
+                    {inflationAdjustedTarget > 0 ? formatCurrency(inflationAdjustedTarget) : <span className="text-text-disabled">-</span>}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-on-surface-variant mb-0.5">Years Remaining</p>
-                  <p className="text-lg font-extrabold text-on-surface tracking-tight">
-                    {yearsRemaining != null && yearsRemaining > 0 ? yearsRemaining : <span className="text-outline-variant">-</span>}
+                  <p className="text-xs text-text-secondary mb-0.5">Years Remaining</p>
+                  <p className="text-lg font-extrabold text-text-primary tracking-tight">
+                    {yearsRemaining != null && yearsRemaining > 0 ? yearsRemaining : <span className="text-text-disabled">-</span>}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-on-surface-variant mb-0.5">Monthly Savings</p>
-                  <p className="text-lg font-extrabold text-primary tracking-tight">
-                    {monthlySavings > 0 ? formatFullCurrency(monthlySavings) : <span className="text-outline-variant">-</span>}
+                  <p className="text-xs text-text-secondary mb-0.5">Monthly Savings</p>
+                  <p className="text-lg font-extrabold text-accent tracking-tight">
+                    {monthlySavings > 0 ? formatFullCurrency(monthlySavings) : <span className="text-text-disabled">-</span>}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-on-surface-variant mb-0.5">Annual Savings</p>
-                  <p className="text-lg font-extrabold text-primary tracking-tight">
-                    {annualSavings > 0 ? formatFullCurrency(annualSavings) : <span className="text-outline-variant">-</span>}
+                  <p className="text-xs text-text-secondary mb-0.5">Annual Savings</p>
+                  <p className="text-lg font-extrabold text-accent tracking-tight">
+                    {annualSavings > 0 ? formatFullCurrency(annualSavings) : <span className="text-text-disabled">-</span>}
                   </p>
                 </div>
               </div>
@@ -669,11 +669,11 @@ export default function DashboardPage() {
 
             <div className="flex items-center gap-3">
               <button type="submit" disabled={targetSaving || portfolioTarget <= 0}
-                className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all disabled:opacity-60">
+                className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95 transition-all disabled:opacity-60">
                 {targetSaving ? "Saving\u2026" : "Update Target"}
               </button>
               <button type="button" onClick={() => setEditing(false)}
-                className="px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-all">
+                className="px-4 py-2 rounded-full text-sm font-medium text-text-secondary hover:bg-surface-alt transition-all">
                 Cancel
               </button>
             </div>
@@ -686,47 +686,47 @@ export default function DashboardPage() {
         <div className="space-y-4">
           {/* Primary row: plan metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{formatCurrency(savedSummary.targetAmount)}</p>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Target</p>
+              <p className="text-xl font-extrabold text-text-primary tracking-tight">{formatCurrency(savedSummary.targetAmount)}</p>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Target Age</p>
-              <p className="text-xl font-extrabold text-on-surface tracking-tight">{target?.targetAge}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{savedSummary.years} years away</p>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Target Age</p>
+              <p className="text-xl font-extrabold text-text-primary tracking-tight">{target?.targetAge}</p>
+              <p className="text-xs text-text-secondary mt-0.5">{savedSummary.years} years away</p>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Monthly</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Monthly</p>
+              <p className="text-xl font-extrabold text-accent tracking-tight">{formatFullCurrency(savedSummary.monthly)}</p>
+              <p className="text-xs text-text-secondary mt-0.5">savings needed</p>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Annual</p>
-              <p className="text-xl font-extrabold text-primary tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">savings needed</p>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Annual</p>
+              <p className="text-xl font-extrabold text-accent tracking-tight">{formatFullCurrency(savedSummary.annual)}</p>
+              <p className="text-xs text-text-secondary mt-0.5">savings needed</p>
             </div>
           </div>
 
           {/* Secondary row: current position */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
-              <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Net Worth</p>
+              <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-text-primary" : "text-error"}`}>
                 {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">assets minus liabilities</p>
+              <p className="text-xs text-text-secondary mt-0.5">assets minus liabilities</p>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Assets</p>
-              <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Total Assets</p>
+              <p className="text-xl font-extrabold text-success tracking-tight">{formatCurrency(totalAssets)}</p>
+              <p className="text-xs text-text-secondary mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
             </div>
-            <div className="bg-surface-container-lowest rounded-2xl p-5">
-              <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Liabilities</p>
-              <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-on-surface"}`}>
+            <div className="bg-surface rounded-xl p-5">
+              <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Total Liabilities</p>
+              <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-text-primary"}`}>
                 {totalLiabilities > 0 ? formatCurrency(totalLiabilities) : "$0"}
               </p>
-              <p className="text-xs text-on-surface-variant mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
+              <p className="text-xs text-text-secondary mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
             </div>
           </div>
         </div>
@@ -735,45 +735,45 @@ export default function DashboardPage() {
       {/* ── Position Summary (shows without target too) ────────────────── */}
       {!editing && (assets.length > 0 || debts.length > 0) && !savedSummary && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Net Worth</p>
-            <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-on-surface" : "text-error"}`}>
+          <div className="bg-surface rounded-xl p-5">
+            <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Net Worth</p>
+            <p className={`text-xl font-extrabold tracking-tight ${netWorth >= 0 ? "text-text-primary" : "text-error"}`}>
               {netWorth < 0 ? `-${formatCurrency(Math.abs(netWorth))}` : formatCurrency(netWorth)}
             </p>
-            <p className="text-xs text-on-surface-variant mt-0.5">assets minus liabilities</p>
+            <p className="text-xs text-text-secondary mt-0.5">assets minus liabilities</p>
           </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Assets</p>
-            <p className="text-xl font-extrabold text-secondary tracking-tight">{formatCurrency(totalAssets)}</p>
-            <p className="text-xs text-on-surface-variant mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
+          <div className="bg-surface rounded-xl p-5">
+            <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Total Assets</p>
+            <p className="text-xl font-extrabold text-success tracking-tight">{formatCurrency(totalAssets)}</p>
+            <p className="text-xs text-text-secondary mt-0.5">{assets.length} account{assets.length !== 1 ? "s" : ""}</p>
           </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-5">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase mb-1">Total Liabilities</p>
-            <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-on-surface"}`}>
+          <div className="bg-surface rounded-xl p-5">
+            <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase mb-1">Total Liabilities</p>
+            <p className={`text-xl font-extrabold tracking-tight ${totalLiabilities > 0 ? "text-error" : "text-text-primary"}`}>
               {totalLiabilities > 0 ? formatCurrency(totalLiabilities) : "$0"}
             </p>
-            <p className="text-xs text-on-surface-variant mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
+            <p className="text-xs text-text-secondary mt-0.5">{debts.length} liabilit{debts.length !== 1 ? "ies" : "y"}</p>
           </div>
         </div>
       )}
 
       {/* ── Hero Chart ─────────────────────────────────────────────────── */}
       {savedSummary && !editing && visibleChartData.length > 1 && (
-        <section className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
+        <section className="bg-surface rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
+            <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
+              <i className="fa-solid fa-chart-line text-[18px] text-accent" />
               Savings Trajectory
             </h2>
             <div className="flex items-center gap-2">
               {/* Chart mode toggle */}
-              <div className="flex items-center bg-surface-container rounded-full p-0.5">
+              <div className="flex items-center bg-surface-alt rounded-full p-0.5">
                 <button
                   onClick={() => setChartMode("summary")}
                   className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     chartMode === "summary"
-                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
-                      : "text-on-surface-variant hover:text-on-surface"
+                      ? "bg-surface text-accent"
+                      : "text-text-secondary hover:text-accent"
                   }`}
                 >
                   Summary
@@ -782,8 +782,8 @@ export default function DashboardPage() {
                   onClick={() => setChartMode("detailed")}
                   className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     chartMode === "detailed"
-                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
-                      : "text-on-surface-variant hover:text-on-surface"
+                      ? "bg-surface text-accent"
+                      : "text-text-secondary hover:text-accent"
                   }`}
                 >
                   Detailed
@@ -791,40 +791,38 @@ export default function DashboardPage() {
               </div>
 
               {/* Time range controls */}
-              <div className="flex items-center bg-surface-container rounded-full p-0.5">
+              <div className="flex items-center bg-surface-alt rounded-full p-0.5">
                 <button
                   onClick={() => setTimeWindow("focused")}
                   className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     timeWindow === "focused"
-                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
-                      : "text-on-surface-variant hover:text-on-surface"
+                      ? "bg-surface text-accent"
+                      : "text-text-secondary hover:text-accent"
                   }`}
                 >
                   Focused
                 </button>
                 <div className={`relative flex items-center min-w-[80px] rounded-full text-xs font-semibold transition-all ${
                   timeWindow === "custom"
-                    ? "bg-surface-container-lowest text-on-surface shadow-sm"
-                    : "text-on-surface-variant"
+                    ? "bg-surface text-accent"
+                    : "text-text-secondary"
                 }`}>
                   <button
                     onClick={() => setTimeWindow("custom")}
-                    className="flex-1 text-center pl-3 pr-1 py-1.5 hover:text-on-surface transition-colors"
+                    className="flex-1 text-center pl-3 pr-1 py-1.5 hover:text-accent transition-colors"
                   >
                     {customYears} Years
                   </button>
                   <button
                     onClick={() => setShowYearMenu((v) => !v)}
-                    className="pr-3 py-1.5 hover:text-on-surface transition-colors"
+                    className="pr-3 py-1.5 hover:text-accent transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[13px] leading-none">
-                      {showYearMenu ? "expand_less" : "expand_more"}
-                    </span>
+                    <i className={`fa-solid ${showYearMenu ? "fa-chevron-up" : "fa-chevron-down"} text-[13px] leading-none`} />
                   </button>
                   {showYearMenu && (
                     <>
                       <div className="fixed inset-0 z-20" onClick={() => setShowYearMenu(false)} />
-                      <div className="absolute top-full right-0 mt-1 z-30 bg-surface-container-lowest rounded-xl shadow-lg overflow-hidden border border-outline-variant/20 min-w-[110px]">
+                      <div className="absolute top-full right-0 mt-1 z-30 bg-surface rounded-xl shadow-lg overflow-hidden min-w-[110px]">
                         {YEAR_RANGE_OPTIONS.map((yr) => (
                           <button
                             key={yr}
@@ -835,8 +833,8 @@ export default function DashboardPage() {
                             }}
                             className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors ${
                               customYears === yr && timeWindow === "custom"
-                                ? "bg-primary-fixed text-primary"
-                                : "text-on-surface hover:bg-surface-container"
+                                ? "bg-accent-light text-accent"
+                                : "text-text-primary hover:bg-surface-alt"
                             }`}
                           >
                             {yr} Years
@@ -850,8 +848,8 @@ export default function DashboardPage() {
                   onClick={() => setTimeWindow("all")}
                   className={`min-w-[80px] text-center px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     timeWindow === "all"
-                      ? "bg-surface-container-lowest text-on-surface shadow-sm"
-                      : "text-on-surface-variant hover:text-on-surface"
+                      ? "bg-surface text-accent"
+                      : "text-text-secondary hover:text-accent"
                   }`}
                 >
                   Full Plan
@@ -901,10 +899,10 @@ export default function DashboardPage() {
                     if (!active || !payload || payload.length === 0) return null;
                     const d = payload[0]?.payload as DashboardChartPoint;
                     return (
-                      <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5 max-w-xs">
+                      <div className="bg-text-primary rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5 max-w-xs">
                         <p className="font-semibold">
                           Age {d.age} ({d.year})
-                          {d.age === savedSummary.retirementAge && <span className="ml-1 text-tertiary-fixed">Retirement</span>}
+                          {d.age === savedSummary.retirementAge && <span className="ml-1 text-warning-fixed">Retirement</span>}
                         </p>
                         {d.planValue != null && (
                           <div className="flex items-center gap-2">
@@ -1052,14 +1050,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-on-surface-variant">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text-secondary">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-primary" />
+              <div className="w-3 h-3 rounded-full bg-accent" />
               <span>Savings Plan</span>
             </div>
             {(assets.length > 0 || debts.length > 0) && (
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-primary" style={{ border: "2px solid #96f3e9" }} />
+                <div className="w-3 h-3 rounded-full bg-accent" style={{ border: "2px solid #96f3e9" }} />
                 <span>Net Worth</span>
               </div>
             )}
@@ -1079,7 +1077,7 @@ export default function DashboardPage() {
               <div className="w-3 h-3 rounded-full bg-tertiary" style={{ opacity: 0.6 }} />
               <span>Retirement</span>
             </div>
-            <p className="ml-auto text-xs text-on-surface-variant">
+            <p className="ml-auto text-xs text-text-secondary">
               {((target?.expectedReturn ?? 0.07) * 100).toFixed(1)}% return. Projections only.
             </p>
           </div>
@@ -1088,17 +1086,17 @@ export default function DashboardPage() {
 
       {/* ── No target prompt ───────────────────────────────────────────── */}
       {!target && !editing && (
-        <section className="bg-surface-container-lowest rounded-2xl p-8 text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center mx-auto">
-            <span className="material-symbols-outlined text-primary text-[28px]">flag</span>
+        <section className="bg-surface rounded-xl p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-accent-light flex items-center justify-center mx-auto">
+            <i className="fa-solid fa-flag text-accent text-[28px]" />
           </div>
-          <h2 className="text-title-md font-bold text-on-surface">Set your financial independence target</h2>
-          <p className="text-sm text-on-surface-variant max-w-md mx-auto">
+          <h2 className="text-title-md font-bold text-text-primary">Set your financial independence target</h2>
+          <p className="text-sm text-text-secondary max-w-md mx-auto">
             Define how much you need to save and by when. This becomes the benchmark shown on your dashboard chart.
           </p>
           <button
             onClick={startEditing}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all"
+            className="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95 transition-all"
           >
             Set a Target
           </button>
@@ -1109,28 +1107,28 @@ export default function DashboardPage() {
       {!editing && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-primary-fixed/60 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[14px] text-primary">account_balance</span>
+            <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-accent-light/60 flex items-center justify-center">
+                <i className="fa-solid fa-building-columns text-[14px] text-accent" />
               </div>
               Your Assets
             </h2>
             <Link
               href="/assets"
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-xs font-semibold text-accent hover:underline"
             >
               View all
             </Link>
           </div>
 
           {assets.length === 0 ? (
-            <div className="bg-surface-container-lowest rounded-2xl p-6 text-center">
-              <p className="text-sm text-on-surface-variant mb-3">No assets yet. Add your first account to start tracking progress against your plan.</p>
+            <div className="bg-surface rounded-xl p-6 text-center">
+              <p className="text-sm text-text-secondary mb-3">No assets yet. Add your first account to start tracking progress against your plan.</p>
               <Link
                 href="/assets"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95 transition-all"
               >
-                <span className="material-symbols-outlined text-[16px]">add</span>
+                <i className="fa-solid fa-plus text-[16px]" />
                 Add Asset
               </Link>
             </div>
@@ -1142,24 +1140,22 @@ export default function DashboardPage() {
                   <Link
                     key={asset.id}
                     href={`/assets/${asset.id}`}
-                    className="group bg-surface-container-lowest rounded-2xl p-5 hover:bg-surface-container-low transition-all"
+                    className="group bg-surface rounded-xl p-5 hover:bg-surface-alt transition-all"
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isInvestment ? "bg-primary-fixed" : "bg-surface-container-high"}`}>
-                        <span className={`material-symbols-outlined text-[16px] ${isInvestment ? "text-primary" : "text-on-surface-variant"}`}>
-                          {isInvestment ? "trending_up" : "account_balance_wallet"}
-                        </span>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isInvestment ? "bg-accent-light" : "bg-surface-alt"}`}>
+                        <i className={`fa-solid ${isInvestment ? "fa-arrow-trend-up" : "fa-wallet"} text-[16px] ${isInvestment ? "text-accent" : "text-text-secondary"}`} />
                       </div>
-                      <span className="text-[10px] font-semibold tracking-widest uppercase text-on-surface-variant">
+                      <span className="text-[10px] font-semibold tracking-widest uppercase text-text-secondary">
                         {isInvestment ? "Investment" : "Simple"}
                       </span>
                     </div>
-                    <p className="text-sm font-bold text-on-surface truncate">{asset.name}</p>
-                    <p className="text-lg font-extrabold text-on-surface tracking-tight mt-0.5">
+                    <p className="text-sm font-bold text-text-primary truncate">{asset.name}</p>
+                    <p className="text-lg font-extrabold text-text-primary tracking-tight mt-0.5">
                       {formatCurrency(asset.balance)}
                     </p>
                     {isInvestment && asset.returnRate != null && (
-                      <p className="text-xs text-on-surface-variant mt-1">
+                      <p className="text-xs text-text-secondary mt-1">
                         {asset.returnRate}% expected return
                       </p>
                     )}
@@ -1175,15 +1171,15 @@ export default function DashboardPage() {
       {!editing && debts.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-on-surface flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-error-container/60 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[14px] text-on-error-container">credit_card</span>
+            <h2 className="text-sm font-bold text-text-primary flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-error-light/60 flex items-center justify-center">
+                <i className="fa-solid fa-credit-card text-[14px] text-error" />
               </div>
               Your Liabilities
             </h2>
             <Link
               href="/liabilities"
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-xs font-semibold text-accent hover:underline"
             >
               View all
             </Link>
@@ -1192,13 +1188,13 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {debts.map(({ debt }) => {
               const typeConfig: Record<string, { icon: string; label: string }> = {
-                simple: { icon: "receipt_long", label: "Simple Debt" },
-                mortgage: { icon: "home", label: "Mortgage" },
-                auto: { icon: "directions_car", label: "Auto Loan" },
-                loan: { icon: "account_balance", label: "Loan" },
-                student_loan: { icon: "school", label: "Student Loan" },
-                credit_card: { icon: "credit_card", label: "Credit Card" },
-                other: { icon: "receipt", label: "Other" },
+                simple: { icon: "fa-receipt", label: "Simple Debt" },
+                mortgage: { icon: "fa-house", label: "Mortgage" },
+                auto: { icon: "fa-car", label: "Auto Loan" },
+                loan: { icon: "fa-building-columns", label: "Loan" },
+                student_loan: { icon: "fa-graduation-cap", label: "Student Loan" },
+                credit_card: { icon: "fa-credit-card", label: "Credit Card" },
+                other: { icon: "fa-receipt", label: "Other" },
               };
               const config = typeConfig[debt.type] ?? typeConfig.other;
 
@@ -1206,24 +1202,22 @@ export default function DashboardPage() {
                 <Link
                   key={debt.id}
                   href={`/liabilities/${debt.id}`}
-                  className="group bg-surface-container-lowest rounded-2xl p-5 hover:bg-surface-container-low transition-all"
+                  className="group bg-surface rounded-xl p-5 hover:bg-surface-alt transition-all"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-error-container">
-                      <span className="material-symbols-outlined text-[16px] text-on-error-container">
-                        {config.icon}
-                      </span>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-error-light">
+                      <i className={`fa-solid ${config.icon} text-[16px] text-error`} />
                     </div>
-                    <span className="text-[10px] font-semibold tracking-widest uppercase text-on-surface-variant">
+                    <span className="text-[10px] font-semibold tracking-widest uppercase text-text-secondary">
                       {config.label}
                     </span>
                   </div>
-                  <p className="text-sm font-bold text-on-surface truncate">{debt.name}</p>
-                  <p className="text-lg font-extrabold text-on-surface tracking-tight mt-0.5">
+                  <p className="text-sm font-bold text-text-primary truncate">{debt.name}</p>
+                  <p className="text-lg font-extrabold text-text-primary tracking-tight mt-0.5">
                     {formatCurrency(debt.balance)}
                   </p>
                   {debt.interestRate != null && debt.interestRate > 0 && (
-                    <p className="text-xs text-on-surface-variant mt-1">
+                    <p className="text-xs text-text-secondary mt-1">
                       {debt.interestRate}% interest
                       {debt.minimumPayment ? ` \u00b7 ${formatFullCurrency(debt.minimumPayment)}/mo` : ""}
                     </p>

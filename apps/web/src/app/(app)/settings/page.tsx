@@ -289,7 +289,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-64">
-        <span className="material-symbols-outlined text-primary animate-spin text-[32px]">progress_activity</span>
+        <i className="fa-solid fa-spinner fa-spin text-accent  text-[32px]" />
       </div>
     );
   }
@@ -297,41 +297,41 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-2xl space-y-6">
       <div>
-        <p className="text-label-sm font-semibold text-on-surface-variant tracking-widest uppercase mb-1">Account</p>
-        <h1 className="text-headline-lg font-extrabold text-on-surface tracking-tight">Settings</h1>
+        <p className="text-label-sm font-semibold text-text-secondary tracking-widest uppercase mb-1">Account</p>
+        <h1 className="text-headline-lg font-extrabold text-text-primary tracking-tight">Settings</h1>
       </div>
 
       {/* Profile Section */}
-      <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+      <section className="bg-surface rounded-xl p-8 space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary text-[20px]">person</span>
+          <div className="w-10 h-10 rounded-full bg-accent-light flex items-center justify-center">
+            <i className="fa-solid fa-user text-accent text-[20px]" />
           </div>
           <div>
-            <h2 className="text-title-md font-bold text-on-surface">Profile</h2>
-            <p className="text-sm text-on-surface-variant">Your name and email address</p>
+            <h2 className="text-title-md font-bold text-text-primary">Profile</h2>
+            <p className="text-sm text-text-secondary">Your name and email address</p>
           </div>
         </div>
 
         <form onSubmit={saveProfile} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-on-surface mb-2">Display name</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">Display name</label>
             <input
               type="text"
               value={profile.name}
               onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
               placeholder="Your name"
-              className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+              className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-on-surface mb-2">Email address</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">Email address</label>
             <input
               type="email"
               value={profile.email}
               onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
               required
-              className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+              className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
 
@@ -345,15 +345,15 @@ export default function SettingsPage() {
               disabled={profileStatus === "saving" || !isProfileDirty}
               className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
                 isProfileDirty
-                  ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
-                  : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                  ? "text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95"
+                  : "text-text-secondary bg-surface-alt cursor-not-allowed"
               }`}
             >
               {profileStatus === "saving" ? "Saving…" : "Save changes"}
             </button>
             {profileStatus === "success" && (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-secondary">
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-success">
+                <i className="fa-solid fa-circle-check text-[18px]" />
                 Saved
               </span>
             )}
@@ -362,30 +362,30 @@ export default function SettingsPage() {
       </section>
 
       {/* Personal & Financial Section */}
-      <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+      <section className="bg-surface rounded-xl p-8 space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center">
-            <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[20px]">tune</span>
+          <div className="w-10 h-10 rounded-full bg-warning-light flex items-center justify-center">
+            <i className="fa-solid fa-sliders text-warning text-[20px]" />
           </div>
           <div>
-            <h2 className="text-title-md font-bold text-on-surface">Personal &amp; Financial</h2>
-            <p className="text-sm text-on-surface-variant">Used for projections and planning</p>
+            <h2 className="text-title-md font-bold text-text-primary">Personal &amp; Financial</h2>
+            <p className="text-sm text-text-secondary">Used for projections and planning</p>
           </div>
         </div>
 
         <form onSubmit={savePersonal} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Date of birth</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Date of birth</label>
               <input
                 type="date"
                 value={personal.dateOfBirth}
                 onChange={(e) => setPersonal((p) => ({ ...p, dateOfBirth: e.target.value }))}
-                className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Target retirement age</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Target retirement age</label>
               <input
                 type="number"
                 min={1}
@@ -393,18 +393,18 @@ export default function SettingsPage() {
                 value={personal.retirementAge}
                 onChange={(e) => setPersonal((p) => ({ ...p, retirementAge: e.target.value }))}
                 placeholder="e.g. 65"
-                className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Timezone</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Timezone</label>
               <select
                 value={personal.timezone}
                 onChange={(e) => setPersonal((p) => ({ ...p, timezone: e.target.value }))}
-                className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
               >
                 {TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>{tz}</option>
@@ -412,11 +412,11 @@ export default function SettingsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Preferred currency</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Preferred currency</label>
               <select
                 value={personal.preferredCurrency}
                 onChange={(e) => setPersonal((p) => ({ ...p, preferredCurrency: e.target.value }))}
-                className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>{c.label}</option>
@@ -426,7 +426,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-on-surface mb-2">Projection end age</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">Projection end age</label>
             <input
               type="number"
               min={50}
@@ -434,9 +434,9 @@ export default function SettingsPage() {
               value={personal.projectionEndAge}
               onChange={(e) => setPersonal((p) => ({ ...p, projectionEndAge: e.target.value }))}
               placeholder="100"
-              className="w-full max-w-48 bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+              className="w-full max-w-48 bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
             />
-            <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+            <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">
               How far into the future projection charts extend. Default is age 100. Charts will show your portfolio growth through this age.
             </p>
           </div>
@@ -451,15 +451,15 @@ export default function SettingsPage() {
               disabled={personalStatus === "saving" || !isPersonalDirty}
               className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
                 isPersonalDirty
-                  ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
-                  : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                  ? "text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95"
+                  : "text-text-secondary bg-surface-alt cursor-not-allowed"
               }`}
             >
               {personalStatus === "saving" ? "Saving…" : "Save changes"}
             </button>
             {personalStatus === "success" && (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-secondary">
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-success">
+                <i className="fa-solid fa-circle-check text-[18px]" />
                 Saved
               </span>
             )}
@@ -469,20 +469,20 @@ export default function SettingsPage() {
 
       {/* Household Section */}
       {activeHouseholdId && (
-        <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+        <section className="bg-surface rounded-xl p-8 space-y-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-secondary-container text-[20px]">group</span>
+            <div className="w-10 h-10 rounded-full bg-success-light flex items-center justify-center">
+              <i className="fa-solid fa-users text-success text-[20px]" />
             </div>
             <div>
-              <h2 className="text-title-md font-bold text-on-surface">Household</h2>
-              <p className="text-sm text-on-surface-variant">Manage your household and members</p>
+              <h2 className="text-title-md font-bold text-text-primary">Household</h2>
+              <p className="text-sm text-text-secondary">Manage your household and members</p>
             </div>
           </div>
 
           {households.length > 1 && (
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Switch household</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Switch household</label>
               <div className="flex flex-wrap gap-2">
                 {households.map((h) => (
                   <button
@@ -490,8 +490,8 @@ export default function SettingsPage() {
                     onClick={() => h.householdId !== activeHouseholdId && switchHousehold(h.householdId)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       h.householdId === activeHouseholdId
-                        ? "bg-primary text-on-primary"
-                        : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest"
+                        ? "bg-accent text-white"
+                        : "bg-surface-alt text-text-primary hover:bg-surface-altest"
                     }`}
                   >
                     {h.householdName}
@@ -504,23 +504,23 @@ export default function SettingsPage() {
 
           <form onSubmit={saveHousehold} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Household name</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Household name</label>
               <input
                 type="text"
                 value={householdName}
                 onChange={(e) => setHouseholdName(e.target.value)}
                 placeholder="My Household"
-                className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-on-surface mb-2">Primary financial goal</label>
+              <label className="block text-sm font-semibold text-text-primary mb-2">Primary financial goal</label>
               <textarea
                 value={financialGoalNote}
                 onChange={(e) => setFinancialGoalNote(e.target.value)}
                 rows={3}
                 placeholder="e.g. Retire by 55 with $2M invested…"
-                className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all resize-none"
+                className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all resize-none"
               />
             </div>
 
@@ -534,15 +534,15 @@ export default function SettingsPage() {
                 disabled={householdStatus === "saving" || !isHouseholdDirty}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
                   isHouseholdDirty
-                    ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
-                    : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                    ? "text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95"
+                    : "text-text-secondary bg-surface-alt cursor-not-allowed"
                 }`}
               >
                 {householdStatus === "saving" ? "Saving…" : "Save changes"}
               </button>
               {householdStatus === "success" && (
-                <span className="flex items-center gap-1.5 text-sm font-medium text-secondary">
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                <span className="flex items-center gap-1.5 text-sm font-medium text-success">
+                  <i className="fa-solid fa-circle-check text-[18px]" />
                   Saved
                 </span>
               )}
@@ -551,14 +551,14 @@ export default function SettingsPage() {
 
           {/* Members list */}
           <div className="pt-2">
-            <h3 className="text-sm font-semibold text-on-surface mb-3">Members</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Members</h3>
             <div className="space-y-2">
               {members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between bg-surface-container-low rounded-2xl px-4 py-3">
+                <div key={m.id} className="flex items-center justify-between bg-surface-alt rounded-xl px-4 py-3">
                   <div>
-                    <span className="text-sm font-medium text-on-surface">{m.name || m.email}</span>
-                    {m.name && <span className="ml-2 text-xs text-on-surface-variant">{m.email}</span>}
-                    <span className="ml-2 text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full">
+                    <span className="text-sm font-medium text-text-primary">{m.name || m.email}</span>
+                    {m.name && <span className="ml-2 text-xs text-text-secondary">{m.email}</span>}
+                    <span className="ml-2 text-xs font-medium text-text-secondary bg-surface-alt px-2 py-0.5 rounded-full">
                       {m.role}
                     </span>
                   </div>
@@ -577,7 +577,7 @@ export default function SettingsPage() {
 
           {/* Invite member */}
           <div className="pt-2">
-            <h3 className="text-sm font-semibold text-on-surface mb-3">Invite a member</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Invite a member</h3>
             <form onSubmit={inviteMember} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <input
@@ -586,35 +586,35 @@ export default function SettingsPage() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                   required
                   placeholder="Email address"
-                  className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
                 />
                 <input
                   type="text"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
                   placeholder="Name (optional)"
-                  className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
                 />
               </div>
 
               {inviteError && <p className="text-sm text-error">{inviteError}</p>}
 
               {inviteResult?.tempPassword && (
-                <div className="rounded-2xl bg-tertiary-fixed p-4">
-                  <p className="text-sm font-medium text-on-tertiary-fixed-variant">
+                <div className="rounded-xl bg-warning-light p-4">
+                  <p className="text-sm font-medium text-warning">
                     Account created! Share this temporary password:
                   </p>
-                  <p className="mt-1 tracking-wider text-sm font-bold text-on-tertiary-fixed-variant select-all">
+                  <p className="mt-1 tracking-wider text-sm font-bold text-warning select-all">
                     {inviteResult.tempPassword}
                   </p>
-                  <p className="mt-1 text-xs text-on-tertiary-fixed-variant/70">
+                  <p className="mt-1 text-xs text-warning/70">
                     They will be asked to set a new password on first sign-in.
                   </p>
                 </div>
               )}
 
               {inviteResult?.message && !inviteResult.tempPassword && (
-                <p className="text-sm font-medium text-secondary">{inviteResult.message}</p>
+                <p className="text-sm font-medium text-success">{inviteResult.message}</p>
               )}
 
               <button
@@ -622,8 +622,8 @@ export default function SettingsPage() {
                 disabled={!inviteEmail}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
                   inviteEmail
-                    ? "text-on-secondary-container bg-secondary-container hover:scale-105 active:scale-95"
-                    : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                    ? "text-success bg-success-light hover:scale-105 active:scale-95"
+                    : "text-text-secondary bg-surface-alt cursor-not-allowed"
                 }`}
               >
                 Send invite
@@ -634,31 +634,31 @@ export default function SettingsPage() {
       )}
 
       {/* Security Section */}
-      <section className="bg-surface-container-lowest rounded-2xl p-8 space-y-6">
+      <section className="bg-surface rounded-xl p-8 space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-error-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-on-error-container text-[20px]">lock</span>
+          <div className="w-10 h-10 rounded-full bg-error-light flex items-center justify-center">
+            <i className="fa-solid fa-lock text-error text-[20px]" />
           </div>
           <div>
-            <h2 className="text-title-md font-bold text-on-surface">Security</h2>
-            <p className="text-sm text-on-surface-variant">Update your password</p>
+            <h2 className="text-title-md font-bold text-text-primary">Security</h2>
+            <p className="text-sm text-text-secondary">Update your password</p>
           </div>
         </div>
 
         <form onSubmit={savePassword} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-on-surface mb-2">Current password</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">Current password</label>
             <input
               type="password"
               value={password.currentPassword}
               onChange={(e) => setPassword((p) => ({ ...p, currentPassword: e.target.value }))}
               required
               autoComplete="current-password"
-              className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+              className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-on-surface mb-2">New password</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">New password</label>
             <input
               type="password"
               value={password.newPassword}
@@ -666,18 +666,18 @@ export default function SettingsPage() {
               required
               autoComplete="new-password"
               placeholder="At least 8 characters"
-              className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+              className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-on-surface mb-2">Confirm new password</label>
+            <label className="block text-sm font-semibold text-text-primary mb-2">Confirm new password</label>
             <input
               type="password"
               value={password.confirmPassword}
               onChange={(e) => setPassword((p) => ({ ...p, confirmPassword: e.target.value }))}
               required
               autoComplete="new-password"
-              className="w-full bg-surface-container-high rounded-2xl px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-white focus:ring-1 focus:ring-primary transition-all"
+              className="w-full bg-surface-alt rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all"
             />
           </div>
 
@@ -691,15 +691,15 @@ export default function SettingsPage() {
               disabled={passwordStatus === "saving" || !isPasswordDirty}
               className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60 ${
                 isPasswordDirty
-                  ? "text-on-primary bg-gradient-to-r from-primary to-primary-container hover:scale-105 active:scale-95"
-                  : "text-on-surface-variant bg-surface-container-high cursor-not-allowed"
+                  ? "text-white bg-gradient-to-r from-accent to-accent-hover hover:scale-105 active:scale-95"
+                  : "text-text-secondary bg-surface-alt cursor-not-allowed"
               }`}
             >
               {passwordStatus === "saving" ? "Updating…" : "Update password"}
             </button>
             {passwordStatus === "success" && (
-              <span className="flex items-center gap-1.5 text-sm font-medium text-secondary">
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-success">
+                <i className="fa-solid fa-circle-check text-[18px]" />
                 Password updated
               </span>
             )}

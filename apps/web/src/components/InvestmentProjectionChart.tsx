@@ -106,18 +106,18 @@ function CustomTooltip({
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
 
   return (
-    <div className="rounded-xl bg-surface-container-lowest px-4 py-3 shadow-lg text-[13px]">
-      <p className="text-[11px] uppercase tracking-[1px] text-on-surface-variant mb-2">
+    <div className="rounded-xl bg-surface px-4 py-3 shadow-lg text-[13px]">
+      <p className="text-[11px] uppercase tracking-[1px] text-text-secondary mb-2">
         Year {label}
       </p>
       {expected != null && (
-        <p className="font-semibold text-on-surface">Expected: <span className="text-primary">{fmt(expected)}</span></p>
+        <p className="font-semibold text-text-primary">Expected: <span className="text-accent">{fmt(expected)}</span></p>
       )}
       {hasVariance && rangeLow != null && rangeHigh != null && (
-        <p className="text-on-surface-variant mt-1">Range: {fmt(rangeLow)} – {fmt(rangeHigh)}</p>
+        <p className="text-text-secondary mt-1">Range: {fmt(rangeLow)} – {fmt(rangeHigh)}</p>
       )}
       {includeInflation && inflAdj != null && (
-        <p className="text-on-surface-variant mt-1">Inflation-adj: {fmt(inflAdj)}</p>
+        <p className="text-text-secondary mt-1">Inflation-adj: {fmt(inflAdj)}</p>
       )}
     </div>
   );
@@ -154,16 +154,16 @@ export default function InvestmentProjectionChart({
   return (
     <ResponsiveContainer width="100%" height={320}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" strokeOpacity={0.6} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-text-disabled)" strokeOpacity={0.6} />
         <XAxis
           dataKey="year"
-          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-text-secondary)" }}
           tickFormatter={(v) => `Y${v}`}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+          tick={{ fontFamily: "Manrope", fontSize: 11, fill: "var(--color-text-secondary)" }}
           tickFormatter={formatK}
           axisLine={false}
           tickLine={false}
@@ -191,7 +191,7 @@ export default function InvestmentProjectionChart({
             <Area
               dataKey="rangeSize"
               stackId="range"
-              fill="var(--color-primary-fixed)"
+              fill="var(--color-accent-light)"
               stroke="transparent"
               fillOpacity={0.7}
               isAnimationActive={false}
@@ -203,7 +203,7 @@ export default function InvestmentProjectionChart({
         {includeInflation && (
           <Line
             dataKey="inflationAdjusted"
-            stroke="var(--color-on-surface-variant)"
+            stroke="var(--color-text-secondary)"
             strokeWidth={1.5}
             strokeDasharray="4 4"
             dot={false}
@@ -215,11 +215,11 @@ export default function InvestmentProjectionChart({
         {/* Main expected value line */}
         <Line
           dataKey="expected"
-          stroke="var(--color-primary)"
+          stroke="var(--color-accent)"
           strokeWidth={2.5}
           dot={false}
           name="Expected"
-          activeDot={{ r: 5, fill: "var(--color-primary)", stroke: "var(--color-surface-container-lowest)", strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: "var(--color-accent)", stroke: "var(--color-surface)", strokeWidth: 2 }}
         />
 
 

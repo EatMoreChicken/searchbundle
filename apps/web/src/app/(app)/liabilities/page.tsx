@@ -17,13 +17,13 @@ const TYPE_LABELS: Record<DebtType, string> = {
 };
 
 const TYPE_ICONS: Record<DebtType, string> = {
-  simple: "receipt_long",
-  mortgage: "home",
-  auto: "directions_car",
-  loan: "account_balance",
-  student_loan: "school",
-  credit_card: "credit_card",
-  other: "radio_button_checked",
+  simple: "fa-receipt",
+  mortgage: "fa-house",
+  auto: "fa-car",
+  loan: "fa-building-columns",
+  student_loan: "fa-graduation-cap",
+  credit_card: "fa-credit-card",
+  other: "fa-circle-dot",
 };
 
 const TYPE_DESCRIPTIONS: Record<string, string> = {
@@ -241,10 +241,10 @@ export default function LiabilitiesPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[2px] text-primary">Finances</p>
-          <h1 className="mt-1 font-headline font-extrabold text-4xl text-on-surface">Liabilities</h1>
+          <p className="text-[11px] uppercase tracking-[2px] text-accent">Finances</p>
+          <h1 className="mt-1 font-headline font-extrabold text-4xl text-text-primary">Liabilities</h1>
           {debtList.length > 0 && (
-            <p className="mt-2 text-[14px] text-on-surface-variant">
+            <p className="mt-2 text-[14px] text-text-secondary">
               Total owed:{" "}
               <span className="font-bold text-error">
                 {formatCurrency(totalBalance)}
@@ -254,28 +254,28 @@ export default function LiabilitiesPage() {
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-5 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
         >
-          <span className="material-symbols-outlined text-[16px]">add</span>
+          <i className="fa-solid fa-plus text-[16px]" />
           Add Liability
         </button>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="mt-16 text-center text-[14px] text-on-surface-variant">Loading...</div>
+        <div className="mt-16 text-center text-[14px] text-text-secondary">Loading...</div>
       ) : activeDebts.length === 0 && archivedDebts.length === 0 ? (
-        <div className="mt-16 flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error-container">
-            <span className="material-symbols-outlined text-[22px] text-error">credit_card</span>
+        <div className="mt-16 flex flex-col items-center rounded-xl bg-surface-alt px-12 py-16 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-error-light">
+            <i className="fa-solid fa-credit-card text-[22px] text-error" />
           </div>
-          <h2 className="mt-5 font-headline font-extrabold text-2xl text-on-surface">No liabilities yet</h2>
-          <p className="mt-2 max-w-sm text-[14px] text-on-surface-variant">
+          <h2 className="mt-5 font-headline font-extrabold text-2xl text-text-primary">No liabilities yet</h2>
+          <p className="mt-2 max-w-sm text-[14px] text-text-secondary">
             Add your mortgage, car loan, or other debts to track payoff timelines and see how extra payments can save you money.
           </p>
           <button
             onClick={openAdd}
-            className="mt-6 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
+            className="mt-6 rounded-full bg-gradient-to-r from-accent to-accent-hover px-6 py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
           >
             Add Your First Liability
           </button>
@@ -297,41 +297,41 @@ export default function LiabilitiesPage() {
                   <div
                     key={debt.id}
                     onClick={() => router.push(`/liabilities/${debt.id}`)}
-                    className="group relative cursor-pointer rounded-2xl bg-surface-container-lowest p-8 transition-transform hover:-translate-y-1"
+                    className="group relative cursor-pointer rounded-xl bg-surface p-8 transition-transform hover:-translate-y-1"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-error-container">
-                          <span className="material-symbols-outlined text-[16px] text-error">{TYPE_ICONS[debt.type] ?? "radio_button_checked"}</span>
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-error-light">
+                          <i className={`fa-solid ${TYPE_ICONS[debt.type] ?? "fa-circle-dot"} text-[16px] text-error`} />
                         </div>
-                        <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
+                        <span className="text-[11px] uppercase tracking-[1px] text-text-secondary">
                           {TYPE_LABELS[debt.type] ?? debt.type}
                         </span>
                       </div>
                       <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <button
                           onClick={(e) => openEdit(debt, e)}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-alt hover:text-accent"
                         >
-                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                          <i className="fa-solid fa-pen text-[14px]" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setArchiveConfirm(debt.id); }}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-tertiary-fixed hover:text-tertiary"
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-warning-light hover:text-warning"
                           title="Archive"
                         >
-                          <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                          <i className="fa-solid fa-box-archive text-[14px]" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setDeleteConfirm(debt.id); }}
-                          className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
+                          className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-error-light hover:text-error"
                         >
-                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          <i className="fa-solid fa-trash text-[14px]" />
                         </button>
                       </div>
                     </div>
 
-                    <p className="mt-4 text-[17px] font-semibold text-on-surface">{debt.name}</p>
+                    <p className="mt-4 text-[17px] font-semibold text-text-primary">{debt.name}</p>
                     <p className="mt-1 text-3xl font-bold tracking-tight text-error">
                       {formatCurrency(debt.balance)}
                     </p>
@@ -339,9 +339,9 @@ export default function LiabilitiesPage() {
                     {debt.balance === 0 && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setArchiveConfirm(debt.id); }}
-                        className="mt-3 flex items-center gap-1.5 rounded-full bg-tertiary-fixed/50 px-3 py-1.5 text-[11px] font-semibold text-on-tertiary-fixed-variant transition-colors hover:bg-tertiary-fixed"
+                        className="mt-3 flex items-center gap-1.5 rounded-full bg-warning-light/50 px-3 py-1.5 text-[11px] font-semibold text-warning transition-colors hover:bg-warning-light"
                       >
-                        <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                        <i className="fa-solid fa-box-archive text-[14px]" />
                         Balance is zero. Archive this?
                       </button>
                     )}
@@ -351,10 +351,10 @@ export default function LiabilitiesPage() {
                         {debt.originalBalance != null && debt.originalBalance > 0 && (
                           <>
                             <div className="flex items-center justify-between text-[12px]">
-                              <span className="text-on-surface-variant">Paid off</span>
-                              <span className="font-semibold text-secondary">{paidDown.toFixed(1)}%</span>
+                              <span className="text-text-secondary">Paid off</span>
+                              <span className="font-semibold text-success">{paidDown.toFixed(1)}%</span>
                             </div>
-                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-container-highest">
+                            <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-surface-altest">
                               <div
                                 className="h-full rounded-full bg-secondary transition-all"
                                 style={{ width: `${Math.min(100, paidDown)}%` }}
@@ -365,24 +365,24 @@ export default function LiabilitiesPage() {
                         <div className="mt-3 flex items-center justify-between">
                           {debt.interestRate != null && (
                             <div>
-                              <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Rate</p>
-                              <span className="rounded-full bg-tertiary-fixed px-2.5 py-1 text-[11px] font-semibold text-tertiary">
+                              <p className="text-[10px] uppercase tracking-[1px] text-text-secondary">Rate</p>
+                              <span className="rounded-full bg-warning-light px-2.5 py-1 text-[11px] font-semibold text-warning">
                                 {debt.interestRate}%
                               </span>
                             </div>
                           )}
                           {debt.minimumPayment != null && (
                             <div className="text-right">
-                              <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Payment</p>
-                              <p className="text-[14px] font-bold text-on-surface">
+                              <p className="text-[10px] uppercase tracking-[1px] text-text-secondary">Payment</p>
+                              <p className="text-[14px] font-bold text-text-primary">
                                 {formatCurrency(debt.minimumPayment)}/mo
                               </p>
                             </div>
                           )}
                           {payoffMonths != null && (
                             <div className="text-right">
-                              <p className="text-[10px] uppercase tracking-[1px] text-on-surface-variant">Payoff</p>
-                              <p className="text-[13px] font-semibold text-on-surface">
+                              <p className="text-[10px] uppercase tracking-[1px] text-text-secondary">Payoff</p>
+                              <p className="text-[13px] font-semibold text-text-primary">
                                 {formatMonths(payoffMonths)}
                               </p>
                             </div>
@@ -392,11 +392,11 @@ export default function LiabilitiesPage() {
                     )}
 
                     {debt.notes && (
-                      <p className="mt-3 text-[12px] text-on-surface-variant line-clamp-2">{debt.notes}</p>
+                      <p className="mt-3 text-[12px] text-text-secondary line-clamp-2">{debt.notes}</p>
                     )}
 
-                    <div className="mt-3 flex items-center gap-1 text-[12px] text-on-surface-variant">
-                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    <div className="mt-3 flex items-center gap-1 text-[12px] text-text-secondary">
+                      <i className="fa-solid fa-arrow-right text-[14px]" />
                       <span>View details</span>
                     </div>
                   </div>
@@ -406,17 +406,17 @@ export default function LiabilitiesPage() {
           )}
 
           {activeDebts.length === 0 && archivedDebts.length > 0 && (
-            <div className="flex flex-col items-center rounded-2xl bg-surface-container-low px-12 py-16 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error-container">
-                <span className="material-symbols-outlined text-[22px] text-error">credit_card</span>
+            <div className="flex flex-col items-center rounded-xl bg-surface-alt px-12 py-16 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-error-light">
+                <i className="fa-solid fa-credit-card text-[22px] text-error" />
               </div>
-              <h2 className="mt-5 font-headline font-extrabold text-2xl text-on-surface">All liabilities archived</h2>
-              <p className="mt-2 max-w-sm text-[14px] text-on-surface-variant">
+              <h2 className="mt-5 font-headline font-extrabold text-2xl text-text-primary">All liabilities archived</h2>
+              <p className="mt-2 max-w-sm text-[14px] text-text-secondary">
                 All your liabilities are currently archived. Add a new one or restore an archived liability below.
               </p>
               <button
                 onClick={openAdd}
-                className="mt-6 rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
+                className="mt-6 rounded-full bg-gradient-to-r from-accent to-accent-hover px-6 py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
               >
                 Add Liability
               </button>
@@ -427,9 +427,9 @@ export default function LiabilitiesPage() {
             <div>
               <button
                 onClick={() => setArchivedOpen(!archivedOpen)}
-                className="flex items-center gap-2 text-[13px] font-semibold text-on-surface-variant hover:text-on-surface"
+                className="flex items-center gap-2 text-[13px] font-semibold text-text-secondary hover:text-accent"
               >
-                <span className="material-symbols-outlined text-[18px]" style={{ transform: archivedOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                <span className="fa-solid text-[18px]" style={{ transform: archivedOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
                   chevron_right
                 </span>
                 Archived ({archivedDebts.length})
@@ -441,42 +441,42 @@ export default function LiabilitiesPage() {
                     <div
                       key={debt.id}
                       onClick={() => router.push(`/liabilities/${debt.id}`)}
-                      className="group relative cursor-pointer rounded-2xl bg-surface-container-low p-8 opacity-60 transition-all hover:opacity-100"
+                      className="group relative cursor-pointer rounded-xl bg-surface-alt p-8 opacity-60 transition-all hover:opacity-100"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-container-high">
-                            <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{TYPE_ICONS[debt.type] ?? "radio_button_checked"}</span>
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-alt">
+                            <i className={`fa-solid ${TYPE_ICONS[debt.type] ?? "fa-circle-dot"} text-[16px] text-text-secondary`} />
                           </div>
-                          <span className="text-[11px] uppercase tracking-[1px] text-on-surface-variant">
+                          <span className="text-[11px] uppercase tracking-[1px] text-text-secondary">
                             {TYPE_LABELS[debt.type] ?? debt.type}
                           </span>
                         </div>
                         <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleUnarchive(debt.id); }}
-                            className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-primary-fixed hover:text-primary"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-accent-light hover:text-accent"
                             title="Restore"
                           >
-                            <span className="material-symbols-outlined text-[14px]">unarchive</span>
+                            <i className="fa-solid fa-box-open text-[14px]" />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setDeleteConfirm(debt.id); }}
-                            className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-error-light hover:text-error"
                           >
-                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                            <i className="fa-solid fa-trash text-[14px]" />
                           </button>
                         </div>
                       </div>
 
-                      <p className="mt-4 text-[17px] font-semibold text-on-surface">{debt.name}</p>
-                      <p className="mt-1 text-3xl font-bold tracking-tight text-on-surface-variant">
+                      <p className="mt-4 text-[17px] font-semibold text-text-primary">{debt.name}</p>
+                      <p className="mt-1 text-3xl font-bold tracking-tight text-text-secondary">
                         {formatCurrency(debt.balance)}
                       </p>
 
                       <div className="mt-3 flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[14px] text-on-surface-variant">inventory_2</span>
-                        <span className="text-[11px] text-on-surface-variant">
+                        <i className="fa-solid fa-box-archive text-[14px] text-text-secondary" />
+                        <span className="text-[11px] text-text-secondary">
                           Archived {debt.archivedAt ? formatDate(debt.archivedAt) : ""}
                         </span>
                       </div>
@@ -492,19 +492,19 @@ export default function LiabilitiesPage() {
       {/* Add / Edit Modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-on-surface/20 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-text-primary/20 sm:items-center"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="w-full max-w-2xl rounded-t-2xl bg-surface-container-lowest p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-t-2xl bg-surface p-8 shadow-xl sm:rounded-xl sm:max-h-[90vh] sm:overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h2 className="font-headline font-extrabold text-2xl text-on-surface">
+              <h2 className="font-headline font-extrabold text-2xl text-text-primary">
                 {editing ? "Edit Liability" : step === "type" ? "What kind of liability?" : `New ${TYPE_LABELS[form.type]}`}
               </h2>
               <button
                 onClick={closeModal}
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-alt hover:text-accent"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <i className="fa-solid fa-xmark text-[18px]" />
               </button>
             </div>
 
@@ -515,14 +515,14 @@ export default function LiabilitiesPage() {
                   <button
                     key={t}
                     onClick={() => selectType(t)}
-                    className="flex items-start gap-4 rounded-2xl bg-surface-container-low p-5 text-left transition-colors hover:bg-primary-fixed"
+                    className="flex items-start gap-4 rounded-xl bg-surface-alt p-5 text-left transition-colors hover:bg-accent-light"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-error-container">
-                      <span className="material-symbols-outlined text-[18px] text-error">{TYPE_ICONS[t]}</span>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-error-light">
+                      <i className={`fa-solid ${TYPE_ICONS[t]} text-[18px] text-error`} />
                     </div>
                     <div>
-                      <p className="text-[15px] font-semibold text-on-surface">{TYPE_LABELS[t]}</p>
-                      <p className="mt-1 text-[12px] text-on-surface-variant">{TYPE_DESCRIPTIONS[t]}</p>
+                      <p className="text-[15px] font-semibold text-text-primary">{TYPE_LABELS[t]}</p>
+                      <p className="mt-1 text-[12px] text-text-secondary">{TYPE_DESCRIPTIONS[t]}</p>
                     </div>
                   </button>
                 ))}
@@ -536,15 +536,15 @@ export default function LiabilitiesPage() {
                   <button
                     type="button"
                     onClick={() => setStep("type")}
-                    className="mb-2 flex items-center gap-1 text-[13px] text-on-surface-variant hover:text-on-surface"
+                    className="mb-2 flex items-center gap-1 text-[13px] text-text-secondary hover:text-accent"
                   >
-                    <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                    <i className="fa-solid fa-arrow-left text-[16px]" />
                     Change type
                   </button>
                 )}
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Name</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-text-primary">Name</label>
                   <input
                     type="text"
                     required
@@ -556,16 +556,16 @@ export default function LiabilitiesPage() {
                     }
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                  <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
                     {form.type === "simple" ? "How much is owed?" : "Current Balance"}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                     <input
                       type="number"
                       required
@@ -574,11 +574,11 @@ export default function LiabilitiesPage() {
                       placeholder={form.type === "simple" ? "500.00" : "250000.00"}
                       value={form.balance}
                       onChange={(e) => setForm({ ...form, balance: e.target.value })}
-                      className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[15px] font-bold text-on-surface placeholder:font-normal placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[15px] font-bold text-text-primary placeholder:font-normal placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                     />
                   </div>
                   {form.type === "simple" && (
-                    <p className="mt-1 text-[11px] text-on-surface-variant">No interest will be calculated on simple debts.</p>
+                    <p className="mt-1 text-[11px] text-text-secondary">No interest will be calculated on simple debts.</p>
                   )}
                 </div>
 
@@ -586,11 +586,11 @@ export default function LiabilitiesPage() {
                   <>
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Original Loan Amount <span className="font-normal text-on-surface-variant">(optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Original Loan Amount <span className="font-normal text-text-secondary">(optional)</span>
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                           <input
                             type="number"
                             min="0"
@@ -598,13 +598,13 @@ export default function LiabilitiesPage() {
                             placeholder="300000.00"
                             value={form.originalBalance}
                             onChange={(e) => setForm({ ...form, originalBalance: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
                         </div>
                       </div>
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Interest Rate <span className="font-normal text-on-surface-variant">(%)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Interest Rate <span className="font-normal text-text-secondary">(%)</span>
                         </label>
                         <div className="relative">
                           <input
@@ -615,18 +615,18 @@ export default function LiabilitiesPage() {
                             placeholder="6.50"
                             value={form.interestRate}
                             onChange={(e) => setForm({ ...form, interestRate: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 pr-8 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt px-4 py-3.5 pr-8 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">%</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">%</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Monthly Payment (P&I)</label>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">Monthly Payment (P&I)</label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                           <input
                             type="number"
                             min="0"
@@ -634,14 +634,14 @@ export default function LiabilitiesPage() {
                             placeholder="1580.00"
                             value={form.minimumPayment}
                             onChange={(e) => setForm({ ...form, minimumPayment: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
                         </div>
-                        <p className="mt-1 text-[11px] text-on-surface-variant">Principal and interest only, before escrow or extras.</p>
+                        <p className="mt-1 text-[11px] text-text-secondary">Principal and interest only, before escrow or extras.</p>
                       </div>
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Remaining Months <span className="font-normal text-on-surface-variant">(optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Remaining Months <span className="font-normal text-text-secondary">(optional)</span>
                         </label>
                         <input
                           type="number"
@@ -651,26 +651,26 @@ export default function LiabilitiesPage() {
                           placeholder="348"
                           value={form.remainingMonths}
                           onChange={(e) => setForm({ ...form, remainingMonths: e.target.value })}
-                          className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                         />
                       </div>
                     </div>
 
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Loan Start Date <span className="font-normal text-on-surface-variant">(optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Loan Start Date <span className="font-normal text-text-secondary">(optional)</span>
                         </label>
                         <input
                           type="date"
                           value={form.loanStartDate}
                           onChange={(e) => setForm({ ...form, loanStartDate: e.target.value })}
-                          className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Original Term <span className="font-normal text-on-surface-variant">(months, optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Original Term <span className="font-normal text-text-secondary">(months, optional)</span>
                         </label>
                         <input
                           type="number"
@@ -680,15 +680,15 @@ export default function LiabilitiesPage() {
                           placeholder={form.type === "mortgage" ? "360" : form.type === "auto" ? "60" : "120"}
                           value={form.loanTermMonths}
                           onChange={(e) => setForm({ ...form, loanTermMonths: e.target.value })}
-                          className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                         />
                       </div>
                     </div>
 
                     {form.type === "loan" && (
-                      <div className="rounded-xl bg-surface-container-low p-4 space-y-3">
-                        <p className="text-[11px] uppercase tracking-[1.5px] text-primary">Interest Accrual Method</p>
-                        <p className="text-[12px] text-on-surface-variant">How does your lender calculate interest? If unsure, monthly is the most common.</p>
+                      <div className="rounded-xl bg-surface-alt p-4 space-y-3">
+                        <p className="text-[11px] uppercase tracking-[1.5px] text-accent">Interest Accrual Method</p>
+                        <p className="text-[12px] text-text-secondary">How does your lender calculate interest? If unsure, monthly is the most common.</p>
                         <div className="space-y-2">
                           {(["monthly", "daily", "precomputed"] as InterestAccrualMethod[]).map((method) => (
                             <button
@@ -697,12 +697,12 @@ export default function LiabilitiesPage() {
                               onClick={() => setForm({ ...form, interestAccrualMethod: method })}
                               className={`w-full rounded-xl p-3 text-left transition-colors ${
                                 form.interestAccrualMethod === method
-                                  ? "bg-primary-fixed"
-                                  : "bg-surface-container hover:bg-surface-container-high"
+                                  ? "bg-accent-light"
+                                  : "bg-surface-alt hover:bg-surface-alt"
                               }`}
                             >
-                              <p className="text-[13px] font-semibold text-on-surface">{ACCRUAL_METHOD_INFO[method].label}</p>
-                              <p className="mt-0.5 text-[11px] text-on-surface-variant">{ACCRUAL_METHOD_INFO[method].description}</p>
+                              <p className="text-[13px] font-semibold text-text-primary">{ACCRUAL_METHOD_INFO[method].label}</p>
+                              <p className="mt-0.5 text-[11px] text-text-secondary">{ACCRUAL_METHOD_INFO[method].description}</p>
                             </button>
                           ))}
                         </div>
@@ -712,15 +712,15 @@ export default function LiabilitiesPage() {
                 )}
 
                 {form.type === "mortgage" && (
-                  <div className="rounded-xl bg-surface-container-low p-4 space-y-4">
-                    <p className="text-[11px] uppercase tracking-[1.5px] text-primary">Mortgage Details</p>
+                  <div className="rounded-xl bg-surface-alt p-4 space-y-4">
+                    <p className="text-[11px] uppercase tracking-[1.5px] text-accent">Mortgage Details</p>
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Home Purchase Price <span className="font-normal text-on-surface-variant">(optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Home Purchase Price <span className="font-normal text-text-secondary">(optional)</span>
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                           <input
                             type="number"
                             min="0"
@@ -728,17 +728,17 @@ export default function LiabilitiesPage() {
                             placeholder="350000.00"
                             value={form.homeValue}
                             onChange={(e) => setForm({ ...form, homeValue: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
                         </div>
-                        <p className="mt-1 text-[11px] text-on-surface-variant">Used to track your equity in the home.</p>
+                        <p className="mt-1 text-[11px] text-text-secondary">Used to track your equity in the home.</p>
                       </div>
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Escrow (Total) <span className="font-normal text-on-surface-variant">(optional, /mo)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Escrow (Total) <span className="font-normal text-text-secondary">(optional, /mo)</span>
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                           <input
                             type="number"
                             min="0"
@@ -746,19 +746,19 @@ export default function LiabilitiesPage() {
                             placeholder="450.00"
                             value={form.escrowAmount}
                             onChange={(e) => setForm({ ...form, escrowAmount: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
                         </div>
-                        <p className="mt-1 text-[11px] text-on-surface-variant">Or break it down below.</p>
+                        <p className="mt-1 text-[11px] text-text-secondary">Or break it down below.</p>
                       </div>
                     </div>
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Property Tax <span className="font-normal text-on-surface-variant">(/year, optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Property Tax <span className="font-normal text-text-secondary">(/year, optional)</span>
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                           <input
                             type="number"
                             min="0"
@@ -766,16 +766,16 @@ export default function LiabilitiesPage() {
                             placeholder="3600.00"
                             value={form.propertyTaxYearly}
                             onChange={(e) => setForm({ ...form, propertyTaxYearly: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
                         </div>
                       </div>
                       <div className="flex-1">
-                        <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                          Home Insurance <span className="font-normal text-on-surface-variant">(/year, optional)</span>
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                          Home Insurance <span className="font-normal text-text-secondary">(/year, optional)</span>
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                           <input
                             type="number"
                             min="0"
@@ -783,17 +783,17 @@ export default function LiabilitiesPage() {
                             placeholder="1800.00"
                             value={form.homeInsuranceYearly}
                             onChange={(e) => setForm({ ...form, homeInsuranceYearly: e.target.value })}
-                            className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                           />
                         </div>
                       </div>
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                        PMI (Private Mortgage Insurance) <span className="font-normal text-on-surface-variant">(/month, optional)</span>
+                      <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                        PMI (Private Mortgage Insurance) <span className="font-normal text-text-secondary">(/month, optional)</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                         <input
                           type="number"
                           min="0"
@@ -801,10 +801,10 @@ export default function LiabilitiesPage() {
                           placeholder="125.00"
                           value={form.pmiMonthly}
                           onChange={(e) => setForm({ ...form, pmiMonthly: e.target.value })}
-                          className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                         />
                       </div>
-                      <p className="mt-1 text-[11px] text-on-surface-variant">
+                      <p className="mt-1 text-[11px] text-text-secondary">
                         PMI is usually required when your down payment is less than 20%. It can be removed once you reach 20% equity.
                       </p>
                     </div>
@@ -812,14 +812,14 @@ export default function LiabilitiesPage() {
                 )}
 
                 {form.type === "auto" && (
-                  <div className="rounded-xl bg-surface-container-low p-4 space-y-4">
-                    <p className="text-[11px] uppercase tracking-[1.5px] text-primary">Vehicle Details</p>
+                  <div className="rounded-xl bg-surface-alt p-4 space-y-4">
+                    <p className="text-[11px] uppercase tracking-[1.5px] text-accent">Vehicle Details</p>
                     <div>
-                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                        Current Vehicle Value <span className="font-normal text-on-surface-variant">(optional)</span>
+                      <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                        Current Vehicle Value <span className="font-normal text-text-secondary">(optional)</span>
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-secondary">$</span>
                         <input
                           type="number"
                           min="0"
@@ -827,10 +827,10 @@ export default function LiabilitiesPage() {
                           placeholder="22000.00"
                           value={form.vehicleValue}
                           onChange={(e) => setForm({ ...form, vehicleValue: e.target.value })}
-                          className="w-full rounded-2xl bg-surface-container-high pl-7 pr-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                          className="w-full rounded-xl bg-surface-alt pl-7 pr-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                         />
                       </div>
-                      <p className="mt-1 text-[11px] text-on-surface-variant">
+                      <p className="mt-1 text-[11px] text-text-secondary">
                         Estimated value from KBB or similar. Used to determine if you are upside down on the loan.
                       </p>
                     </div>
@@ -838,15 +838,15 @@ export default function LiabilitiesPage() {
                 )}
 
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                    Notes <span className="font-normal text-on-surface-variant">(optional)</span>
+                  <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                    Notes <span className="font-normal text-text-secondary">(optional)</span>
                   </label>
                   <textarea
                     rows={2}
                     placeholder="Any notes about this liability..."
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    className="w-full rounded-2xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                   />
                 </div>
 
@@ -854,14 +854,14 @@ export default function LiabilitiesPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant hover:bg-surface-container"
+                    className="flex-1 rounded-full bg-surface-alt py-3 text-[14px] font-semibold text-text-secondary hover:bg-surface-alt"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 rounded-full bg-gradient-to-r from-primary to-primary-container py-3 text-[14px] font-semibold text-on-primary disabled:opacity-50"
+                    className="flex-1 rounded-full bg-gradient-to-r from-accent to-accent-hover py-3 text-[14px] font-semibold text-white disabled:opacity-50"
                   >
                     {saving ? "Saving..." : editing ? "Save Changes" : `Add ${TYPE_LABELS[form.type]}`}
                   </button>
@@ -875,15 +875,15 @@ export default function LiabilitiesPage() {
       {/* Archive confirmation */}
       {archiveConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-text-primary/20"
           onClick={(e) => { if (e.target === e.currentTarget) setArchiveConfirm(null); }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-tertiary-fixed">
-              <span className="material-symbols-outlined text-[22px] text-tertiary">inventory_2</span>
+          <div className="w-full max-w-sm rounded-xl bg-surface/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-light">
+              <i className="fa-solid fa-box-archive text-[22px] text-warning" />
             </div>
-            <h2 className="mt-4 font-headline font-extrabold text-2xl text-on-surface">Archive this liability?</h2>
-            <div className="mt-3 space-y-2 text-[13px] text-on-surface-variant">
+            <h2 className="mt-4 font-headline font-extrabold text-2xl text-text-primary">Archive this liability?</h2>
+            <div className="mt-3 space-y-2 text-[13px] text-text-secondary">
               <p>Archiving will:</p>
               <ul className="ml-4 list-disc space-y-1">
                 <li>Remove it from your dashboard and projections</li>
@@ -895,13 +895,13 @@ export default function LiabilitiesPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setArchiveConfirm(null)}
-                className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
+                className="flex-1 rounded-full bg-surface-alt py-3 text-[14px] font-semibold text-text-secondary transition-transform active:scale-95"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleArchive(archiveConfirm)}
-                className="flex-1 rounded-full bg-gradient-to-r from-tertiary to-tertiary-container py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
+                className="flex-1 rounded-full bg-gradient-to-r from-warning to-warning py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
               >
                 Archive
               </button>
@@ -912,18 +912,18 @@ export default function LiabilitiesPage() {
 
       {deleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-text-primary/20"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
-            <h2 className="font-headline font-extrabold text-2xl text-on-surface">Delete liability?</h2>
-            <p className="mt-2 text-[14px] text-on-surface-variant">
+          <div className="w-full max-w-sm rounded-xl bg-surface/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <h2 className="font-headline font-extrabold text-2xl text-text-primary">Delete liability?</h2>
+            <p className="mt-2 text-[14px] text-text-secondary">
               This will permanently remove the liability and its history. This cannot be undone.
             </p>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant hover:bg-surface-container"
+                className="flex-1 rounded-full bg-surface-alt py-3 text-[14px] font-semibold text-text-secondary hover:bg-surface-alt"
               >
                 Cancel
               </button>

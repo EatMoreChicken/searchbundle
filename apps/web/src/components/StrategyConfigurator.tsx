@@ -51,8 +51,8 @@ function formatFullCurrency(value: number): string {
 function InfoTooltip({ children }: { children: string }) {
   return (
     <span className="relative group inline-flex items-center ml-1 align-middle cursor-help">
-      <span className="material-symbols-outlined text-[14px] text-on-surface-variant">info</span>
-      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 w-64 rounded-xl bg-on-surface px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+      <i className="fa-solid fa-circle-info text-[14px] text-text-secondary" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 z-20 mb-2 w-64 rounded-xl bg-text-primary px-3 py-2.5 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
         {children}
       </span>
     </span>
@@ -98,7 +98,7 @@ function SliderInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-on-surface-variant flex items-center">
+        <label className="text-xs font-semibold text-text-secondary flex items-center">
           {label}
           {tooltip && <InfoTooltip>{tooltip}</InfoTooltip>}
         </label>
@@ -106,9 +106,9 @@ function SliderInput({
           <button
             type="button"
             onClick={onReset}
-            className="text-[10px] font-medium text-primary hover:text-primary-container transition-colors flex items-center gap-0.5"
+            className="text-[10px] font-medium text-accent hover:text-accent-container transition-colors flex items-center gap-0.5"
           >
-            <span className="material-symbols-outlined text-[12px]">restart_alt</span>
+            <i className="fa-solid fa-rotate text-[12px]" />
             Reset
           </button>
         )}
@@ -121,11 +121,11 @@ function SliderInput({
           step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="flex-1 h-2 rounded-full appearance-none bg-surface-container-highest cursor-pointer accent-primary"
+          className="flex-1 h-2 rounded-full appearance-none bg-surface-altest cursor-pointer accent-primary"
         />
         <div className="relative w-24 flex-shrink-0">
           {prefix && (
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-text-secondary">
               {prefix}
             </span>
           )}
@@ -146,19 +146,19 @@ function SliderInput({
                 onChange(v);
               }
             }}
-            className={`w-full bg-surface-container-high rounded-xl py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:bg-white focus:ring-1 transition-all ${
+            className={`w-full bg-surface-alt rounded-xl py-2 text-center text-sm font-bold text-text-primary focus:outline-none focus:bg-white focus:ring-1 transition-all ${
               prefix ? "pl-6" : ""
-            } ${suffix ? "pr-6" : ""} ${inputError ? "ring-1 ring-error" : "focus:ring-primary"}`}
+            } ${suffix ? "pr-6" : ""} ${inputError ? "ring-1 ring-error" : "focus:ring-accent"}`}
           />
           {suffix && (
-            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-text-secondary">
               {suffix}
             </span>
           )}
         </div>
       </div>
       {inputError && <p className="text-[11px] text-error">Enter a value between {min} and {max}</p>}
-      {!inputError && hint && <p className="text-[11px] text-on-surface-variant leading-relaxed">{hint}</p>}
+      {!inputError && hint && <p className="text-[11px] text-text-secondary leading-relaxed">{hint}</p>}
     </div>
   );
 }
@@ -196,7 +196,7 @@ function CurrencyInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-on-surface-variant flex items-center">
+        <label className="text-xs font-semibold text-text-secondary flex items-center">
           {label}
           {tooltip && <InfoTooltip>{tooltip}</InfoTooltip>}
         </label>
@@ -204,15 +204,15 @@ function CurrencyInput({
           <button
             type="button"
             onClick={onReset}
-            className="text-[10px] font-medium text-primary hover:text-primary-container transition-colors flex items-center gap-0.5"
+            className="text-[10px] font-medium text-accent hover:text-accent-container transition-colors flex items-center gap-0.5"
           >
-            <span className="material-symbols-outlined text-[12px]">restart_alt</span>
+            <i className="fa-solid fa-rotate text-[12px]" />
             Reset
           </button>
         )}
       </div>
       <div className="relative">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">$</span>
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-text-secondary">$</span>
         <input
           type="text"
           inputMode="numeric"
@@ -230,15 +230,15 @@ function CurrencyInput({
               onChange(v);
             }
           }}
-          className={`w-full bg-surface-container-high rounded-xl py-3 pl-8 pr-4 text-base font-bold text-on-surface focus:outline-none focus:bg-white focus:ring-1 transition-all ${
-            error ? "ring-1 ring-error" : "focus:ring-primary"
+          className={`w-full bg-surface-alt rounded-xl py-3 pl-8 pr-4 text-base font-bold text-text-primary focus:outline-none focus:bg-white focus:ring-1 transition-all ${
+            error ? "ring-1 ring-error" : "focus:ring-accent"
           }`}
         />
       </div>
       {error && (
         <p className="text-[11px] text-error">Enter a monthly amount between ${min.toLocaleString()} and ${max.toLocaleString()}</p>
       )}
-      {!error && hint && <p className="text-[11px] text-on-surface-variant leading-relaxed">{hint}</p>}
+      {!error && hint && <p className="text-[11px] text-text-secondary leading-relaxed">{hint}</p>}
     </div>
   );
 }
@@ -261,31 +261,31 @@ function AssumptionStepper({
   const canIncrease = value < max - STEP * 0.5;
 
   return (
-    <div className="bg-surface-container-low rounded-xl p-3 text-center">
+    <div className="bg-surface-alt rounded-xl p-3 text-center">
       <div className="flex items-center justify-center gap-2 mb-1">
         <button
           type="button"
           onClick={() => onChange(Math.round((value - STEP) * 10000) / 10000)}
           disabled={!canDecrease}
-          className="w-7 h-7 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-7 h-7 rounded-full bg-surface-alt hover:bg-surface-alt transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
           aria-label={`Decrease ${label}`}
         >
-          <span className="material-symbols-outlined text-[16px] text-on-surface-variant">keyboard_arrow_down</span>
+          <i className="fa-solid fa-chevron-down text-[16px] text-text-secondary" />
         </button>
-        <p className="text-lg font-bold text-on-surface w-14 text-center tabular-nums">
+        <p className="text-lg font-bold text-text-primary w-14 text-center tabular-nums">
           {(value * 100).toFixed(1)}%
         </p>
         <button
           type="button"
           onClick={() => onChange(Math.round((value + STEP) * 10000) / 10000)}
           disabled={!canIncrease}
-          className="w-7 h-7 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-7 h-7 rounded-full bg-surface-alt hover:bg-surface-alt transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
           aria-label={`Increase ${label}`}
         >
-          <span className="material-symbols-outlined text-[16px] text-on-surface-variant">keyboard_arrow_up</span>
+          <i className="fa-solid fa-chevron-up text-[16px] text-text-secondary" />
         </button>
       </div>
-      <p className="text-[10px] text-on-surface-variant">{label}</p>
+      <p className="text-[10px] text-text-secondary">{label}</p>
     </div>
   );
 }
@@ -524,29 +524,29 @@ export default function StrategyConfigurator({
       {/* Strategy header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary text-[20px]">{meta.icon}</span>
+          <div className="w-10 h-10 rounded-full bg-accent-light flex items-center justify-center">
+            <i className={`fa-solid ${meta.icon} text-accent text-[20px]`} />
           </div>
           <div>
-            <h2 className="text-title-md font-bold text-on-surface">{meta.name}</h2>
-            <p className="text-sm text-on-surface-variant">{meta.subtitle}</p>
+            <h2 className="text-title-md font-bold text-text-primary">{meta.name}</h2>
+            <p className="text-sm text-text-secondary">{meta.subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={resetAll}
-            className="px-3 py-1.5 rounded-full text-xs font-medium text-on-surface-variant hover:bg-surface-container-high transition-all flex items-center gap-1"
+            className="px-3 py-1.5 rounded-full text-xs font-medium text-text-secondary hover:bg-surface-alt transition-all flex items-center gap-1"
           >
-            <span className="material-symbols-outlined text-[14px]">restart_alt</span>
+            <i className="fa-solid fa-rotate text-[14px]" />
             Reset all
           </button>
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-1.5 rounded-full text-xs font-medium text-primary hover:bg-primary-fixed/40 transition-all flex items-center gap-1"
+            className="px-3 py-1.5 rounded-full text-xs font-medium text-accent hover:bg-accent-light/40 transition-all flex items-center gap-1"
           >
-            <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
+            <i className="fa-solid fa-right-left text-[14px]" />
             Change strategy
           </button>
         </div>
@@ -556,10 +556,10 @@ export default function StrategyConfigurator({
         {/* Left: Controls */}
         <div className="lg:col-span-2 space-y-5">
           {/* Strategy-specific sliders */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-5">
+          <div className="bg-surface rounded-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">tune</span>
+              <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                <i className="fa-solid fa-sliders text-[18px] text-text-secondary" />
                 Strategy Controls
               </h3>
             </div>
@@ -594,18 +594,18 @@ export default function StrategyConfigurator({
             {/* Traditional: show calculated amount (read-only style) */}
             {strategy === "traditional" && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-on-surface-variant flex items-center">
+                <label className="text-xs font-semibold text-text-secondary flex items-center">
                   Monthly savings
                   <InfoTooltip>
                     With the traditional approach, you save the same amount every month. This is calculated using the PMT formula based on your target, return rate, and timeline.
                   </InfoTooltip>
                 </label>
-                <div className="bg-surface-container-high rounded-xl p-4 text-center">
-                  <p className="text-2xl font-extrabold text-primary tracking-tight">
+                <div className="bg-surface-alt rounded-xl p-4 text-center">
+                  <p className="text-2xl font-extrabold text-accent tracking-tight">
                     {formatFullCurrency(Math.round(autoStartMonthly))}
-                    <span className="text-sm font-medium text-on-surface-variant">/mo</span>
+                    <span className="text-sm font-medium text-text-secondary">/mo</span>
                   </p>
-                  <p className="text-[11px] text-on-surface-variant mt-1">
+                  <p className="text-[11px] text-text-secondary mt-1">
                     Same amount every month for {years} years
                   </p>
                 </div>
@@ -717,9 +717,9 @@ export default function StrategyConfigurator({
           </div>
 
           {/* Assumptions */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-3">
-            <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">settings</span>
+          <div className="bg-surface rounded-xl p-6 space-y-3">
+            <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+              <i className="fa-solid fa-gear text-[18px] text-text-secondary" />
               Assumptions
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -738,7 +738,7 @@ export default function StrategyConfigurator({
                 max={0.10}
               />
             </div>
-            <p className="text-[11px] text-on-surface-variant">
+            <p className="text-[11px] text-text-secondary">
               Tap ± to adjust by 0.1% and see how it affects your projection.
             </p>
           </div>
@@ -747,14 +747,14 @@ export default function StrategyConfigurator({
         {/* Right: Chart + Summary */}
         <div className="lg:col-span-3 space-y-5">
           {/* Chart */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
+          <div className="bg-surface rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">show_chart</span>
+              <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                <i className="fa-solid fa-chart-line text-[18px] text-accent" />
                 Your projection
               </h3>
               {isDragging && dragAge != null && (
-                <span className="text-xs font-semibold text-tertiary">
+                <span className="text-xs font-semibold text-warning">
                   Retire at {dragAge}
                 </span>
               )}
@@ -805,18 +805,18 @@ export default function StrategyConfigurator({
                       const data = payload[0]?.payload as YearlyDataPoint;
                       const isPostRetirement = data.age > displayRetirementAge;
                       return (
-                        <div className="bg-on-surface rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5">
+                        <div className="bg-text-primary rounded-xl px-4 py-3 shadow-lg text-white text-xs space-y-1.5">
                           <p className="font-semibold">
                             Age {label} ({data.year})
                             {data.age === displayRetirementAge && (
-                              <span className="ml-1 text-tertiary-fixed">Retirement</span>
+                              <span className="ml-1 text-warning-fixed">Retirement</span>
                             )}
                             {isPostRetirement && (
                               <span className="ml-1 text-white/50">Post-retirement</span>
                             )}
                           </p>
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            <div className="w-2 h-2 rounded-full bg-accent" />
                             <span>Portfolio: {formatFullCurrency(data.portfolioValue)}</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -835,7 +835,7 @@ export default function StrategyConfigurator({
                     verticalAlign="top"
                     height={30}
                     formatter={(value: string) => (
-                      <span className="text-xs text-on-surface-variant">{value}</span>
+                      <span className="text-xs text-text-secondary">{value}</span>
                     )}
                   />
                   <ReferenceLine
@@ -884,9 +884,9 @@ export default function StrategyConfigurator({
                   setIsDragging(true);
                   setDragAge(retirementAge);
                 }}
-                className="text-[11px] text-on-surface-variant hover:text-tertiary transition-colors flex items-center gap-1 cursor-ew-resize px-2 py-1 rounded-full hover:bg-tertiary-fixed/30"
+                className="text-[11px] text-text-secondary hover:text-warning transition-colors flex items-center gap-1 cursor-ew-resize px-2 py-1 rounded-full hover:bg-warning-light/30"
               >
-                <span className="material-symbols-outlined text-[14px]">drag_indicator</span>
+                <i className="fa-solid fa-grip-vertical text-[14px]" />
                 Drag the retirement line to adjust your target age
               </button>
             </div>
@@ -894,23 +894,21 @@ export default function StrategyConfigurator({
             {/* Target comparison */}
             <div
               className={`rounded-xl p-3 flex items-center gap-3 ${
-                onTrack ? "bg-secondary-fixed/30" : "bg-error-container/30"
+                onTrack ? "bg-success-light/30" : "bg-error-light/30"
               }`}
             >
-              <span
-                className={`material-symbols-outlined text-[18px] ${
-                  onTrack ? "text-secondary" : "text-error"
+              <i
+                className={`fa-solid ${onTrack ? "fa-circle-check" : "fa-triangle-exclamation"} text-[18px] ${
+                  onTrack ? "text-success" : "text-error"
                 }`}
-              >
-                {onTrack ? "check_circle" : "warning"}
-              </span>
+              />
               <div className="flex-1">
-                <p className={`text-xs font-semibold ${onTrack ? "text-secondary" : "text-on-error-container"}`}>
+                <p className={`text-xs font-semibold ${onTrack ? "text-success" : "text-error"}`}>
                   {onTrack
                     ? `On track: portfolio reaches ${formatCurrency(finalPortfolioValue)} at age ${retirementAge}`
                     : `Under target by ${formatCurrency(Math.abs(surplusDeficit))}`}
                 </p>
-                <p className="text-[11px] text-on-surface-variant">
+                <p className="text-[11px] text-text-secondary">
                   Target: {formatCurrency(targetAmount)}
                   {!onTrack && ". Increase your contributions or adjust the strategy parameters."}
                 </p>
@@ -919,26 +917,26 @@ export default function StrategyConfigurator({
           </div>
 
           {/* Live summary */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 space-y-4">
-            <p className="text-label-sm font-bold text-on-surface-variant tracking-widest uppercase">
+          <div className="bg-surface rounded-xl p-6 space-y-4">
+            <p className="text-label-sm font-bold text-text-secondary tracking-widest uppercase">
               Plan Summary
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-surface-container-low rounded-xl p-4 text-center">
-                <p className="text-2xl font-extrabold text-primary tracking-tight">
+              <div className="bg-surface-alt rounded-xl p-4 text-center">
+                <p className="text-2xl font-extrabold text-accent tracking-tight">
                   {formatFullCurrency(firstYearContribution)}
                 </p>
-                <p className="text-xs text-on-surface-variant mt-0.5">
+                <p className="text-xs text-text-secondary mt-0.5">
                   {strategy === "traditional" ? "monthly, every month" : "year 1 monthly"}
                 </p>
               </div>
-              <div className="bg-surface-container-low rounded-xl p-4 text-center">
-                <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+              <div className="bg-surface-alt rounded-xl p-4 text-center">
+                <p className="text-2xl font-extrabold text-text-primary tracking-tight">
                   {strategy === "traditional"
                     ? formatFullCurrency(firstYearContribution)
                     : formatFullCurrency(lastYearContribution)}
                 </p>
-                <p className="text-xs text-on-surface-variant mt-0.5">
+                <p className="text-xs text-text-secondary mt-0.5">
                   {strategy === "coast_fire"
                     ? `after year ${phase1Years}`
                     : strategy === "barista_fire"
@@ -948,17 +946,17 @@ export default function StrategyConfigurator({
                     : "final year monthly"}
                 </p>
               </div>
-              <div className="bg-surface-container-low rounded-xl p-4 text-center">
-                <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+              <div className="bg-surface-alt rounded-xl p-4 text-center">
+                <p className="text-2xl font-extrabold text-text-primary tracking-tight">
                   {formatCurrency(finalPortfolioValue)}
                 </p>
-                <p className="text-xs text-on-surface-variant mt-0.5">projected total</p>
+                <p className="text-xs text-text-secondary mt-0.5">projected total</p>
               </div>
-              <div className="bg-surface-container-low rounded-xl p-4 text-center">
-                <p className="text-2xl font-extrabold text-on-surface tracking-tight">
+              <div className="bg-surface-alt rounded-xl p-4 text-center">
+                <p className="text-2xl font-extrabold text-text-primary tracking-tight">
                   {currentAge} → {retirementAge}
                 </p>
-                <p className="text-xs text-on-surface-variant mt-0.5">{years} years</p>
+                <p className="text-xs text-text-secondary mt-0.5">{years} years</p>
               </div>
             </div>
 
@@ -966,77 +964,75 @@ export default function StrategyConfigurator({
             <button
               type="button"
               onClick={() => setShowPurchasingPower(!showPurchasingPower)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-surface-container transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors"
             >
-              <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[16px]">payments</span>
+              <span className="text-xs font-semibold text-accent flex items-center gap-1.5">
+                <i className="fa-solid fa-credit-card text-[16px]" />
                 See purchasing power details
               </span>
-              <span className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform ${showPurchasingPower ? "rotate-180" : ""}`}>
-                expand_more
-              </span>
+              <i className={`fa-solid fa-chevron-down text-[18px] text-text-secondary transition-transform ${showPurchasingPower ? "rotate-180" : ""}`} />
             </button>
 
             {showPurchasingPower && (
-              <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
-                <p className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[14px] text-tertiary">trending_down</span>
+              <div className="bg-surface-alt rounded-xl p-5 space-y-4">
+                <p className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  <i className="fa-solid fa-arrow-trend-down text-[14px] text-warning" />
                   What {formatCurrency(finalPortfolioValue)} really buys at age {retirementAge}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-0.5">
-                    <p className="text-lg font-extrabold text-on-surface tracking-tight">{formatFullCurrency(todaysDollars)}</p>
-                    <p className="text-[11px] text-on-surface-variant">In today&apos;s dollars</p>
+                    <p className="text-lg font-extrabold text-text-primary tracking-tight">{formatFullCurrency(todaysDollars)}</p>
+                    <p className="text-[11px] text-text-secondary">In today&apos;s dollars</p>
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-lg font-extrabold text-on-surface tracking-tight">{formatFullCurrency(finalPortfolioValue)}</p>
-                    <p className="text-[11px] text-on-surface-variant">Nominal (future) value</p>
+                    <p className="text-lg font-extrabold text-text-primary tracking-tight">{formatFullCurrency(finalPortfolioValue)}</p>
+                    <p className="text-[11px] text-text-secondary">Nominal (future) value</p>
                   </div>
                 </div>
 
-                <div className="border-t border-surface-container-highest pt-3 space-y-1">
-                  <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                <div className="border-t border-surface-alt pt-3 space-y-1">
+                  <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
                     Annual withdrawal at {(withdrawalRate * 100).toFixed(0)}% rate
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-0.5">
-                      <p className="text-base font-bold text-primary">{formatFullCurrency(annualWithdrawalToday)}<span className="text-xs font-medium text-on-surface-variant">/yr</span></p>
-                      <p className="text-[11px] text-on-surface-variant">In today&apos;s dollars</p>
+                      <p className="text-base font-bold text-accent">{formatFullCurrency(annualWithdrawalToday)}<span className="text-xs font-medium text-text-secondary">/yr</span></p>
+                      <p className="text-[11px] text-text-secondary">In today&apos;s dollars</p>
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-base font-bold text-on-surface">{formatFullCurrency(annualWithdrawal)}<span className="text-xs font-medium text-on-surface-variant">/yr</span></p>
-                      <p className="text-[11px] text-on-surface-variant">Nominal</p>
+                      <p className="text-base font-bold text-text-primary">{formatFullCurrency(annualWithdrawal)}<span className="text-xs font-medium text-text-secondary">/yr</span></p>
+                      <p className="text-[11px] text-text-secondary">Nominal</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-surface-container-highest pt-3 space-y-1">
-                  <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                <div className="border-t border-surface-alt pt-3 space-y-1">
+                  <p className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider">
                     Monthly spending
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-0.5">
-                      <p className="text-base font-bold text-primary">{formatFullCurrency(monthlyWithdrawalToday)}<span className="text-xs font-medium text-on-surface-variant">/mo</span></p>
-                      <p className="text-[11px] text-on-surface-variant">In today&apos;s dollars</p>
+                      <p className="text-base font-bold text-accent">{formatFullCurrency(monthlyWithdrawalToday)}<span className="text-xs font-medium text-text-secondary">/mo</span></p>
+                      <p className="text-[11px] text-text-secondary">In today&apos;s dollars</p>
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-base font-bold text-on-surface">{formatFullCurrency(monthlyWithdrawal)}<span className="text-xs font-medium text-on-surface-variant">/mo</span></p>
-                      <p className="text-[11px] text-on-surface-variant">Nominal</p>
+                      <p className="text-base font-bold text-text-primary">{formatFullCurrency(monthlyWithdrawal)}<span className="text-xs font-medium text-text-secondary">/mo</span></p>
+                      <p className="text-[11px] text-text-secondary">Nominal</p>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                  <span className="material-symbols-outlined text-[10px] align-middle mr-0.5">info</span>
+                <p className="text-[10px] text-text-secondary leading-relaxed">
+                  <i className="fa-solid fa-circle-info text-[10px] align-middle mr-0.5" />
                   &quot;Today&apos;s dollars&quot; adjusts for {(localInflationRate * 100).toFixed(1)}% annual inflation over {yearsToRetirement} years.
                   The {(withdrawalRate * 100).toFixed(0)}% withdrawal rate is applied to your projected portfolio.
                 </p>
               </div>
             )}
 
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              <span className="material-symbols-outlined text-[12px] align-middle mr-0.5">info</span>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              <i className="fa-solid fa-circle-info text-[12px] align-middle mr-0.5" />
               Based on {(localAnnualReturn * 100).toFixed(1)}% annual return and {(localInflationRate * 100).toFixed(1)}% inflation.
               These are projections, not guarantees. You can refine these numbers anytime.
             </p>

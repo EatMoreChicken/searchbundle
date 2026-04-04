@@ -22,7 +22,7 @@ export const STRATEGY_LIST: StrategyMeta[] = [
     id: "front_loaded",
     name: "Front-Loaded",
     subtitle: "Save more now, less later",
-    icon: "rocket_launch",
+    icon: "fa-rocket",
     description:
       "Maximize compound interest by contributing more in the early years and gradually reducing your savings over time. The most mathematically efficient approach.",
     bestFor: "People who can save aggressively now and want to ease off later",
@@ -31,7 +31,7 @@ export const STRATEGY_LIST: StrategyMeta[] = [
     id: "coast_fire",
     name: "Coast FIRE",
     subtitle: "Sprint then coast",
-    icon: "sailing",
+    icon: "fa-sailboat",
     description:
       "Save intensely for a set number of years until your portfolio can grow to your target on its own, then stop saving entirely. Compound growth carries you to the finish line.",
     bestFor: "Those willing to sacrifice short-term to gain complete savings freedom later",
@@ -40,7 +40,7 @@ export const STRATEGY_LIST: StrategyMeta[] = [
     id: "barista_fire",
     name: "Barista FIRE",
     subtitle: "Sprint then slow down",
-    icon: "coffee",
+    icon: "fa-mug-hot",
     description:
       "Save aggressively for an initial period, then switch to smaller contributions. Great if you plan to move to part-time work or a lower-paying passion job.",
     bestFor: "People who want flexibility without full retirement savings pressure",
@@ -49,7 +49,7 @@ export const STRATEGY_LIST: StrategyMeta[] = [
     id: "traditional",
     name: "Traditional",
     subtitle: "Steady and predictable",
-    icon: "trending_flat",
+    icon: "fa-arrows-left-right",
     description:
       "Save the same amount every month from now until retirement. Simple to automate and requires no adjustment over time.",
     bestFor: "People who prefer simplicity and consistency",
@@ -58,7 +58,7 @@ export const STRATEGY_LIST: StrategyMeta[] = [
     id: "back_loaded",
     name: "Back-Loaded",
     subtitle: "Start small, ramp up",
-    icon: "trending_up",
+    icon: "fa-arrow-trend-up",
     description:
       "Begin with smaller contributions that increase each year. Less optimal for compound growth, but realistic if your income will grow or you have financial constraints now.",
     bestFor: "Early-career savers or those with current financial constraints",

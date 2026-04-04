@@ -40,14 +40,14 @@ A reusable inline component for labeling financial/technical terms. Usage:
 </InfoTooltip>
 ```
 - Place inline after a label, inside a `flex items-center` wrapper
-- Tooltip displays on hover, dark background (`bg-on-surface`), white text, 64-char width max
+- Tooltip displays on hover, dark background (`bg-text-primary`), white text, 64-char width max
 - Never use for basic concepts (e.g., "name", "age"): only for terms the average user might not know
 
 ### Descriptive Mode Cards
 When presenting two or more mutually exclusive modes or options, use visual cards instead of plain toggle buttons or radio inputs. Each card must:
 - Have an icon + short title (5 words max)
 - Have a one-sentence description in plain language
-- Show selection state via background color shift (e.g., `bg-primary-fixed` when selected)
+- Show selection state via background color shift (e.g., `bg-accent-light` when selected)
 
 Example: the mode selector on the dashboard shows "I know my number" vs "I know my lifestyle": no extra click needed to understand what each mode does.
 
@@ -439,9 +439,9 @@ setTimeout(() => {
   - `PATCH /api/users/me`: update name, email, dateOfBirth, timezone, preferredCurrency, retirementAge, projectionEndAge
   - `POST /api/users/me/password`: change password; requires `{ currentPassword, newPassword }`. Also clears `mustResetPassword`.
 - Household section in settings: rename household, edit financial goal, manage members, invite new members, switch between households
-- Settings link is in the Sidebar footer (icon: `manage_accounts`)
-- Sidebar collapsed state is persisted via `localStorage` key `"sb-sidebar-collapsed"` (`"true"` / `"false"`). Falls back to `window.innerWidth < 1024` on first load.
-- Sidebar nav items: Dashboard, Tracker, Assets, Liabilities. The Projections page/nav item has been removed.
+- Navigation is a top horizontal navbar (`Navbar.tsx`), not a sidebar. Sticky to top. Contains: logo, nav items (Dashboard, Tracker, Assets, Liabilities, Cooper, Settings), household switcher, user menu with sign-out.
+- Mobile: hamburger menu opens a slide-down nav overlay.
+- Active nav item uses `text-accent` with a 2px bottom accent bar. Inactive items use `text-text-tertiary`.
 
 ---
 
@@ -450,11 +450,17 @@ setTimeout(() => {
 **Before building any new UI, read [docs/DESIGN.md](../docs/DESIGN.md) in full.** It is the single source of truth for all visual and interaction decisions: color tokens, typography, spacing, component patterns, motion, and iconography. Do not guess or invent design decisions that are not covered there. If something is missing, add it to DESIGN.md before implementing.
 
 Key rules at a glance (see DESIGN.md for full detail):
-- **No borders, no shadows.** Depth comes from background color shifts only.
-- **Font:** Manrope only, all weights. Never use any other font.
-- **Icons:** Font Awesome 6 (Solid). Never use Material Symbols or any other icon set.
-- **Colors:** Use only the tokens defined in DESIGN.md (`--canvas`, `--surface`, `--accent`, semantic colors, etc.).
-- **Buttons:** Ghost/outlined style by default. No solid-fill buttons.
-- **Motion:** Every state change must transition smoothly. See the animation tables in DESIGN.md.
+- **No borders, no shadows.** Depth comes from background color shifts only. Tooltips and floating overlays may use `shadow-lg`.
+- **Font:** Manrope only, weights 400-800. Never use any other font.
+- **Icons:** Font Awesome 6 (Solid). Loaded via CDN. Use `<i className="fa-solid fa-{name}" />` for static icons, `<i className={`fa-solid ${variable}`} />` for dynamic. Never use Material Symbols or any other icon set.
+- **Colors:** Use only the tokens defined in `globals.css` and DESIGN.md:
+  - Backgrounds: `bg-canvas` (page), `bg-surface` (cards), `bg-surface-alt` (nested)
+  - Text: `text-text-primary`, `text-text-secondary`, `text-text-tertiary`, `text-text-disabled`
+  - Accent: `text-accent`, `bg-accent`, `bg-accent-light`, `bg-accent-hover`, `border-accent`
+  - Semantic: `text-success`/`bg-success-light`, `text-error`/`bg-error-light`, `text-warning`/`bg-warning-light`
+- **Navigation:** Top horizontal navbar (`Navbar.tsx`), NOT a sidebar. Component: `apps/web/src/components/Navbar.tsx`.
+- **Buttons:** Ghost/outlined style by default. No solid-fill buttons. 1.5px border in accent, text in accent.
+- **Motion:** Every state change must transition smoothly. CSS defaults in globals.css handle button/link transitions (150ms ease).
 - **Spacing:** 4px base unit. All spacing is a multiple of 4.
+- **Rounded corners:** Max `rounded-xl` (12px) for cards and containers. `rounded-[99px]` for pill badges only.
 - **Cursor:** Always add `cursor-pointer` to clickable non-button elements.

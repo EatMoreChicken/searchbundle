@@ -110,18 +110,18 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
   }
 
   return (
-    <div className="rounded-2xl bg-surface-container-lowest p-8">
+    <div className="rounded-xl bg-surface p-8">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[2px] text-primary">Planning</p>
-          <h2 className="mt-1 text-xl font-bold text-on-surface">Planned Contributions</h2>
+          <p className="text-[11px] uppercase tracking-[2px] text-accent">Planning</p>
+          <h2 className="mt-1 text-xl font-bold text-text-primary">Planned Contributions</h2>
         </div>
         {contributions.length > 0 && !addOpen && (
           <button
             onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-4 py-2 text-[12px] font-semibold text-on-primary transition-transform active:scale-95"
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-[12px] font-semibold text-white transition-transform active:scale-95"
           >
-            <span className="material-symbols-outlined text-[14px]">add</span>
+            <i className="fa-solid fa-plus text-[14px]" />
             Add
           </button>
         )}
@@ -129,17 +129,17 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
 
       {contributions.length === 0 && !addOpen ? (
         <div className="mt-6 flex flex-col items-center py-10 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-fixed/30">
-            <span className="material-symbols-outlined text-[20px] text-primary">event_repeat</span>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-light/30">
+            <i className="fa-solid fa-arrows-rotate text-[20px] text-accent" />
           </div>
-          <p className="mt-4 text-[13px] text-on-surface-variant max-w-xs">
+          <p className="mt-4 text-[13px] text-text-secondary max-w-xs">
             Add recurring contributions to see a projection of how this account will grow over time.
           </p>
           <button
             onClick={() => setAddOpen(true)}
-            className="mt-4 flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-5 py-2.5 text-[13px] font-semibold text-on-primary transition-transform active:scale-95"
+            className="mt-4 flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2.5 text-[13px] font-semibold text-white transition-transform active:scale-95"
           >
-            <span className="material-symbols-outlined text-[14px]">add</span>
+            <i className="fa-solid fa-plus text-[14px]" />
             Add Contribution
           </button>
         </div>
@@ -147,33 +147,33 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
         <div className="mt-5 space-y-2">
           {contributions.map((c) =>
             editingId === c.id ? (
-              <div key={c.id} className="rounded-xl bg-surface-container p-4">
+              <div key={c.id} className="rounded-xl bg-surface-alt p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="flex-1">
-                    <label className="mb-1 block text-[11px] font-medium text-on-surface-variant">Label</label>
+                    <label className="mb-1 block text-[11px] font-medium text-text-secondary">Label</label>
                     <input
                       type="text"
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
-                      className="w-full rounded-xl bg-surface-container-high px-3 py-2.5 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-xl bg-surface-alt px-3 py-2.5 text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                   </div>
                   <div className="w-28">
-                    <label className="mb-1 block text-[11px] font-medium text-on-surface-variant">Amount</label>
+                    <label className="mb-1 block text-[11px] font-medium text-text-secondary">Amount</label>
                     <input
                       type="number"
                       step="0.01"
                       value={editAmount}
                       onChange={(e) => setEditAmount(e.target.value)}
-                      className="w-full rounded-xl bg-surface-container-high px-3 py-2.5 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-xl bg-surface-alt px-3 py-2.5 text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                   </div>
                   <div className="w-32">
-                    <label className="mb-1 block text-[11px] font-medium text-on-surface-variant">Frequency</label>
+                    <label className="mb-1 block text-[11px] font-medium text-text-secondary">Frequency</label>
                     <select
                       value={editFrequency}
                       onChange={(e) => setEditFrequency(e.target.value as ContributionFrequency)}
-                      className="w-full rounded-xl bg-surface-container-high px-3 py-2.5 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-xl bg-surface-alt px-3 py-2.5 text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
                     >
                       {FREQ_OPTIONS.map((f) => (
                         <option key={f.value} value={f.value}>{f.label}</option>
@@ -184,15 +184,15 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
                     <button
                       onClick={handleEditSave}
                       disabled={editSaving}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-on-primary disabled:opacity-50 transition-transform active:scale-95"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-50 transition-transform active:scale-95"
                     >
-                      <span className="material-symbols-outlined text-[16px]">check</span>
+                      <i className="fa-solid fa-check text-[16px]" />
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-alt text-text-secondary hover:text-accent transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[16px]">close</span>
+                      <i className="fa-solid fa-xmark text-[16px]" />
                     </button>
                   </div>
                 </div>
@@ -200,35 +200,35 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
             ) : (
               <div
                 key={c.id}
-                className="group flex items-center justify-between rounded-xl bg-surface-container-low px-5 py-4"
+                className="group flex items-center justify-between rounded-xl bg-surface-alt px-5 py-4"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-fixed/30">
-                    <span className="material-symbols-outlined text-[14px] text-primary">event_repeat</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-light/30">
+                    <i className="fa-solid fa-arrows-rotate text-[14px] text-accent" />
                   </div>
                   <div>
-                    <p className="text-[13px] font-medium text-on-surface">{c.label}</p>
-                    <p className="mt-0.5 text-[11px] text-on-surface-variant">
+                    <p className="text-[13px] font-medium text-text-primary">{c.label}</p>
+                    <p className="mt-0.5 text-[11px] text-text-secondary">
                       {FREQ_OPTIONS.find((f) => f.value === c.frequency)?.label ?? c.frequency}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[14px] font-semibold text-on-surface">
+                  <span className="text-[14px] font-semibold text-text-primary">
                     {formatCurrencyFull(c.amount)}
                   </span>
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={() => startEdit(c)}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-alt hover:text-accent transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[14px]">edit</span>
+                      <i className="fa-solid fa-pen text-[14px]" />
                     </button>
                     <button
                       onClick={() => handleDelete(c.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-error-container hover:text-error transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-error-light hover:text-error transition-colors"
                     >
-                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                      <i className="fa-solid fa-trash text-[14px]" />
                     </button>
                   </div>
                 </div>
@@ -240,21 +240,21 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
 
       {/* Add form */}
       {addOpen && (
-        <form onSubmit={handleAdd} className="mt-4 rounded-xl bg-surface-container p-4">
+        <form onSubmit={handleAdd} className="mt-4 rounded-xl bg-surface-alt p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <label className="mb-1 block text-[11px] font-medium text-on-surface-variant">What is this for?</label>
+              <label className="mb-1 block text-[11px] font-medium text-text-secondary">What is this for?</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. Monthly deposit, Employer match"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                className="w-full rounded-xl bg-surface-container-high px-3 py-2.5 text-[13px] text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl bg-surface-alt px-3 py-2.5 text-[13px] text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             <div className="w-28">
-              <label className="mb-1 block text-[11px] font-medium text-on-surface-variant">Amount</label>
+              <label className="mb-1 block text-[11px] font-medium text-text-secondary">Amount</label>
               <input
                 type="number"
                 required
@@ -262,15 +262,15 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl bg-surface-container-high px-3 py-2.5 text-[13px] text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl bg-surface-alt px-3 py-2.5 text-[13px] text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
             <div className="w-32">
-              <label className="mb-1 block text-[11px] font-medium text-on-surface-variant">Frequency</label>
+              <label className="mb-1 block text-[11px] font-medium text-text-secondary">Frequency</label>
               <select
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as ContributionFrequency)}
-                className="w-full rounded-xl bg-surface-container-high px-3 py-2.5 text-[13px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded-xl bg-surface-alt px-3 py-2.5 text-[13px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
               >
                 {FREQ_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>{f.label}</option>
@@ -281,16 +281,16 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
               <button
                 type="submit"
                 disabled={saving}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-on-primary disabled:opacity-50 transition-transform active:scale-95"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white disabled:opacity-50 transition-transform active:scale-95"
               >
-                <span className="material-symbols-outlined text-[16px]">check</span>
+                <i className="fa-solid fa-check text-[16px]" />
               </button>
               <button
                 type="button"
                 onClick={() => { setAddOpen(false); setLabel(""); setAmount(""); setFrequency("monthly"); }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-alt text-text-secondary hover:text-accent transition-colors"
               >
-                <span className="material-symbols-outlined text-[16px]">close</span>
+                <i className="fa-solid fa-xmark text-[16px]" />
               </button>
             </div>
           </div>
@@ -299,11 +299,11 @@ export default function PlannedContributions({ assetId, contributions, onUpdate 
 
       {/* Monthly total */}
       {contributions.length > 0 && (
-        <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-container px-5 py-3">
-          <span className="text-[12px] font-medium text-on-surface-variant">Monthly equivalent</span>
-          <span className="text-[14px] font-bold text-on-surface">
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-alt px-5 py-3">
+          <span className="text-[12px] font-medium text-text-secondary">Monthly equivalent</span>
+          <span className="text-[14px] font-bold text-text-primary">
             {formatCurrency(Math.round(totalMonthly))}
-            <span className="text-[11px] font-normal text-on-surface-variant">/mo</span>
+            <span className="text-[11px] font-normal text-text-secondary">/mo</span>
           </span>
         </div>
       )}

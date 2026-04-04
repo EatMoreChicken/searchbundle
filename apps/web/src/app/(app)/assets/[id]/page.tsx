@@ -29,12 +29,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const TYPE_ICONS: Record<string, string> = {
-  simple: "account_balance_wallet",
-  investment: "trending_up",
-  savings: "savings",
-  hsa: "favorite",
-  property: "home",
-  other: "radio_button_checked",
+  simple: "fa-wallet",
+  investment: "fa-arrow-trend-up",
+  savings: "fa-piggy-bank",
+  hsa: "fa-heart",
+  property: "fa-house",
+  other: "fa-circle-dot",
 };
 
 function formatCurrency(value: number, currency = "USD") {
@@ -577,7 +577,7 @@ export default function AssetDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-[14px] text-on-surface-variant">Loading…</p>
+        <p className="text-[14px] text-text-secondary">Loading…</p>
       </div>
     );
   }
@@ -585,8 +585,8 @@ export default function AssetDetailPage() {
   if (!asset) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-[14px] text-on-surface-variant">Asset not found.</p>
-        <button onClick={() => router.push("/assets")} className="text-[13px] text-primary underline">
+        <p className="text-[14px] text-text-secondary">Asset not found.</p>
+        <button onClick={() => router.push("/assets")} className="text-[13px] text-accent underline">
           Back to Assets
         </button>
       </div>
@@ -599,24 +599,24 @@ export default function AssetDetailPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push("/assets")}
-          className="flex items-center gap-2 text-[13px] text-on-surface-variant hover:text-on-surface"
+          className="flex items-center gap-2 text-[13px] text-text-secondary hover:text-accent"
         >
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          <i className="fa-solid fa-arrow-left text-[16px]" />
           Assets
         </button>
         <div className="flex gap-2">
           <button
             onClick={openEdit}
-            className="flex items-center gap-2 rounded-full bg-surface-container-low px-4 py-2.5 text-[13px] font-medium text-on-surface-variant hover:text-on-surface"
+            className="flex items-center gap-2 rounded-full bg-surface-alt px-4 py-2.5 text-[13px] font-medium text-text-secondary hover:text-accent"
           >
-            <span className="material-symbols-outlined text-[16px]">edit</span>
+            <i className="fa-solid fa-pen text-[16px]" />
             Edit
           </button>
           <button
             onClick={() => setDeleteConfirm(true)}
-            className="flex items-center gap-2 rounded-full bg-surface-container-low px-4 py-2.5 text-[13px] font-medium text-on-surface-variant hover:bg-error-container hover:text-error"
+            className="flex items-center gap-2 rounded-full bg-surface-alt px-4 py-2.5 text-[13px] font-medium text-text-secondary hover:bg-error-light hover:text-error"
           >
-            <span className="material-symbols-outlined text-[16px]">delete</span>
+            <i className="fa-solid fa-trash text-[16px]" />
             Delete
           </button>
         </div>
@@ -625,16 +625,16 @@ export default function AssetDetailPage() {
       {/* Asset header */}
       <div className="mt-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-fixed/30">
-            <span className="material-symbols-outlined text-[18px] text-primary">
-              {TYPE_ICONS[asset.type] ?? "account_balance_wallet"}
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-light/30">
+            <span className="fa-solid text-[18px] text-accent">
+              {TYPE_ICONS[asset.type] ?? "fa-wallet"}
             </span>
           </div>
-          <span className="text-[11px] uppercase tracking-[1.5px] text-on-surface-variant">
+          <span className="text-[11px] uppercase tracking-[1.5px] text-text-secondary">
             {TYPE_LABELS[asset.type] ?? asset.type}
           </span>
         </div>
-        <h1 className="mt-3 font-headline font-extrabold text-4xl text-on-surface">{asset.name}</h1>
+        <h1 className="mt-3 font-headline font-extrabold text-4xl text-text-primary">{asset.name}</h1>
 
         {/* Large clickable balance */}
         {balanceEditing ? (
@@ -649,8 +649,8 @@ export default function AssetDetailPage() {
               disabled={balanceSaving}
               autoFocus
               className={[
-                "w-full max-w-md rounded-xl bg-surface-container-high px-4 py-3 text-4xl font-bold tracking-tight text-on-surface focus:outline-none focus:ring-2",
-                balanceError ? "focus:ring-error" : "focus:ring-primary",
+                "w-full max-w-md rounded-xl bg-surface-alt px-4 py-3 text-4xl font-bold tracking-tight text-text-primary focus:outline-none focus:ring-2",
+                balanceError ? "focus:ring-error" : "focus:ring-accent",
               ].join(" ")}
             />
             {(() => {
@@ -661,8 +661,8 @@ export default function AssetDetailPage() {
               const rounded = Math.round(result * 100) / 100;
               return (
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[14px] text-primary">arrow_forward</span>
-                  <span className="text-[13px] font-semibold text-primary">
+                  <i className="fa-solid fa-arrow-right text-[14px] text-accent" />
+                  <span className="text-[13px] font-semibold text-accent">
                     {formatCurrency(rounded, asset.currency)}
                   </span>
                 </div>
@@ -670,11 +670,11 @@ export default function AssetDetailPage() {
             })()}
             {balanceError && (
               <div className="mt-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[14px] text-error">error</span>
+                <i className="fa-solid fa-circle-exclamation text-[14px] text-error" />
                 <span className="text-[12px] text-error">{balanceError}</span>
               </div>
             )}
-            <p className="mt-1.5 text-[11px] text-on-surface-variant">
+            <p className="mt-1.5 text-[11px] text-text-secondary">
               Enter a value or use math: 8500+200, 8500-100. Press Enter to save, Escape to cancel.
             </p>
           </div>
@@ -685,14 +685,12 @@ export default function AssetDetailPage() {
             title="Click to update balance"
           >
             <div className="flex items-center gap-2">
-              <p className="text-5xl font-bold tracking-tight text-on-surface group-hover/balance:text-primary transition-colors">
+              <p className="text-5xl font-bold tracking-tight text-text-primary group-hover/balance:text-accent transition-colors">
                 {formatCurrency(asset.balance, asset.currency)}
               </p>
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant/50 group-hover/balance:text-primary group-hover/balance:opacity-100 transition-colors">
-                edit
-              </span>
+              <i className="fa-solid fa-pen text-[18px] text-text-secondary/50 group-hover/balance:text-accent group-hover/balance:opacity-100 transition-colors" />
             </div>
-            <span className="text-[11px] text-on-surface-variant/60 group-hover/balance:text-primary transition-colors">
+            <span className="text-[11px] text-text-secondary/60 group-hover/balance:text-accent transition-colors">
               Click to update balance
             </span>
           </button>
@@ -701,40 +699,40 @@ export default function AssetDetailPage() {
 
       {/* Asset description */}
       {asset.notes && (
-        <p className="mt-3 text-[14px] text-on-surface-variant">{asset.notes}</p>
+        <p className="mt-3 text-[14px] text-text-secondary">{asset.notes}</p>
       )}
 
       {/* Quick stats */}
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl bg-surface-container-lowest p-5">
-          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Net Change</p>
+        <div className="rounded-xl bg-surface p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-text-secondary">Net Change</p>
           <p className={[
             "mt-2 text-xl font-bold",
-            netChange > 0 ? "text-secondary" : netChange < 0 ? "text-error" : "text-on-surface",
+            netChange > 0 ? "text-success" : netChange < 0 ? "text-error" : "text-text-primary",
           ].join(" ")}>
             {netChange > 0 ? "+" : ""}{formatCurrency(netChange, asset.currency)}
           </p>
-          <p className="mt-1 text-[11px] text-on-surface-variant">since first recorded</p>
+          <p className="mt-1 text-[11px] text-text-secondary">since first recorded</p>
         </div>
-        <div className="rounded-xl bg-surface-container-lowest p-5">
-          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Updates</p>
-          <p className="mt-2 text-xl font-bold text-on-surface">{totalUpdates}</p>
-          <p className="mt-1 text-[11px] text-on-surface-variant">balance changes</p>
+        <div className="rounded-xl bg-surface p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-text-secondary">Updates</p>
+          <p className="mt-2 text-xl font-bold text-text-primary">{totalUpdates}</p>
+          <p className="mt-1 text-[11px] text-text-secondary">balance changes</p>
         </div>
-        <div className="rounded-xl bg-surface-container-lowest p-5">
-          <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Last Updated</p>
-          <p className="mt-2 text-[15px] font-bold text-on-surface">
+        <div className="rounded-xl bg-surface p-5">
+          <p className="text-[10px] uppercase tracking-[1.2px] text-text-secondary">Last Updated</p>
+          <p className="mt-2 text-[15px] font-bold text-text-primary">
             {formatDate(asset.updatedAt)}
           </p>
-          <p className="mt-1 text-[11px] text-on-surface-variant">
+          <p className="mt-1 text-[11px] text-text-secondary">
             created {formatDate(asset.createdAt)}
           </p>
         </div>
         {asset.type === "investment" && asset.returnRate != null && (
-          <div className="rounded-xl bg-surface-container-lowest p-5">
-            <p className="text-[10px] uppercase tracking-[1.2px] text-on-surface-variant">Expected Return</p>
-            <p className="mt-2 text-xl font-bold text-primary">{asset.returnRate}%</p>
-            <p className="mt-1 text-[11px] text-on-surface-variant">
+          <div className="rounded-xl bg-surface p-5">
+            <p className="text-[10px] uppercase tracking-[1.2px] text-text-secondary">Expected Return</p>
+            <p className="mt-2 text-xl font-bold text-accent">{asset.returnRate}%</p>
+            <p className="mt-1 text-[11px] text-text-secondary">
               {asset.returnRateVariance ? `+/- ${asset.returnRateVariance}% variance` : "annual"}
             </p>
           </div>
@@ -742,21 +740,21 @@ export default function AssetDetailPage() {
       </div>
 
       {/* Balance History Chart */}
-      <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
+      <div className="mt-8 rounded-xl bg-surface p-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] uppercase tracking-[2px] text-primary">
+            <p className="text-[11px] uppercase tracking-[2px] text-accent">
               {asset.type === "investment" ? "History & Projection" : "History"}
             </p>
-            <h2 className="mt-1 text-xl font-bold text-on-surface">Balance Over Time</h2>
+            <h2 className="mt-1 text-xl font-bold text-text-primary">Balance Over Time</h2>
           </div>
           {asset.type === "investment" && chartData.length > 1 && (
             <div className="flex items-center gap-2">
-              <label className="text-[11px] text-on-surface-variant">Project</label>
+              <label className="text-[11px] text-text-secondary">Project</label>
               <select
                 value={projectionYears}
                 onChange={(e) => handleProjectionYearsChange(Number(e.target.value))}
-                className="cursor-pointer rounded-xl bg-surface-container-high px-3 py-1.5 text-[12px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                className="cursor-pointer rounded-xl bg-surface-alt px-3 py-1.5 text-[12px] text-text-primary focus:outline-none focus:ring-1 focus:ring-accent"
               >
                 {PROJECTION_YEAR_OPTIONS.map((y) => (
                   <option key={y} value={y}>{y} years</option>
@@ -768,8 +766,8 @@ export default function AssetDetailPage() {
 
         {chartData.length <= 1 ? (
           <div className="mt-6 flex flex-col items-center py-12 text-center">
-            <span className="material-symbols-outlined text-[28px] text-on-surface-variant/40">show_chart</span>
-            <p className="mt-3 text-[13px] text-on-surface-variant">
+            <i className="fa-solid fa-chart-line text-[28px] text-text-secondary/40" />
+            <p className="mt-3 text-[13px] text-text-secondary">
               Update the balance to start building a history chart.
             </p>
           </div>
@@ -780,17 +778,17 @@ export default function AssetDetailPage() {
               <ComposedChart data={combinedChartData.points} margin={{ top: 28, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="projectionGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.08} />
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.08} />
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="4 4"
-                  stroke="var(--color-outline-variant)"
+                  stroke="var(--color-text-disabled)"
                   strokeOpacity={0.3}
                   vertical={false}
                 />
@@ -798,7 +796,7 @@ export default function AssetDetailPage() {
                   dataKey="x"
                   type="number"
                   domain={["dataMin", "dataMax"]}
-                  tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
                   tickFormatter={(x: number) => {
                     if (Math.abs(x - combinedChartData.bridgeX) < 0.05) return "Now";
                     const pt = combinedChartData.points.find((d) => d.x === x);
@@ -809,7 +807,7 @@ export default function AssetDetailPage() {
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={formatCompact}
@@ -830,17 +828,17 @@ export default function AssetDetailPage() {
                     const inflAdj = byKey["inflationAdjusted"];
                     const fmt = (v: number) => formatCurrencyFull(v, asset.currency);
                     return (
-                      <div className="rounded-xl bg-on-surface px-4 py-3 shadow-lg text-[13px] text-white">
+                      <div className="rounded-xl bg-text-primary px-4 py-3 shadow-lg text-[13px] text-white">
                         <p className="text-[11px] uppercase tracking-[1px] text-white/70 mb-2">
                           {isProjection
                             ? `Year ${Math.round((label as number) - combinedChartData.bridgeX)}`
                             : combinedChartData.points.find((p) => p.x === label)?.label ?? ""}
                         </p>
                         {histVal != null && (
-                          <p className="font-semibold">Balance: <span className="text-primary-fixed">{fmt(histVal)}</span></p>
+                          <p className="font-semibold">Balance: <span className="text-accent-fixed">{fmt(histVal)}</span></p>
                         )}
                         {projVal != null && (
-                          <p className="font-semibold">Expected: <span className="text-primary-fixed">{fmt(projVal)}</span></p>
+                          <p className="font-semibold">Expected: <span className="text-accent-fixed">{fmt(projVal)}</span></p>
                         )}
                         {combinedChartData.hasVariance && rLow != null && rSize != null && (
                           <p className="text-white/70 mt-1">Range: {fmt(rLow)} – {fmt(rLow + rSize)}</p>
@@ -867,7 +865,7 @@ export default function AssetDetailPage() {
                     <Area
                       dataKey="projectedRangeSize"
                       stackId="range"
-                      fill="var(--color-primary-fixed)"
+                      fill="var(--color-accent-light)"
                       stroke="transparent"
                       fillOpacity={0.25}
                       isAnimationActive={false}
@@ -880,11 +878,11 @@ export default function AssetDetailPage() {
                 <Area
                   type="monotone"
                   dataKey="historyValue"
-                  stroke="var(--color-primary)"
+                  stroke="var(--color-accent)"
                   strokeWidth={2}
                   fill="url(#balanceGradient)"
-                  dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: "var(--color-primary)", strokeWidth: 2, stroke: "white" }}
+                  dot={{ r: 4, fill: "var(--color-accent)", strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: "var(--color-accent)", strokeWidth: 2, stroke: "white" }}
                   connectNulls={false}
                   isAnimationActive={false}
                 />
@@ -893,11 +891,11 @@ export default function AssetDetailPage() {
                 <Line
                   type="monotone"
                   dataKey="projectedExpected"
-                  stroke="var(--color-primary)"
+                  stroke="var(--color-accent)"
                   strokeWidth={2}
                   strokeDasharray="6 4"
                   dot={false}
-                  activeDot={{ r: 5, fill: "var(--color-primary)", stroke: "var(--color-surface-container-lowest)", strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: "var(--color-accent)", stroke: "var(--color-surface)", strokeWidth: 2 }}
                   connectNulls={false}
                   isAnimationActive={false}
                 />
@@ -907,13 +905,13 @@ export default function AssetDetailPage() {
                 {/* "Today" divider */}
                 <ReferenceLine
                   x={combinedChartData.bridgeX}
-                  stroke="var(--color-tertiary)"
+                  stroke="var(--color-warning)"
                   strokeDasharray="6 4"
                   strokeWidth={1.5}
                   label={{
                     value: "Today",
                     position: "top",
-                    fill: "var(--color-tertiary)",
+                    fill: "var(--color-warning)",
                     fontSize: 10,
                     fontWeight: 600,
                   }}
@@ -924,7 +922,7 @@ export default function AssetDetailPage() {
                   <ReferenceLine
                     key={marker.id}
                     x={marker.timeX}
-                    stroke="var(--color-tertiary)"
+                    stroke="var(--color-warning)"
                     strokeDasharray="4 4"
                     strokeWidth={1}
                     strokeOpacity={0.35}
@@ -937,7 +935,7 @@ export default function AssetDetailPage() {
                             cx={cx}
                             cy={9}
                             r={7}
-                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            fill={isHovered ? "var(--color-warning)" : "var(--color-warning)"}
                             style={{ cursor: "pointer", transition: "fill 0.15s" }}
                             onClick={() => scrollToEntry(marker.scrollTarget)}
                             onMouseEnter={() => setHoveredMarker(marker.id)}
@@ -945,7 +943,7 @@ export default function AssetDetailPage() {
                           />
                           <path
                             d={`M${cx - 4},14 Q${cx},22 ${cx + 4},14`}
-                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            fill={isHovered ? "var(--color-warning)" : "var(--color-warning)"}
                             style={{ cursor: "pointer", transition: "fill 0.15s" }}
                           />
                           <text
@@ -980,7 +978,7 @@ export default function AssetDetailPage() {
                             >
                               <div
                                 style={{
-                                  background: "var(--color-on-surface)",
+                                  background: "var(--color-text-primary)",
                                   color: "white",
                                   borderRadius: 8,
                                   padding: "6px 10px",
@@ -1015,13 +1013,13 @@ export default function AssetDetailPage() {
               <AreaChart data={chartData} margin={{ top: 28, right: 10, left: 10, bottom: 5 }}>
                 <defs>
                   <linearGradient id="balanceGradientSimple" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="4 4"
-                  stroke="var(--color-outline-variant)"
+                  stroke="var(--color-text-disabled)"
                   strokeOpacity={0.3}
                   vertical={false}
                 />
@@ -1029,7 +1027,7 @@ export default function AssetDetailPage() {
                   dataKey="idx"
                   type="number"
                   domain={["dataMin", "dataMax"]}
-                  tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
                   tickFormatter={(idx: number) => {
                     const pt = chartData.find((d) => d.idx === idx);
                     return pt ? pt.label : "";
@@ -1038,7 +1036,7 @@ export default function AssetDetailPage() {
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "var(--color-on-surface-variant)" }}
+                  tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v: number) => formatCurrency(v)}
@@ -1046,7 +1044,7 @@ export default function AssetDetailPage() {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "var(--color-on-surface)",
+                    backgroundColor: "var(--color-text-primary)",
                     border: "none",
                     borderRadius: "12px",
                     padding: "8px 14px",
@@ -1060,17 +1058,17 @@ export default function AssetDetailPage() {
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="var(--color-primary)"
+                  stroke="var(--color-accent)"
                   strokeWidth={2}
                   fill="url(#balanceGradientSimple)"
-                  dot={{ r: 4, fill: "var(--color-primary)", strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: "var(--color-primary)", strokeWidth: 2, stroke: "white" }}
+                  dot={{ r: 4, fill: "var(--color-accent)", strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: "var(--color-accent)", strokeWidth: 2, stroke: "white" }}
                 />
                 {allNoteMarkers.map((marker) => (
                   <ReferenceLine
                     key={marker.id}
                     x={marker.x}
-                    stroke="var(--color-tertiary)"
+                    stroke="var(--color-warning)"
                     strokeDasharray="4 4"
                     strokeWidth={1}
                     strokeOpacity={0.35}
@@ -1083,7 +1081,7 @@ export default function AssetDetailPage() {
                             cx={cx}
                             cy={9}
                             r={7}
-                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            fill={isHovered ? "var(--color-warning)" : "var(--color-warning)"}
                             style={{ cursor: "pointer", transition: "fill 0.15s" }}
                             onClick={() => scrollToEntry(marker.scrollTarget)}
                             onMouseEnter={() => setHoveredMarker(marker.id)}
@@ -1091,7 +1089,7 @@ export default function AssetDetailPage() {
                           />
                           <path
                             d={`M${cx - 4},14 Q${cx},22 ${cx + 4},14`}
-                            fill={isHovered ? "var(--color-tertiary-container)" : "var(--color-tertiary)"}
+                            fill={isHovered ? "var(--color-warning)" : "var(--color-warning)"}
                             style={{ cursor: "pointer", transition: "fill 0.15s" }}
                           />
                           <text
@@ -1126,7 +1124,7 @@ export default function AssetDetailPage() {
                             >
                               <div
                                 style={{
-                                  background: "var(--color-on-surface)",
+                                  background: "var(--color-text-primary)",
                                   color: "white",
                                   borderRadius: 8,
                                   padding: "6px 10px",
@@ -1168,11 +1166,11 @@ export default function AssetDetailPage() {
 
       {/* Projection Chart (simple accounts only; investment accounts use combined chart above) */}
       {asset.type !== "investment" && contributions.length > 0 && (
-        <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
+        <div className="mt-8 rounded-xl bg-surface p-8">
           <div>
-            <p className="text-[11px] uppercase tracking-[2px] text-primary">Projection</p>
-            <h2 className="mt-1 text-xl font-bold text-on-surface">Balance Projection</h2>
-            <p className="mt-1 text-[12px] text-on-surface-variant">
+            <p className="text-[11px] uppercase tracking-[2px] text-accent">Projection</p>
+            <h2 className="mt-1 text-xl font-bold text-text-primary">Balance Projection</h2>
+            <p className="mt-1 text-[12px] text-text-secondary">
               Projected balance based on your planned contributions over 10 years
             </p>
           </div>
@@ -1190,21 +1188,21 @@ export default function AssetDetailPage() {
       )}
 
       {/* Activity Timeline */}
-      <div className="mt-8 rounded-2xl bg-surface-container-lowest p-8">
+      <div className="mt-8 rounded-xl bg-surface p-8">
         <div>
-          <p className="text-[11px] uppercase tracking-[2px] text-primary">Activity</p>
-          <h2 className="mt-1 text-xl font-bold text-on-surface">Timeline</h2>
+          <p className="text-[11px] uppercase tracking-[2px] text-accent">Activity</p>
+          <h2 className="mt-1 text-xl font-bold text-text-primary">Timeline</h2>
         </div>
 
         {/* Unified activity input: balance + note */}
-        <div className="mt-5 rounded-xl bg-surface-container p-5">
-          <p className="text-[12px] font-medium text-on-surface-variant mb-3">
+        <div className="mt-5 rounded-xl bg-surface-alt p-5">
+          <p className="text-[12px] font-medium text-text-secondary mb-3">
             Update your balance, add a note, or both
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
-              <div className="flex items-center gap-2 rounded-xl bg-surface-container-high px-4 py-3">
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant/50">payments</span>
+              <div className="flex items-center gap-2 rounded-xl bg-surface-alt px-4 py-3">
+                <i className="fa-solid fa-credit-card text-[16px] text-text-secondary/50" />
                 <input
                   type="text"
                   placeholder="New balance or expression"
@@ -1212,13 +1210,13 @@ export default function AssetDetailPage() {
                   onChange={(e) => { setActivityBalance(e.target.value); setActivityError(null); }}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitActivity(); } }}
                   disabled={activitySaving}
-                  className="flex-1 bg-transparent text-[13px] text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
+                  className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-secondary/60 focus:outline-none"
                 />
               </div>
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 rounded-xl bg-surface-container-high px-4 py-3">
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant/50">sticky_note_2</span>
+              <div className="flex items-center gap-2 rounded-xl bg-surface-alt px-4 py-3">
+                <span className="fa-solid text-[16px] text-text-secondary/50">sticky_note_2</span>
                 <input
                   type="text"
                   placeholder="Add a note (optional)"
@@ -1226,16 +1224,16 @@ export default function AssetDetailPage() {
                   onChange={(e) => setActivityNote(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitActivity(); } }}
                   disabled={activitySaving}
-                  className="flex-1 bg-transparent text-[13px] text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
+                  className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-secondary/60 focus:outline-none"
                 />
               </div>
             </div>
             <button
               onClick={submitActivity}
               disabled={activitySaving || (!activityBalance.trim() && !activityNote.trim())}
-              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-5 py-2.5 text-[13px] font-semibold text-on-primary disabled:opacity-40 transition-transform active:scale-95"
+              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2.5 text-[13px] font-semibold text-white disabled:opacity-40 transition-transform active:scale-95"
             >
-              <span className="material-symbols-outlined text-[14px]">add_circle</span>
+              <i className="fa-solid fa-circle-plus text-[14px]" />
               Add
             </button>
           </div>
@@ -1246,8 +1244,8 @@ export default function AssetDetailPage() {
             if (result === null) return null;
             return (
               <div className="mt-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[14px] text-primary">arrow_forward</span>
-                <span className="text-[13px] font-semibold text-primary">
+                <i className="fa-solid fa-arrow-right text-[14px] text-accent" />
+                <span className="text-[13px] font-semibold text-accent">
                   {formatCurrency(Math.round(result * 100) / 100, asset.currency)}
                 </span>
               </div>
@@ -1255,7 +1253,7 @@ export default function AssetDetailPage() {
           })()}
           {activityError && (
             <div className="mt-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px] text-error">error</span>
+              <i className="fa-solid fa-circle-exclamation text-[14px] text-error" />
               <span className="text-[12px] text-error">{activityError}</span>
             </div>
           )}
@@ -1263,8 +1261,8 @@ export default function AssetDetailPage() {
 
         {timeline.length === 0 ? (
           <div className="mt-6 flex flex-col items-center py-10 text-center">
-            <span className="material-symbols-outlined text-[28px] text-on-surface-variant/40">history</span>
-            <p className="mt-3 text-[13px] text-on-surface-variant">
+            <i className="fa-solid fa-clock-rotate-left text-[28px] text-text-secondary/40" />
+            <p className="mt-3 text-[13px] text-text-secondary">
               No activity yet. Update the balance or add a note to start building your timeline.
             </p>
           </div>
@@ -1277,44 +1275,44 @@ export default function AssetDetailPage() {
                   <div
                     key={`u-${update.id}`}
                     id={`update-${update.id}`}
-                    className="flex items-center justify-between rounded-xl bg-surface-container-low px-5 py-4 transition-all"
+                    className="flex items-center justify-between rounded-xl bg-surface-alt px-5 py-4 transition-all"
                   >
                     <div className="flex items-center gap-4">
                       <div className={[
                         "flex h-8 w-8 items-center justify-center rounded-full",
                         update.changeAmount > 0
-                          ? "bg-secondary-fixed/40"
+                          ? "bg-success-light/40"
                           : update.changeAmount < 0
-                            ? "bg-error-container"
-                            : "bg-surface-container-high",
+                            ? "bg-error-light"
+                            : "bg-surface-alt",
                       ].join(" ")}>
                         <span className={[
-                          "material-symbols-outlined text-[14px]",
+                          "fa-solid text-[14px]",
                           update.changeAmount > 0
-                            ? "text-secondary"
+                            ? "text-success"
                             : update.changeAmount < 0
                               ? "text-error"
-                              : "text-on-surface-variant",
+                              : "text-text-secondary",
                         ].join(" ")}>
                           {update.changeAmount > 0 ? "arrow_upward" : update.changeAmount < 0 ? "arrow_downward" : "remove"}
                         </span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[13px] font-medium text-on-surface-variant">
+                          <span className="text-[13px] font-medium text-text-secondary">
                             {formatCurrencyFull(update.previousBalance)}
                           </span>
-                          <span className="material-symbols-outlined text-[12px] text-on-surface-variant">arrow_forward</span>
-                          <span className="text-[13px] font-semibold text-on-surface">
+                          <i className="fa-solid fa-arrow-right text-[12px] text-text-secondary" />
+                          <span className="text-[13px] font-semibold text-text-primary">
                             {formatCurrencyFull(update.newBalance)}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[11px] text-on-surface-variant">
+                        <p className="mt-0.5 text-[11px] text-text-secondary">
                           {formatDateTime(update.createdAt)}
                         </p>
                         {update.note && (
-                          <p className="mt-1 flex items-center gap-1.5 text-[12px] text-on-surface-variant">
-                            <span className="material-symbols-outlined text-[12px] text-tertiary">sticky_note_2</span>
+                          <p className="mt-1 flex items-center gap-1.5 text-[12px] text-text-secondary">
+                            <span className="fa-solid text-[12px] text-warning">sticky_note_2</span>
                             {update.note}
                           </p>
                         )}
@@ -1323,10 +1321,10 @@ export default function AssetDetailPage() {
                     <span className={[
                       "text-[13px] font-semibold",
                       update.changeAmount > 0
-                        ? "text-secondary"
+                        ? "text-success"
                         : update.changeAmount < 0
                           ? "text-error"
-                          : "text-on-surface-variant",
+                          : "text-text-secondary",
                     ].join(" ")}>
                       {update.changeAmount > 0 ? "+" : ""}
                       {formatCurrencyFull(update.changeAmount)}
@@ -1341,22 +1339,22 @@ export default function AssetDetailPage() {
                 <div
                   key={`n-${note.id}`}
                   id={`note-${note.id}`}
-                  className="flex items-center justify-between rounded-xl bg-tertiary-fixed/20 px-5 py-4 transition-all"
+                  className="flex items-center justify-between rounded-xl bg-warning-light/20 px-5 py-4 transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tertiary-fixed">
-                      <span className="material-symbols-outlined text-[14px] text-on-tertiary-fixed-variant">sticky_note_2</span>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warning-light">
+                      <span className="fa-solid text-[14px] text-warning">sticky_note_2</span>
                     </div>
                     <div>
-                      <p className="text-[13px] font-medium text-on-surface">{note.content}</p>
-                      <p className="mt-0.5 text-[11px] text-on-surface-variant">{formatDateTime(note.createdAt)}</p>
+                      <p className="text-[13px] font-medium text-text-primary">{note.content}</p>
+                      <p className="mt-0.5 text-[11px] text-text-secondary">{formatDateTime(note.createdAt)}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => deleteNote(note.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant/40 hover:text-error hover:bg-error-container transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary/40 hover:text-error hover:bg-error-light transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <i className="fa-solid fa-xmark text-[14px]" />
                   </button>
                 </div>
               );
@@ -1368,53 +1366,53 @@ export default function AssetDetailPage() {
       {/* Edit Modal */}
       {editOpen && editForm && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-on-surface/20 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-text-primary/20 sm:items-center"
           onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false); }}
         >
-          <div className="w-full max-w-2xl rounded-t-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl sm:rounded-2xl sm:max-h-[90vh] sm:overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-t-2xl bg-surface/80 backdrop-blur-[20px] p-8 shadow-xl sm:rounded-xl sm:max-h-[90vh] sm:overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h2 className="font-headline font-extrabold text-2xl text-on-surface">Edit Asset</h2>
+              <h2 className="font-headline font-extrabold text-2xl text-text-primary">Edit Asset</h2>
               <button
                 onClick={() => setEditOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary hover:bg-surface-alt hover:text-accent"
               >
-                <span className="material-symbols-outlined text-[18px]">close</span>
+                <i className="fa-solid fa-xmark text-[18px]" />
               </button>
             </div>
 
             <form onSubmit={handleSave} className="mt-6 space-y-4">
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">Asset Name</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-text-primary">Asset Name</label>
                 <input
                   type="text"
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
-                  Notes <span className="font-normal text-on-surface-variant">(optional)</span>
+                <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
+                  Notes <span className="font-normal text-text-secondary">(optional)</span>
                 </label>
                 <textarea
                   rows={3}
                   value={editForm.notes}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                  className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary placeholder:text-text-secondary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                 />
               </div>
 
               {/* Investment-specific fields */}
               {asset.type === "investment" && (
-                <div className="rounded-xl bg-surface-container-low p-4 space-y-4">
-                  <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-[1px]">
+                <div className="rounded-xl bg-surface-alt p-4 space-y-4">
+                  <p className="text-[12px] font-semibold text-text-secondary uppercase tracking-[1px]">
                     Investment Settings
                   </p>
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                      <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
                         Expected annual return (%)
                       </label>
                       <input
@@ -1424,11 +1422,11 @@ export default function AssetDetailPage() {
                         max="50"
                         value={editForm.returnRate}
                         onChange={(e) => setEditForm({ ...editForm, returnRate: e.target.value })}
-                        className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="mb-1.5 block text-[13px] font-medium text-on-surface">
+                      <label className="mb-1.5 block text-[13px] font-medium text-text-primary">
                         Variance (+/- %)
                       </label>
                       <input
@@ -1438,7 +1436,7 @@ export default function AssetDetailPage() {
                         max="20"
                         value={editForm.returnRateVariance}
                         onChange={(e) => setEditForm({ ...editForm, returnRateVariance: e.target.value })}
-                        className="w-full rounded-xl bg-surface-container-high px-4 py-3.5 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-xl bg-surface-alt px-4 py-3.5 text-[14px] text-text-primary focus:outline-none focus:bg-surface focus:ring-1 focus:ring-accent"
                       />
                     </div>
                   </div>
@@ -1446,7 +1444,7 @@ export default function AssetDetailPage() {
                 </div>
               )}
 
-              <p className="text-[11px] text-on-surface-variant">
+              <p className="text-[11px] text-text-secondary">
                 To update the balance, use the clickable balance display on the detail page.
               </p>
 
@@ -1454,14 +1452,14 @@ export default function AssetDetailPage() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(false)}
-                  className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
+                  className="flex-1 rounded-full bg-surface-alt py-3 text-[14px] font-semibold text-text-secondary transition-transform active:scale-95"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-full bg-gradient-to-r from-primary to-primary-container py-3 text-[14px] font-semibold text-on-primary disabled:opacity-50 transition-transform active:scale-95"
+                  className="flex-1 rounded-full bg-gradient-to-r from-accent to-accent-hover py-3 text-[14px] font-semibold text-white disabled:opacity-50 transition-transform active:scale-95"
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>
@@ -1474,24 +1472,24 @@ export default function AssetDetailPage() {
       {/* Delete confirmation */}
       {deleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/20"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-text-primary/20"
           onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(false); }}
         >
-          <div className="w-full max-w-sm rounded-2xl bg-surface-container-lowest/80 backdrop-blur-[20px] p-8 shadow-xl">
-            <h2 className="font-headline font-extrabold text-2xl text-on-surface">Delete asset?</h2>
-            <p className="mt-2 text-[14px] text-on-surface-variant">
+          <div className="w-full max-w-sm rounded-xl bg-surface/80 backdrop-blur-[20px] p-8 shadow-xl">
+            <h2 className="font-headline font-extrabold text-2xl text-text-primary">Delete asset?</h2>
+            <p className="mt-2 text-[14px] text-text-secondary">
               This will permanently remove <strong>{asset.name}</strong> and its history. This cannot be undone.
             </p>
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(false)}
-                className="flex-1 rounded-full bg-surface-container-low py-3 text-[14px] font-semibold text-on-surface-variant transition-transform active:scale-95"
+                className="flex-1 rounded-full bg-surface-alt py-3 text-[14px] font-semibold text-text-secondary transition-transform active:scale-95"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 rounded-full bg-error py-3 text-[14px] font-semibold text-on-primary transition-transform active:scale-95"
+                className="flex-1 rounded-full bg-error py-3 text-[14px] font-semibold text-white transition-transform active:scale-95"
               >
                 Delete
               </button>

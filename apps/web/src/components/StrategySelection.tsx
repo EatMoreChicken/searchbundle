@@ -90,10 +90,10 @@ function MiniChartDual({ strategy, years }: MiniChartProps) {
               const d = payload[0]?.payload as { t: number; portfolio: number; contribution: number };
               const pct = Math.round(d.t * 100);
               return (
-                <div className="bg-on-surface rounded-lg px-2.5 py-1.5 shadow-lg text-white text-[10px] space-y-0.5 pointer-events-none">
+                <div className="bg-text-primary rounded-lg px-2.5 py-1.5 shadow-lg text-white text-[10px] space-y-0.5 pointer-events-none">
                   <p className="font-semibold">{pct}% through</p>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                     <span>Portfolio: {Math.round(d.portfolio * 100)}%</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -145,13 +145,13 @@ export default function StrategySelection({
   return (
     <div className="space-y-6">
       {/* Intro note */}
-      <div className="bg-surface-container rounded-2xl p-5 flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center flex-shrink-0 mt-0.5">
-          <span className="material-symbols-outlined text-on-tertiary-fixed-variant text-[18px]">lightbulb</span>
+      <div className="bg-surface-alt rounded-xl p-5 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-warning-light flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i className="fa-solid fa-lightbulb text-warning text-[18px]" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-on-surface mb-1">Choose a savings path to start with</p>
-          <p className="text-xs text-on-surface-variant leading-relaxed">
+          <p className="text-sm font-semibold text-text-primary mb-1">Choose a savings path to start with</p>
+          <p className="text-xs text-text-secondary leading-relaxed">
             This is just a starting point. On the next page, you can customize every parameter: adjust sliders,
             change the target, and see exactly how the numbers shift. Nothing is locked in.
           </p>
@@ -161,12 +161,12 @@ export default function StrategySelection({
       {/* Legend */}
       <div className="flex items-center gap-4 px-1">
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-0.5 bg-primary rounded-full" />
-          <span className="text-xs text-on-surface-variant">Portfolio growth</span>
+          <div className="w-5 h-0.5 bg-accent rounded-full" />
+          <span className="text-xs text-text-secondary">Portfolio growth</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-5 h-0.5 bg-tertiary rounded-full" style={{ borderTop: "1.5px dashed #805200", height: 0 }} />
-          <span className="text-xs text-on-surface-variant">Monthly contribution</span>
+          <span className="text-xs text-text-secondary">Monthly contribution</span>
         </div>
       </div>
 
@@ -219,10 +219,10 @@ function StrategyCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full text-left rounded-2xl p-6 transition-all ${
+      className={`w-full text-left rounded-xl p-6 transition-all ${
         isSelected
-          ? "bg-primary-fixed ring-2 ring-primary/20"
-          : "bg-surface-container-lowest hover:bg-surface-container"
+          ? "bg-accent-light ring-2 ring-primary/20"
+          : "bg-surface hover:bg-surface-alt"
       }`}
     >
       <div className="flex items-start gap-5">
@@ -230,41 +230,41 @@ function StrategyCard({
         <div className="flex flex-col items-center gap-1 flex-shrink-0">
           <div
             className={`w-11 h-11 rounded-full flex items-center justify-center ${
-              isSelected ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"
+              isSelected ? "bg-accent text-white" : "bg-surface-alt text-text-secondary"
             }`}
           >
-            <span className="material-symbols-outlined text-[22px]">{meta.icon}</span>
+            <i className={`fa-solid ${meta.icon} text-[22px]`} />
           </div>
           {rank === 1 && (
-            <span className="text-[10px] font-bold text-primary uppercase tracking-wide">Best</span>
+            <span className="text-[10px] font-bold text-accent uppercase tracking-wide">Best</span>
           )}
         </div>
 
         {/* Center: text */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <h3 className={`text-title-md font-bold ${isSelected ? "text-primary" : "text-on-surface"}`}>
+            <h3 className={`text-title-md font-bold ${isSelected ? "text-accent" : "text-text-primary"}`}>
               {meta.name}
             </h3>
-            <span className="text-xs text-on-surface-variant">{meta.subtitle}</span>
+            <span className="text-xs text-text-secondary">{meta.subtitle}</span>
           </div>
-          <p className="text-sm text-on-surface-variant leading-relaxed mb-3">{meta.description}</p>
+          <p className="text-sm text-text-secondary leading-relaxed mb-3">{meta.description}</p>
 
           {/* Monthly preview */}
           {hasValidNumbers && (
             <div className="flex items-center gap-4 text-xs">
               <div>
-                <span className="text-on-surface-variant">Year 1: </span>
-                <span className="font-bold text-on-surface">{formatCurrency(summary.firstYearMonthly)}/mo</span>
+                <span className="text-text-secondary">Year 1: </span>
+                <span className="font-bold text-text-primary">{formatCurrency(summary.firstYearMonthly)}/mo</span>
               </div>
               {summary.firstYearMonthly !== summary.lastYearMonthly && (
                 <>
-                  <span className="text-on-surface-variant">→</span>
+                  <span className="text-text-secondary">→</span>
                   <div>
-                    <span className="text-on-surface-variant">
+                    <span className="text-text-secondary">
                       {meta.id === "coast_fire" ? `After ${summary.phase1Years ?? "?"} yrs: ` : "Final year: "}
                     </span>
-                    <span className="font-bold text-on-surface">
+                    <span className="font-bold text-text-primary">
                       {summary.lastYearMonthly === 0 ? "$0/mo" : `${formatCurrency(summary.lastYearMonthly)}/mo`}
                     </span>
                   </div>
@@ -275,8 +275,8 @@ function StrategyCard({
 
           {/* Best for tag */}
           <div className="flex items-center gap-1.5 mt-2">
-            <span className="material-symbols-outlined text-[12px] text-on-surface-variant">person</span>
-            <span className="text-xs text-on-surface-variant italic">{meta.bestFor}</span>
+            <i className="fa-solid fa-user text-[12px] text-text-secondary" />
+            <span className="text-xs text-text-secondary italic">{meta.bestFor}</span>
           </div>
         </div>
 
