@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
@@ -88,7 +87,7 @@ export default function Navbar() {
       <div className="flex items-center h-14 px-4 lg:px-6">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2 mr-8 shrink-0">
-          <Image src="/logo.png" alt="SearchBundle" width={28} height={28} className="rounded-md" />
+          <img src="/logo.png" alt="SearchBundle" width={28} height={28} className="rounded-md" />
           <span className="font-extrabold text-[15px] tracking-tight text-text-primary hidden sm:inline">
             Search<span className="text-accent">Bundle</span>
           </span>
